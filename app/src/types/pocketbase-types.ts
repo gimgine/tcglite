@@ -11,6 +11,7 @@ export enum Collections {
   Mfas = '_mfas',
   Otps = '_otps',
   Superusers = '_superusers',
+  Orders = 'orders',
   Users = 'users'
 }
 
@@ -86,6 +87,29 @@ export type SuperusersRecord = {
   verified?: boolean;
 };
 
+export type OrdersRecord = {
+  address?: string;
+  addressTwo?: string;
+  carrier?: string;
+  city?: string;
+  count?: number;
+  country?: string;
+  created?: IsoDateString;
+  firstName?: string;
+  id: string;
+  lastName?: string;
+  orderDate?: IsoDateString;
+  orderNumber?: string;
+  postalCode?: string;
+  shippingFee?: number;
+  shippingMethod?: string;
+  state?: string;
+  trackingNumber?: string;
+  updated?: IsoDateString;
+  value?: string;
+  weight?: number;
+};
+
 export type UsersRecord = {
   avatar?: string;
   created?: IsoDateString;
@@ -105,6 +129,7 @@ export type ExternalauthsResponse<Texpand = unknown> = Required<ExternalauthsRec
 export type MfasResponse<Texpand = unknown> = Required<MfasRecord> & BaseSystemFields<Texpand>;
 export type OtpsResponse<Texpand = unknown> = Required<OtpsRecord> & BaseSystemFields<Texpand>;
 export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> & AuthSystemFields<Texpand>;
+export type OrdersResponse<Texpand = unknown> = Required<OrdersRecord> & BaseSystemFields<Texpand>;
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>;
 
 // Types containing all Records and Responses, useful for creating typing helper functions
@@ -115,6 +140,7 @@ export type CollectionRecords = {
   _mfas: MfasRecord;
   _otps: OtpsRecord;
   _superusers: SuperusersRecord;
+  orders: OrdersRecord;
   users: UsersRecord;
 };
 
@@ -124,6 +150,7 @@ export type CollectionResponses = {
   _mfas: MfasResponse;
   _otps: OtpsResponse;
   _superusers: SuperusersResponse;
+  orders: OrdersResponse;
   users: UsersResponse;
 };
 
@@ -136,5 +163,6 @@ export type TypedPocketBase = PocketBase & {
   collection(idOrName: '_mfas'): RecordService<MfasResponse>;
   collection(idOrName: '_otps'): RecordService<OtpsResponse>;
   collection(idOrName: '_superusers'): RecordService<SuperusersResponse>;
+  collection(idOrName: 'orders'): RecordService<OrdersResponse>;
   collection(idOrName: 'users'): RecordService<UsersResponse>;
 };

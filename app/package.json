@@ -16,13 +16,13 @@
     "typegen": "npx pocketbase-typegen --env --out ./src/types/pocketbase-types.ts && npm run format"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^6.7.2",
-    "@fortawesome/free-regular-svg-icons": "^6.7.2",
-    "@fortawesome/vue-fontawesome": "^3.0.8",
+    "@primeuix/themes": "^1.1.2",
     "@tailwindcss/vite": "^4.1.5",
     "axios": "^1.6.7",
     "pinia": "^3.0.1",
     "pocketbase": "^0.26.1",
+    "primeicons": "^7.0.0",
+    "primevue": "^4.3.5",
     "tailwindcss": "^4.1.5",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
