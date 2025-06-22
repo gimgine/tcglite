@@ -1,13 +1,13 @@
 <template>
   <div class="grid grid-cols-12 gap-4">
     <div class="col-span-3">
-      <div class="bg-white rounded-md p-6 flex flex-col gap-2">
+      <div class="flex flex-col gap-2 rounded-md bg-white p-6">
         <div class="text-sm text-gray-600">Profit</div>
         <div>{{ formatCurrency(totalProfit(orders)) }}</div>
       </div>
     </div>
     <div class="col-span-12">
-      <div class="bg-white pt-0 p-4">
+      <div class="bg-white p-4 pt-0">
         <DataTable :value="orders" removable-sort filter-display="menu" striped-rows>
           <template #header>
             <div class="flex items-center justify-between">
@@ -16,7 +16,7 @@
                 <SelectButton v-model="selectedTableOption" :options="tableOptions" />
               </div>
               <div>
-                <FileUpload mode="basic" choose-label="CSV" choose-icon="pi pi-file-arrow-up" accept=".csv" @select="handleUpload" auto />
+                <FileUpload mode="basic" choose-label="CSV" choose-icon="pi pi-file-arrow-up" accept=".csv" auto @select="handleUpload" />
               </div>
             </div>
           </template>
@@ -112,7 +112,7 @@ const tableOptions = ref(['Orders', 'Profits']);
 // Watchers ---------------------------------------------------------------------------
 
 // Methods ----------------------------------------------------------------------------
-const parseOrderCsv = async (file: Blob): Promise<any[]> => {
+const parseOrderCsv = async (file: Blob): Promise<{ [key: string]: unknown }[]> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 

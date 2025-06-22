@@ -1,8 +1,8 @@
 <template>
-  <div class="fixed left-0 top-0 h-16 bg-white w-full flex items-center px-4 z-10">
+  <div class="fixed top-0 left-0 z-10 flex h-16 w-full items-center bg-white px-4">
     <span class="text-xl">Gimgine Trading Post</span>
   </div>
-  <div class="pt-24 px-20 pb-16 min-h-screen">
+  <div class="min-h-screen px-20 pt-24 pb-16">
     <router-view />
   </div>
 </template>
