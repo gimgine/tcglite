@@ -1,26 +1,84 @@
 <template>
-  <div class="grid grid-cols-12">
+  <div class="grid grid-cols-12 gap-4">
+    <div class="col-span-3">
+      <div class="bg-white rounded-md p-6 flex flex-col gap-2">
+        <div class="text-sm text-gray-600">Profit</div>
+        <div>{{ formatCurrency(totalProfit(orders)) }}</div>
+      </div>
+    </div>
     <div class="col-span-12">
-      <div class="bg-white p-4">
+      <div class="bg-white pt-0 p-4">
         <DataTable :value="orders" removable-sort filter-display="menu" striped-rows>
           <template #header>
             <div class="flex items-center justify-between">
-              <span class="text-lg">Order History</span>
-              <FileUpload mode="basic" choose-label="CSV" choose-icon="pi pi-file-arrow-up" accept=".csv" @select="handleUpload" auto />
+              <div class="flex items-center gap-4">
+                <span class="text-lg">Order History</span>
+                <SelectButton v-model="selectedTableOption" :options="tableOptions" />
+              </div>
+              <div>
+                <FileUpload mode="basic" choose-label="CSV" choose-icon="pi pi-file-arrow-up" accept=".csv" @select="handleUpload" auto />
+              </div>
             </div>
           </template>
           <Column field="orderNumber" header="Order Number" sortable />
           <Column field="firstName" header="First Name" sortable />
           <Column field="lastName" header="Last Name" sortable />
-          <Column field="address" header="Address" sortable />
-          <Column field="city" header="City" sortable />
-          <Column field="state" header="State" sortable />
-          <Column field="postalCode" header="Postal Code" sortable />
-          <Column field="orderDate" header="Order Date" sortable />
+          <Column v-if="selectedTableOption === 'Orders'" field="address" header="Address" sortable />
+          <Column v-if="selectedTableOption === 'Orders'" field="city" header="City" sortable />
+          <Column v-if="selectedTableOption === 'Orders'" field="state" header="State" sortable />
+          <Column v-if="selectedTableOption === 'Orders'" field="postalCode" header="Postal Code" sortable />
+          <Column field="orderDate" header="Order Date" sortable>
+            <template #body="slotProps">
+              {{ new Date(slotProps.data.orderDate).toLocaleDateString() }}
+            </template>
+          </Column>
           <Column field="count" header="Item Count" sortable />
-          <Column field="value" header="Value" sortable />
-          <Column field="shippingFee" header="Shipping Fee" sortable />
-          <Column field="trackingNumber" header="Tracking Number" sortable />
+          <Column field="value" header="Value" sortable>
+            <template #body="slotProps">
+              {{ formatCurrency(slotProps.data.value) }}
+            </template>
+          </Column>
+          <Column field="shippingFee" header="Shipping Fee" sortable>
+            <template #body="slotProps">
+              {{ formatCurrency(slotProps.data.shippingFee) }}
+            </template>
+          </Column>
+          <Column v-if="selectedTableOption === 'Orders'" field="trackingNumber" header="Tracking Number" sortable />
+          <Column v-if="selectedTableOption === 'Profits'" header="Total Price" sortable>
+            <template #body="slotProps">
+              {{ formatCurrency(totalPrice(slotProps.data)) }}
+            </template>
+          </Column>
+          <Column v-if="selectedTableOption === 'Profits'" header="Vendor Fee" sortable>
+            <template #body="slotProps">
+              {{ formatCurrency(vendorFee(slotProps.data)) }}
+            </template>
+          </Column>
+          <Column v-if="selectedTableOption === 'Profits'" header="Processing Fee" sortable>
+            <template #body="slotProps">
+              {{ formatCurrency(processingFee(slotProps.data)) }}
+            </template>
+          </Column>
+          <Column v-if="selectedTableOption === 'Profits'" header="COGS" sortable>
+            <template #body="slotProps">
+              {{ formatCurrency(cogs(slotProps.data, 0.26)) }}
+            </template>
+          </Column>
+          <Column v-if="selectedTableOption === 'Profits'" header="Shipping Cost" sortable>
+            <template #body>
+              {{ formatCurrency(1.0) }}
+            </template>
+          </Column>
+          <Column v-if="selectedTableOption === 'Profits'" header="Profit/Loss" sortable>
+            <template #body="slotProps">
+              <span :class="profitOrLoss(slotProps.data, 0.26, 1.0) > 0 ? 'text-green-600' : 'text-red-600'">
+                {{ formatCurrency(profitOrLoss(slotProps.data, 0.26, 1.0)) }}
+              </span>
+            </template>
+          </Column>
+          <Column v-if="selectedTableOption === 'Profits'" header="Fee %" sortable>
+            <template #body="slotProps"> {{ feePercentage(slotProps.data) }} </template>
+          </Column>
         </DataTable>
       </div>
     </div>
@@ -28,9 +86,9 @@
 </template>
 
 <script setup lang="ts">
-import { FileUpload, DataTable, Column, type FileUploadSelectEvent } from 'primevue';
-import pb from '@/util/pocketbase';
 import { Collections, type OrdersRecord } from '@/types/pocketbase-types';
+import pb from '@/util/pocketbase';
+import { Column, DataTable, FileUpload, type FileUploadSelectEvent, SelectButton } from 'primevue';
 import { onMounted, ref } from 'vue';
 // Types ------------------------------------------------------------------------------
 
@@ -42,6 +100,9 @@ import { onMounted, ref } from 'vue';
 
 // Reactive Variables -----------------------------------------------------------------
 const orders = ref<OrdersRecord[]>([]);
+
+const selectedTableOption = ref('Profits');
+const tableOptions = ref(['Orders', 'Profits']);
 // Provided ---------------------------------------------------------------------------
 
 // Exposed ----------------------------------------------------------------------------
@@ -119,6 +180,42 @@ const handleUpload = async (event: FileUploadSelectEvent) => {
 
 const refreshOrders = async () => {
   orders.value = await pb.collection(Collections.Orders).getFullList();
+};
+
+const formatCurrency = (value: number) => {
+  return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+};
+
+const totalPrice = (order: OrdersRecord) => {
+  return order.value + (order.shippingFee ?? 0);
+};
+
+const vendorFee = (order: OrdersRecord) => {
+  return totalPrice(order) * 0.1025;
+};
+
+const processingFee = (order: OrdersRecord) => {
+  return totalPrice(order) * 0.025 + 0.3;
+};
+
+const cogs = (order: OrdersRecord, cog: number) => {
+  return order.count * cog;
+};
+
+const profitOrLoss = (order: OrdersRecord, cog: number, shippingCost: number) => {
+  return totalPrice(order) - vendorFee(order) - processingFee(order) - cogs(order, cog) - shippingCost;
+};
+
+const feePercentage = (order: OrdersRecord): string => {
+  return `${(((processingFee(order) + vendorFee(order)) / totalPrice(order)) * 100).toFixed(2)}%`;
+};
+
+const totalProfit = (orders: OrdersRecord[]) => {
+  let profit = 0;
+  orders.forEach((order) => {
+    profit += profitOrLoss(order, 0.26, 1.0);
+  });
+  return profit;
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------

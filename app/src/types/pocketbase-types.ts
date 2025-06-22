@@ -88,26 +88,26 @@ export type SuperusersRecord = {
 };
 
 export type OrdersRecord = {
-  address?: string;
+  address: string;
   addressTwo?: string;
   carrier?: string;
-  city?: string;
-  count?: number;
-  country?: string;
+  city: string;
+  count: number;
+  country: string;
   created?: IsoDateString;
-  firstName?: string;
+  firstName: string;
   id: string;
-  lastName?: string;
-  orderDate?: IsoDateString;
-  orderNumber?: string;
-  postalCode?: string;
+  lastName: string;
+  orderDate: IsoDateString;
+  orderNumber: string;
+  postalCode: string;
   shippingFee?: number;
-  shippingMethod?: string;
-  state?: string;
+  shippingMethod: string;
+  state: string;
   trackingNumber?: string;
   updated?: IsoDateString;
-  value?: number;
-  weight?: number;
+  value: number;
+  weight: number;
 };
 
 export type UsersRecord = {
