@@ -32,10 +32,10 @@
               {{ new Date(slotProps.data.orderDate).toLocaleDateString() }}
             </template>
           </Column>
-          <Column field="count" header="Item Count" sortable />
-          <Column field="value" header="Value" sortable>
+          <Column field="itemCount" header="Item Count" sortable />
+          <Column field="productValue" header="Value" sortable>
             <template #body="slotProps">
-              {{ formatCurrency(slotProps.data.value) }}
+              {{ formatCurrency(slotProps.data.productValue) }}
             </template>
           </Column>
           <Column field="shippingFee" header="Shipping Fee" sortable>
@@ -44,40 +44,40 @@
             </template>
           </Column>
           <Column v-if="selectedTableOption === 'Orders'" field="trackingNumber" header="Tracking Number" sortable />
-          <Column v-if="selectedTableOption === 'Profits'" header="Total Price" sortable>
+          <Column v-if="selectedTableOption === 'Profits'" field="totalPrice" header="Total Price" sortable>
             <template #body="slotProps">
-              {{ formatCurrency(totalPrice(slotProps.data)) }}
+              {{ formatCurrency(slotProps.data.totalPrice) }}
             </template>
           </Column>
-          <Column v-if="selectedTableOption === 'Profits'" header="Vendor Fee" sortable>
+          <Column v-if="selectedTableOption === 'Profits'" field="vendorFee" header="Vendor Fee" sortable>
             <template #body="slotProps">
-              {{ formatCurrency(vendorFee(slotProps.data)) }}
+              {{ formatCurrency(slotProps.data.vendorFee) }}
             </template>
           </Column>
-          <Column v-if="selectedTableOption === 'Profits'" header="Processing Fee" sortable>
+          <Column v-if="selectedTableOption === 'Profits'" field="processingFee" header="Processing Fee" sortable>
             <template #body="slotProps">
-              {{ formatCurrency(processingFee(slotProps.data)) }}
+              {{ formatCurrency(slotProps.data.processingFee) }}
             </template>
           </Column>
-          <Column v-if="selectedTableOption === 'Profits'" header="COGS" sortable>
+          <Column v-if="selectedTableOption === 'Profits'" field="cogs" header="COGS" sortable>
             <template #body="slotProps">
-              {{ formatCurrency(cogs(slotProps.data, 0.26)) }}
+              {{ formatCurrency(slotProps.data.cogs) }}
             </template>
           </Column>
-          <Column v-if="selectedTableOption === 'Profits'" header="Shipping Cost" sortable>
-            <template #body>
-              {{ formatCurrency(1.0) }}
+          <Column v-if="selectedTableOption === 'Profits'" field="shippingCost" header="Shipping Cost" sortable>
+            <template #body="slotProps">
+              {{ formatCurrency(slotProps.data.shippingCost) }}
             </template>
           </Column>
-          <Column v-if="selectedTableOption === 'Profits'" header="Profit/Loss" sortable>
+          <Column v-if="selectedTableOption === 'Profits'" field="profit" header="Profit/Loss" sortable>
             <template #body="slotProps">
-              <span :class="profitOrLoss(slotProps.data, 0.26, 1.0) > 0 ? 'text-green-600' : 'text-red-600'">
-                {{ formatCurrency(profitOrLoss(slotProps.data, 0.26, 1.0)) }}
+              <span :class="slotProps.data.profit > 0 ? 'text-green-600' : 'text-red-600'">
+                {{ formatCurrency(slotProps.data.profit) }}
               </span>
             </template>
           </Column>
-          <Column v-if="selectedTableOption === 'Profits'" header="Fee %" sortable>
-            <template #body="slotProps"> {{ feePercentage(slotProps.data) }} </template>
+          <Column v-if="selectedTableOption === 'Profits'" field="feePercentage" header="Fee %" sortable>
+            <template #body="slotProps"> {{ `${slotProps.data.feePercentage.toFixed(2)}%` }} </template>
           </Column>
         </DataTable>
       </div>
@@ -136,7 +136,7 @@ const parseOrderCsv = async (file: Blob): Promise<{ [key: string]: unknown }[]> 
         const splitLine = line.split(',').map((v) => v.replace(/^"|"$/g, ''));
         if (splitLine.length < 17) continue;
 
-        orders.push({
+        const newOrder = {
           orderNumber: splitLine[0],
           firstName: splitLine[1],
           lastName: splitLine[2],
@@ -147,14 +147,34 @@ const parseOrderCsv = async (file: Blob): Promise<{ [key: string]: unknown }[]> 
           postalCode: splitLine[7],
           country: splitLine[8],
           orderDate: splitLine[9],
-          weight: +splitLine[10],
+          productWeight: +splitLine[10],
           shippingMethod: splitLine[11],
-          count: +splitLine[12],
-          value: +splitLine[13],
+          itemCount: +splitLine[12],
+          productValue: +splitLine[13],
           shippingFee: +splitLine[14],
           trackingNumber: splitLine[15],
           carrier: splitLine[16]
-        });
+        };
+
+        const TEMP_COGS = 0.26;
+        const TEMP_SHIPPING_COST = 1.0;
+
+        const newOrderFinancial = {
+          totalPrice: newOrder.productValue + newOrder.shippingFee,
+          vendorFee: (newOrder.productValue + newOrder.shippingFee) * 0.1025,
+          processingFee: (newOrder.productValue + newOrder.shippingFee) * 0.025 + 0.3,
+          cogs: newOrder.itemCount * TEMP_COGS,
+          shippingCost: TEMP_SHIPPING_COST,
+          profit:
+            newOrder.productValue +
+            newOrder.shippingFee -
+            ((newOrder.productValue + newOrder.shippingFee) * 0.1275 + 0.3) -
+            newOrder.itemCount * TEMP_COGS -
+            TEMP_SHIPPING_COST,
+          feePercentage: (((newOrder.productValue + newOrder.shippingFee) * 0.1275 + 0.3) / (newOrder.productValue + newOrder.shippingFee)) * 100
+        };
+
+        orders.push({ ...newOrder, ...newOrderFinancial });
       }
 
       resolve(orders);
@@ -186,34 +206,10 @@ const formatCurrency = (value: number) => {
   return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 };
 
-const totalPrice = (order: OrdersRecord) => {
-  return order.value + (order.shippingFee ?? 0);
-};
-
-const vendorFee = (order: OrdersRecord) => {
-  return totalPrice(order) * 0.1025;
-};
-
-const processingFee = (order: OrdersRecord) => {
-  return totalPrice(order) * 0.025 + 0.3;
-};
-
-const cogs = (order: OrdersRecord, cog: number) => {
-  return order.count * cog;
-};
-
-const profitOrLoss = (order: OrdersRecord, cog: number, shippingCost: number) => {
-  return totalPrice(order) - vendorFee(order) - processingFee(order) - cogs(order, cog) - shippingCost;
-};
-
-const feePercentage = (order: OrdersRecord): string => {
-  return `${(((processingFee(order) + vendorFee(order)) / totalPrice(order)) * 100).toFixed(2)}%`;
-};
-
 const totalProfit = (orders: OrdersRecord[]) => {
   let profit = 0;
   orders.forEach((order) => {
-    profit += profitOrLoss(order, 0.26, 1.0);
+    profit += order.profit ?? 0;
   });
   return profit;
 };

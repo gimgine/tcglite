@@ -92,22 +92,29 @@ export type OrdersRecord = {
   addressTwo?: string;
   carrier?: string;
   city: string;
-  count: number;
+  cogs?: number;
   country: string;
   created?: IsoDateString;
+  feePercentage?: number;
   firstName: string;
   id: string;
+  itemCount: number;
   lastName: string;
   orderDate: IsoDateString;
   orderNumber: string;
   postalCode: string;
+  processingFee?: number;
+  productValue: number;
+  productWeight: number;
+  profit?: number;
+  shippingCost?: number;
   shippingFee?: number;
   shippingMethod: string;
   state: string;
+  totalPrice?: number;
   trackingNumber?: string;
   updated?: IsoDateString;
-  value: number;
-  weight: number;
+  vendorFee?: number;
 };
 
 export type UsersRecord = {
