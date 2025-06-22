@@ -106,7 +106,7 @@ export type OrdersRecord = {
   state?: string;
   trackingNumber?: string;
   updated?: IsoDateString;
-  value?: string;
+  value?: number;
   weight?: number;
 };
 
