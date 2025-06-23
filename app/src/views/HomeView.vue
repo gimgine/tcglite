@@ -7,8 +7,8 @@
       </div>
     </div>
     <div class="col-span-12">
-      <div class="bg-white p-4 pt-0">
-        <DataTable :value="orders" removable-sort filter-display="menu" striped-rows>
+      <div class="rounded-md bg-white p-4 pt-0">
+        <DataTable v-model:expanded-rows="expandedRows" :value="orders" removable-sort filter-display="menu" data-key="orderNumber" striped-rows>
           <template #header>
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-4">
@@ -20,6 +20,7 @@
               </div>
             </div>
           </template>
+          <Column v-if="selectedTableOption === 'Profits'" expander />
           <Column field="orderNumber" header="Order Number" sortable />
           <Column field="firstName" header="First Name" sortable />
           <Column field="lastName" header="Last Name" sortable />
@@ -32,13 +33,13 @@
               {{ new Date(slotProps.data.orderDate).toLocaleDateString() }}
             </template>
           </Column>
-          <Column field="itemCount" header="Item Count" sortable />
-          <Column field="productValue" header="Value" sortable>
+          <Column v-if="selectedTableOption === 'Orders'" field="itemCount" header="Item Count" sortable />
+          <Column v-if="selectedTableOption === 'Orders'" field="productValue" header="Value" sortable>
             <template #body="slotProps">
               {{ formatCurrency(slotProps.data.productValue) }}
             </template>
           </Column>
-          <Column field="shippingFee" header="Shipping Fee" sortable>
+          <Column v-if="selectedTableOption === 'Orders'" field="shippingFee" header="Shipping Fee" sortable>
             <template #body="slotProps">
               {{ formatCurrency(slotProps.data.shippingFee) }}
             </template>
@@ -49,14 +50,11 @@
               {{ formatCurrency(slotProps.data.totalPrice) }}
             </template>
           </Column>
-          <Column v-if="selectedTableOption === 'Profits'" field="vendorFee" header="Vendor Fee" sortable>
+          <Column v-if="selectedTableOption === 'Profits'" header="Fees">
             <template #body="slotProps">
-              {{ formatCurrency(slotProps.data.vendorFee) }}
-            </template>
-          </Column>
-          <Column v-if="selectedTableOption === 'Profits'" field="processingFee" header="Processing Fee" sortable>
-            <template #body="slotProps">
-              {{ formatCurrency(slotProps.data.processingFee) }}
+              <span class="text-orange-600">
+                {{ formatCurrency(slotProps.data.processingFee + slotProps.data.vendorFee) }}
+              </span>
             </template>
           </Column>
           <Column v-if="selectedTableOption === 'Profits'" field="cogs" header="COGS" sortable>
@@ -64,9 +62,11 @@
               {{ formatCurrency(slotProps.data.cogs) }}
             </template>
           </Column>
-          <Column v-if="selectedTableOption === 'Profits'" field="shippingCost" header="Shipping Cost" sortable>
+          <Column v-if="selectedTableOption === 'Profits'" field="shippingCost" header="Shipping" sortable>
             <template #body="slotProps">
-              {{ formatCurrency(slotProps.data.shippingCost) }}
+              <span :class="`rounded-sm px-2 py-0.5 text-xs font-bold ${getShippingMethodColor(slotProps.data.shippingCost)}`">
+                {{ getShippingMethod(slotProps.data.shippingCost)?.name }}
+              </span>
             </template>
           </Column>
           <Column v-if="selectedTableOption === 'Profits'" field="profit" header="Profit/Loss" sortable>
@@ -76,9 +76,12 @@
               </span>
             </template>
           </Column>
-          <Column v-if="selectedTableOption === 'Profits'" field="feePercentage" header="Fee %" sortable>
-            <template #body="slotProps"> {{ `${slotProps.data.feePercentage.toFixed(2)}%` }} </template>
-          </Column>
+
+          <template v-if="selectedTableOption === 'Profits'" #expansion="slotProps">
+            <div>
+              <span>{{ slotProps.data.orderNumber }}</span>
+            </div>
+          </template>
         </DataTable>
       </div>
     </div>
@@ -86,7 +89,7 @@
 </template>
 
 <script setup lang="ts">
-import { Collections, type OrdersRecord } from '@/types/pocketbase-types';
+import { Collections, type OrdersRecord, type ShippingRecord } from '@/types/pocketbase-types';
 import pb from '@/util/pocketbase';
 import { Column, DataTable, FileUpload, type FileUploadSelectEvent, SelectButton } from 'primevue';
 import { onMounted, ref } from 'vue';
@@ -100,9 +103,11 @@ import { onMounted, ref } from 'vue';
 
 // Reactive Variables -----------------------------------------------------------------
 const orders = ref<OrdersRecord[]>([]);
+const shippingMethods = ref<ShippingRecord[]>([]);
 
 const selectedTableOption = ref('Profits');
 const tableOptions = ref(['Orders', 'Profits']);
+const expandedRows = ref({});
 // Provided ---------------------------------------------------------------------------
 
 // Exposed ----------------------------------------------------------------------------
@@ -202,6 +207,19 @@ const refreshOrders = async () => {
   orders.value = await pb.collection(Collections.Orders).getFullList();
 };
 
+const refreshShippingMethods = async () => {
+  shippingMethods.value = await pb.collection(Collections.Shipping).getFullList();
+};
+
+const getShippingMethod = (shippingCost: number) => {
+  return shippingMethods.value.find((sm) => sm.cost === shippingCost);
+};
+
+const getShippingMethodColor = (shippingCost: number) => {
+  const colors = { blue: 'text-blue-600 bg-blue-200', pink: 'text-pink-600 bg-pink-200' };
+  return colors[getShippingMethod(shippingCost)?.color as 'blue' | 'pink'];
+};
+
 const formatCurrency = (value: number) => {
   return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 };
@@ -215,7 +233,8 @@ const totalProfit = (orders: OrdersRecord[]) => {
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------
-onMounted(async () => {
+onMounted(() => {
   refreshOrders();
+  refreshShippingMethods();
 });
 </script>
