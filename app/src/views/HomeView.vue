@@ -9,6 +9,13 @@
 
     <div class="col-span-12 md:col-span-3">
       <div class="flex flex-col gap-2 rounded-md bg-white p-6">
+        <div class="text-sm text-gray-600">Gross Sales</div>
+        <div>{{ formatCurrency(grossSales(orders)) }}</div>
+      </div>
+    </div>
+
+    <div class="col-span-12 md:col-span-3">
+      <div class="flex flex-col gap-2 rounded-md bg-white p-6">
         <div class="text-sm text-gray-600">Orders</div>
         <div>{{ orders.length }}</div>
       </div>
@@ -342,6 +349,14 @@ const totalProfit = (orders: OrdersRecord[]) => {
     profit += order.profit ?? 0;
   });
   return profit;
+};
+
+const grossSales = (orders: OrdersRecord[]) => {
+  let gross = 0;
+  orders.forEach((order) => {
+    gross += order.totalPrice ?? 0;
+  });
+  return gross;
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------
