@@ -152,6 +152,9 @@ import { computed, onMounted, ref } from 'vue';
 const ENVELOPE = { cost: 1, name: 'Envelope' };
 const TRACKING = { cost: 5, name: 'Tracking' };
 
+const QUESTIONABLE_TRACKING_THRESHOLD = 20;
+const TRACKING_THRESHOLD = 30;
+
 const TEMP_COGS = 0.26;
 
 // Reactive Variables -----------------------------------------------------------------
@@ -260,9 +263,6 @@ const setOrderFinancial = (order: OrderCsvRecord, useDefaultShipping?: boolean) 
 const determineDefaultShippingCost = (totalPrice: number) => {
   return totalPrice >= TRACKING_THRESHOLD ? TRACKING.cost : ENVELOPE.cost;
 };
-
-const QUESTIONABLE_TRACKING_THRESHOLD = 20;
-const TRACKING_THRESHOLD = 30;
 
 const handleCsvClick = async (event: FileUploadSelectEvent) => {
   const parsedOrders = await parseOrderCsv(event.files[0]);
