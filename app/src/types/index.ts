@@ -1,0 +1,27 @@
+export interface OrderCsvRecord {
+  orderNumber: string;
+  firstName: string;
+  lastName: string;
+  address: string;
+  addressTwo: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  orderDate: string;
+  productWeight: number;
+  shippingMethod: string;
+  itemCount: number;
+  productValue: number;
+  shippingFee: number;
+  trackingNumber: string;
+  carrier: string;
+
+  totalPrice?: number;
+  vendorFee?: number;
+  processingFee?: number;
+  cogs?: number;
+  shippingCost?: number;
+  profit?: number;
+  feePercentage?: number;
+}

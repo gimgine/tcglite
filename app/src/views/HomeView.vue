@@ -16,7 +16,7 @@
                 <SelectButton v-model="selectedTableOption" :options="tableOptions" />
               </div>
               <div>
-                <FileUpload mode="basic" choose-label="CSV" choose-icon="pi pi-file-arrow-up" accept=".csv" auto @select="handleUpload" />
+                <FileUpload mode="basic" choose-label="CSV" choose-icon="pi pi-file-arrow-up" accept=".csv" auto @select="handleCsvClick" />
               </div>
             </div>
           </template>
@@ -64,7 +64,9 @@
           </Column>
           <Column v-if="selectedTableOption === 'Profits'" field="shippingCost" header="Shipping" sortable>
             <template #body="slotProps">
-              <span :class="`rounded-sm px-2 py-0.5 text-xs font-bold ${getShippingMethodColor(slotProps.data.shippingCost)}`">
+              <span
+                :class="`rounded-sm px-2 py-0.5 text-xs font-bold ${slotProps.data.shippingCost === TRACKING.cost ? 'bg-blue-200 text-blue-600' : 'bg-pink-200 text-pink-600'}`"
+              >
                 {{ getShippingMethod(slotProps.data.shippingCost)?.name }}
               </span>
             </template>
@@ -86,13 +88,60 @@
       </div>
     </div>
   </div>
+
+  <Dialog v-model:visible="shippingDialogVisible" modal>
+    <DataTable :value="shippingFlaggedOrders">
+      <template #header>
+        <span>Confirm Shipping Method</span>
+      </template>
+      <Column header="Name">
+        <template #body="slotProps">
+          {{ `${slotProps.data.firstName} ${slotProps.data.lastName}` }}
+        </template>
+      </Column>
+      <Column field="orderDate" header="Order Date">
+        <template #body="slotProps">
+          {{ new Date(slotProps.data.orderDate).toLocaleDateString() }}
+        </template>
+      </Column>
+      <Column header="Total Price">
+        <template #body="slotProps">
+          {{ formatCurrency(slotProps.data.productValue + slotProps.data.shippingFee) }}
+        </template>
+      </Column>
+      <Column header="Shipping">
+        <template #body="slotProps">
+          <Select v-model="slotProps.data.shippingCost" :options="shippingMethods" option-label="name" option-value="cost">
+            <template #value="selectSlotProps">
+              <span
+                :class="`rounded-sm px-2 py-0.5 text-xs font-bold ${selectSlotProps.value === TRACKING.cost ? 'bg-blue-200 text-blue-600' : 'bg-pink-200 text-pink-600'}`"
+              >
+                {{ getShippingMethod(selectSlotProps.value)?.name }}
+              </span>
+            </template>
+            <template #option="selectSlotProps">
+              <span
+                :class="`rounded-sm px-2 py-0.5 text-xs font-bold ${selectSlotProps.option.cost === TRACKING.cost ? 'bg-blue-200 text-blue-600' : 'bg-pink-200 text-pink-600'}`"
+              >
+                {{ selectSlotProps.option.name }}
+              </span>
+            </template>
+          </Select>
+        </template>
+      </Column>
+    </DataTable>
+    <template #footer>
+      <Button label="Submit" :loading="isSubmitLoading" @click="handleSubmitClick" />
+    </template>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
-import { Collections, type OrdersRecord, type ShippingRecord } from '@/types/pocketbase-types';
+import type { OrderCsvRecord } from '@/types';
+import { Collections, type OrdersRecord } from '@/types/pocketbase-types';
 import pb from '@/util/pocketbase';
-import { Column, DataTable, FileUpload, type FileUploadSelectEvent, SelectButton } from 'primevue';
-import { onMounted, ref } from 'vue';
+import { Button, Column, DataTable, Dialog, FileUpload, type FileUploadSelectEvent, Select, SelectButton } from 'primevue';
+import { computed, onMounted, ref } from 'vue';
 // Types ------------------------------------------------------------------------------
 
 // Component Info (props/emits) -------------------------------------------------------
@@ -100,14 +149,24 @@ import { onMounted, ref } from 'vue';
 // Template Refs ----------------------------------------------------------------------
 
 // Variables --------------------------------------------------------------------------
+const ENVELOPE = { cost: 1, name: 'Envelope' };
+const TRACKING = { cost: 5, name: 'Tracking' };
+
+const TEMP_COGS = 0.26;
 
 // Reactive Variables -----------------------------------------------------------------
 const orders = ref<OrdersRecord[]>([]);
-const shippingMethods = ref<ShippingRecord[]>([]);
+const shippingMethods = ref<{ cost: number; name: string }[]>([ENVELOPE, TRACKING]);
 
 const selectedTableOption = ref('Profits');
 const tableOptions = ref(['Orders', 'Profits']);
 const expandedRows = ref({});
+
+const shippingDialogVisible = ref(false);
+const newOrders = ref<OrderCsvRecord[]>([]);
+const shippingFlaggedOrders = computed(() => newOrders.value.filter((o) => o.productValue + o.shippingFee > QUESTIONABLE_TRACKING_THRESHOLD));
+const isSubmitLoading = ref(false);
+
 // Provided ---------------------------------------------------------------------------
 
 // Exposed ----------------------------------------------------------------------------
@@ -117,7 +176,7 @@ const expandedRows = ref({});
 // Watchers ---------------------------------------------------------------------------
 
 // Methods ----------------------------------------------------------------------------
-const parseOrderCsv = async (file: Blob): Promise<{ [key: string]: unknown }[]> => {
+const parseOrderCsv = async (file: Blob): Promise<OrderCsvRecord[]> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -133,7 +192,7 @@ const parseOrderCsv = async (file: Blob): Promise<{ [key: string]: unknown }[]> 
         return;
       }
 
-      const orders = [];
+      const newOrders = [];
 
       for (const line of lines) {
         if (line.split(',')[0] === 'Order #') continue;
@@ -141,7 +200,7 @@ const parseOrderCsv = async (file: Blob): Promise<{ [key: string]: unknown }[]> 
         const splitLine = line.split(',').map((v) => v.replace(/^"|"$/g, ''));
         if (splitLine.length < 17) continue;
 
-        const newOrder = {
+        const newOrder: OrderCsvRecord = {
           orderNumber: splitLine[0],
           firstName: splitLine[1],
           lastName: splitLine[2],
@@ -161,28 +220,16 @@ const parseOrderCsv = async (file: Blob): Promise<{ [key: string]: unknown }[]> 
           carrier: splitLine[16]
         };
 
-        const TEMP_COGS = 0.26;
-        const TEMP_SHIPPING_COST = 1.0;
+        if (orders.value.some((o) => o.orderNumber === newOrder.orderNumber)) {
+          continue;
+        }
 
-        const newOrderFinancial = {
-          totalPrice: newOrder.productValue + newOrder.shippingFee,
-          vendorFee: (newOrder.productValue + newOrder.shippingFee) * 0.1025,
-          processingFee: (newOrder.productValue + newOrder.shippingFee) * 0.025 + 0.3,
-          cogs: newOrder.itemCount * TEMP_COGS,
-          shippingCost: TEMP_SHIPPING_COST,
-          profit:
-            newOrder.productValue +
-            newOrder.shippingFee -
-            ((newOrder.productValue + newOrder.shippingFee) * 0.1275 + 0.3) -
-            newOrder.itemCount * TEMP_COGS -
-            TEMP_SHIPPING_COST,
-          feePercentage: (((newOrder.productValue + newOrder.shippingFee) * 0.1275 + 0.3) / (newOrder.productValue + newOrder.shippingFee)) * 100
-        };
+        setOrderFinancial(newOrder, true);
 
-        orders.push({ ...newOrder, ...newOrderFinancial });
+        newOrders.push(newOrder);
       }
 
-      resolve(orders);
+      resolve(newOrders);
     };
 
     reader.onerror = (err) => reject(err);
@@ -190,13 +237,63 @@ const parseOrderCsv = async (file: Blob): Promise<{ [key: string]: unknown }[]> 
   });
 };
 
-const handleUpload = async (event: FileUploadSelectEvent) => {
-  const newOrders = await parseOrderCsv(event.files[0]);
+const setOrderFinancial = (order: OrderCsvRecord, useDefaultShipping?: boolean) => {
+  const totalPrice = order.productValue + order.shippingFee;
+  const vendorFee = totalPrice * 0.1025;
+  const processingFee = totalPrice * 0.025 + 0.3;
+  const cogs = order.itemCount * TEMP_COGS;
+  const shippingCost = useDefaultShipping
+    ? determineDefaultShippingCost(totalPrice)
+    : (order.shippingCost ?? determineDefaultShippingCost(totalPrice));
+  const profit = totalPrice - vendorFee - processingFee - cogs - shippingCost;
+  const feePercentage = ((vendorFee + processingFee) / totalPrice) * 100;
 
+  order.totalPrice = totalPrice;
+  order.vendorFee = vendorFee;
+  order.processingFee = processingFee;
+  order.cogs = cogs;
+  order.shippingCost = shippingCost;
+  order.profit = profit;
+  order.feePercentage = feePercentage;
+};
+
+const determineDefaultShippingCost = (totalPrice: number) => {
+  return totalPrice >= TRACKING_THRESHOLD ? TRACKING.cost : ENVELOPE.cost;
+};
+
+const QUESTIONABLE_TRACKING_THRESHOLD = 20;
+const TRACKING_THRESHOLD = 30;
+
+const handleCsvClick = async (event: FileUploadSelectEvent) => {
+  const parsedOrders = await parseOrderCsv(event.files[0]);
+
+  newOrders.value = parsedOrders;
+
+  if (shippingFlaggedOrders.value.length > 0) {
+    shippingDialogVisible.value = true;
+    return;
+  }
+};
+
+const handleSubmitClick = () => {
+  isSubmitLoading.value = true;
+
+  shippingFlaggedOrders.value.forEach((o) => setOrderFinancial(o));
+
+  createOrders()
+    .then(() => {
+      shippingDialogVisible.value = false;
+    })
+    .finally(() => {
+      isSubmitLoading.value = false;
+    });
+};
+
+const createOrders = async () => {
   const batch = pb.createBatch();
 
-  newOrders.forEach((order) => {
-    if (!orders.value.some((o) => o.orderNumber === order.orderNumber)) batch.collection(Collections.Orders).create(order);
+  newOrders.value.forEach((order) => {
+    batch.collection(Collections.Orders).create(order);
   });
 
   await batch.send();
@@ -207,17 +304,8 @@ const refreshOrders = async () => {
   orders.value = await pb.collection(Collections.Orders).getFullList();
 };
 
-const refreshShippingMethods = async () => {
-  shippingMethods.value = await pb.collection(Collections.Shipping).getFullList();
-};
-
 const getShippingMethod = (shippingCost: number) => {
   return shippingMethods.value.find((sm) => sm.cost === shippingCost);
-};
-
-const getShippingMethodColor = (shippingCost: number) => {
-  const colors = { blue: 'text-blue-600 bg-blue-200', pink: 'text-pink-600 bg-pink-200' };
-  return colors[getShippingMethod(shippingCost)?.color as 'blue' | 'pink'];
 };
 
 const formatCurrency = (value: number) => {
@@ -235,6 +323,5 @@ const totalProfit = (orders: OrdersRecord[]) => {
 // Lifecycle Hooks --------------------------------------------------------------------
 onMounted(() => {
   refreshOrders();
-  refreshShippingMethods();
 });
 </script>

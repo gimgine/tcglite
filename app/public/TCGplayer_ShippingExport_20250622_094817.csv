@@ -1,6 +1,5 @@
 Order #,FirstName,LastName,Address1,Address2,City,State,PostalCode,Country,Order Date,Product Weight,Shipping Method,Item Count,Value Of Products,Shipping Fee Paid,Tracking #,Carrier
-"95CE391B-88C6BA-4B457","Michael","Glick","223-C Village Ln","","Greensboro","NC","27409","US","2025-06-14","0.63","Standard (7-10 days)","9","20.33","1.31","",""
+"95CE391B-88C6BA-4B457","Michael","Glick","223-C Village Ln","","Greensboro","NC","27409","US","2025-06-14","0.63","Standard (7-10 days)","9","23.33","1.31","",""
 "95CE391B-681C27-9DB77","Thomas","Jessen","458 E. 7th","","Red Wing","MN","55066","US","2025-06-14","0.07","Standard (7-10 days)","1","4.67","1.31","",""
-"95CE391B-FE3C78-DEAC0","Julio Benitez","CMQ","5718 Roundtree Drive","","Woodbridge","VA","22193","US","2025-06-14","0.07","Standard (7-10 days)","1","1.90","1.31","",""
-"95CE391B-71D408-BD676","Brian","Broers","CMS 405 Box 7274","","APO","AE","09034-0068","US","2025-06-14","0.49","Standard (7-10 days)","7","108.70","1.31","",""
-"95CE391B-74B366-9C90F","Anthony","Reid","760 CARMELITA ST","","PORTERVILLE","CA","93257-2122","US","2025-06-14","0.07","Standard (7-10 days)","1","1.50","1.31","",""
+"95CE391B-85C6BA-4B457","Jim","Glick","223-C Village Ln","","Greensboro","NC","27409","US","2025-06-14","0.63","Standard (7-10 days)","9","45.33","1.31","",""
+"95CE391B-88C6HA-4B457","Frederick","Glick","223-C Village Ln","","Greensboro","NC","27409","US","2025-06-14","0.63","Standard (7-10 days)","9","78.33","1.31","",""
