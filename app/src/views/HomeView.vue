@@ -27,57 +27,41 @@
           <template #header>
             <div class="flex items-center justify-between">
               <div class="flex flex-col gap-4 md:flex-row md:items-center">
-                <span class="text-lg">Order History</span>
-                <SelectButton v-model="selectedTableOption" :options="tableOptions" />
+                <span class="text-lg">Order Profits</span>
               </div>
               <div>
                 <FileUpload mode="basic" choose-label="CSV" choose-icon="pi pi-file-arrow-up" accept=".csv" auto @select="handleCsvClick" />
               </div>
             </div>
           </template>
-          <Column v-if="selectedTableOption === 'Profits'" expander />
+          <Column expander />
           <Column field="orderNumber" header="Order Number" sortable />
           <Column field="firstName" header="First Name" sortable />
           <Column field="lastName" header="Last Name" sortable />
-          <Column v-if="selectedTableOption === 'Orders'" field="address" header="Address" sortable />
-          <Column v-if="selectedTableOption === 'Orders'" field="city" header="City" sortable />
-          <Column v-if="selectedTableOption === 'Orders'" field="state" header="State" sortable />
-          <Column v-if="selectedTableOption === 'Orders'" field="postalCode" header="Postal Code" sortable />
           <Column field="orderDate" header="Order Date" sortable>
             <template #body="slotProps">
               {{ new Date(slotProps.data.orderDate).toLocaleDateString() }}
             </template>
           </Column>
-          <Column v-if="selectedTableOption === 'Orders'" field="itemCount" header="Item Count" sortable />
-          <Column v-if="selectedTableOption === 'Orders'" field="productValue" header="Value" sortable>
-            <template #body="slotProps">
-              {{ formatCurrency(slotProps.data.productValue) }}
-            </template>
-          </Column>
-          <Column v-if="selectedTableOption === 'Orders'" field="shippingFee" header="Shipping Fee" sortable>
-            <template #body="slotProps">
-              {{ formatCurrency(slotProps.data.shippingFee) }}
-            </template>
-          </Column>
-          <Column v-if="selectedTableOption === 'Orders'" field="trackingNumber" header="Tracking Number" sortable />
-          <Column v-if="selectedTableOption === 'Profits'" field="totalPrice" header="Total Price" sortable>
+          <Column field="itemCount" header="Item Count" sortable />
+          <Column field="totalPrice" header="Total Price" sortable>
             <template #body="slotProps">
               {{ formatCurrency(slotProps.data.totalPrice) }}
             </template>
           </Column>
-          <Column v-if="selectedTableOption === 'Profits'" header="Fees">
+          <Column header="Fees">
             <template #body="slotProps">
               <span class="text-orange-600">
                 {{ formatCurrency(slotProps.data.processingFee + slotProps.data.vendorFee) }}
               </span>
             </template>
           </Column>
-          <Column v-if="selectedTableOption === 'Profits'" field="cogs" header="COGS" sortable>
+          <Column field="cogs" header="COGS" sortable>
             <template #body="slotProps">
               {{ formatCurrency(slotProps.data.cogs) }}
             </template>
           </Column>
-          <Column v-if="selectedTableOption === 'Profits'" field="shippingCost" header="Shipping" sortable>
+          <Column field="shippingCost" header="Shipping" sortable>
             <template #body="slotProps">
               <span
                 :class="`rounded-sm px-2 py-0.5 text-xs font-bold ${slotProps.data.shippingCost === TRACKING.cost ? 'bg-blue-200 text-blue-600' : 'bg-pink-200 text-pink-600'}`"
@@ -86,7 +70,7 @@
               </span>
             </template>
           </Column>
-          <Column v-if="selectedTableOption === 'Profits'" field="profit" header="Profit/Loss" sortable>
+          <Column field="profit" header="Profit/Loss" sortable>
             <template #body="slotProps">
               <span :class="slotProps.data.profit > 0 ? 'text-green-600' : 'text-red-600'">
                 {{ formatCurrency(slotProps.data.profit) }}
@@ -94,7 +78,7 @@
             </template>
           </Column>
 
-          <template v-if="selectedTableOption === 'Profits'" #expansion="slotProps">
+          <template #expansion="slotProps">
             <div>
               <span>{{ slotProps.data.orderNumber }}</span>
             </div>
@@ -155,7 +139,7 @@
 import type { OrderCsvRecord } from '@/types';
 import { Collections, type OrdersRecord } from '@/types/pocketbase-types';
 import pb from '@/util/pocketbase';
-import { Button, Column, DataTable, Dialog, FileUpload, type FileUploadSelectEvent, Select, SelectButton } from 'primevue';
+import { Button, Column, DataTable, Dialog, FileUpload, type FileUploadSelectEvent, Select } from 'primevue';
 import { computed, onMounted, ref } from 'vue';
 // Types ------------------------------------------------------------------------------
 
@@ -176,8 +160,6 @@ const TEMP_COGS = 0.26;
 const orders = ref<OrdersRecord[]>([]);
 const shippingMethods = ref<{ cost: number; name: string }[]>([ENVELOPE, TRACKING]);
 
-const selectedTableOption = ref('Profits');
-const tableOptions = ref(['Orders', 'Profits']);
 const expandedRows = ref({});
 
 const shippingDialogVisible = ref(false);
