@@ -139,7 +139,7 @@
 import type { OrderCsvRecord } from '@/types';
 import { Collections, type OrdersRecord } from '@/types/pocketbase-types';
 import pb from '@/util/pocketbase';
-import { Button, Column, DataTable, Dialog, FileUpload, type FileUploadSelectEvent, Select } from 'primevue';
+import { Button, Column, DataTable, Dialog, FileUpload, type FileUploadSelectEvent, Select, useToast } from 'primevue';
 import { computed, onMounted, ref } from 'vue';
 // Types ------------------------------------------------------------------------------
 
@@ -157,6 +157,8 @@ const TRACKING_THRESHOLD = 30;
 const TEMP_COGS = 0.26;
 
 // Reactive Variables -----------------------------------------------------------------
+const toast = useToast();
+
 const orders = ref<OrdersRecord[]>([]);
 const shippingMethods = ref<{ cost: number; name: string }[]>([ENVELOPE, TRACKING]);
 
@@ -272,7 +274,14 @@ const handleCsvClick = async (event: FileUploadSelectEvent) => {
     return;
   }
 
-  await createOrders();
+  createOrders().then(() => {
+    toast.add({
+      severity: 'success',
+      summary: 'Orders Added',
+      detail: `${newOrders.value.length} new orders were added.`,
+      life: 3000
+    });
+  });
 };
 
 const handleSubmitClick = () => {
@@ -283,6 +292,12 @@ const handleSubmitClick = () => {
   createOrders()
     .then(() => {
       shippingDialogVisible.value = false;
+      toast.add({
+        severity: 'success',
+        summary: 'Orders Added',
+        detail: `${newOrders.value.length} orders were added.`,
+        life: 3000
+      });
     })
     .finally(() => {
       isSubmitLoading.value = false;
@@ -290,6 +305,15 @@ const handleSubmitClick = () => {
 };
 
 const createOrders = async () => {
+  if (!newOrders.value.length) {
+    toast.add({
+      severity: 'error',
+      summary: 'No Orders Found',
+      detail: `No new orders were found in the CSV.`,
+      life: 5000
+    });
+  }
+
   const batch = pb.createBatch();
 
   newOrders.value.forEach((order) => {

@@ -1,4 +1,5 @@
 <template>
+  <Toast />
   <div class="fixed top-0 left-0 z-10 flex h-16 w-full items-center bg-white px-4">
     <span class="text-xl">Gimgine Trading Post</span>
   </div>
@@ -8,6 +9,7 @@
 </template>
 
 <script setup lang="ts">
+import { Toast } from 'primevue';
 import { RouterView } from 'vue-router';
 </script>
 
