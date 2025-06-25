@@ -101,7 +101,7 @@
       </Column>
       <Column field="orderDate" header="Order Date">
         <template #body="slotProps">
-          {{ new Date(slotProps.data.orderDate).toLocaleDateString() }}
+          {{ slotProps.data.orderDate.toLocaleDateString() }}
         </template>
       </Column>
       <Column header="Total Price">
@@ -203,6 +203,7 @@ const parseOrderCsv = async (file: Blob): Promise<OrderCsvRecord[]> => {
         const splitLine = line.split(',').map((v) => v.replace(/^"|"$/g, ''));
         if (splitLine.length < 17) continue;
 
+        const [year, month, day] = splitLine[9].split('-');
         const newOrder: OrderCsvRecord = {
           orderNumber: splitLine[0],
           firstName: splitLine[1],
@@ -213,7 +214,7 @@ const parseOrderCsv = async (file: Blob): Promise<OrderCsvRecord[]> => {
           state: splitLine[6],
           postalCode: splitLine[7],
           country: splitLine[8],
-          orderDate: splitLine[9],
+          orderDate: new Date(Date.UTC(+year, +month - 1, +day, 12, 0, 0)),
           productWeight: +splitLine[10],
           shippingMethod: splitLine[11],
           itemCount: +splitLine[12],

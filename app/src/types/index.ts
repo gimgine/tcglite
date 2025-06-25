@@ -8,7 +8,7 @@ export interface OrderCsvRecord {
   state: string;
   postalCode: string;
   country: string;
-  orderDate: string;
+  orderDate: Date;
   productWeight: number;
   shippingMethod: string;
   itemCount: number;
