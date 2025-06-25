@@ -289,6 +289,8 @@ const handleCsvClick = async (event: FileUploadSelectEvent) => {
     shippingDialogVisible.value = true;
     return;
   }
+
+  await createOrders();
 };
 
 const handleSubmitClick = () => {
