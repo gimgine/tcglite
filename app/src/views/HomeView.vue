@@ -1,17 +1,32 @@
 <template>
   <div class="grid grid-cols-12 gap-4">
-    <div class="col-span-3">
+    <div class="col-span-12 md:col-span-3">
       <div class="flex flex-col gap-2 rounded-md bg-white p-6">
         <div class="text-sm text-gray-600">Profit</div>
         <div>{{ formatCurrency(totalProfit(orders)) }}</div>
       </div>
     </div>
+
+    <div class="col-span-12 md:col-span-3">
+      <div class="flex flex-col gap-2 rounded-md bg-white p-6">
+        <div class="text-sm text-gray-600">Orders</div>
+        <div>{{ orders.length }}</div>
+      </div>
+    </div>
+
+    <div class="col-span-12 md:col-span-3">
+      <div class="flex flex-col gap-2 rounded-md bg-white p-6">
+        <div class="text-sm text-gray-600">Last Updated</div>
+        <div>{{ new Date(Math.max(...orders.map((order) => new Date(order.created!).getTime()))).toLocaleString() }}</div>
+      </div>
+    </div>
+
     <div class="col-span-12">
       <div class="rounded-md bg-white p-4 pt-0">
         <DataTable v-model:expanded-rows="expandedRows" :value="orders" removable-sort filter-display="menu" data-key="orderNumber" striped-rows>
           <template #header>
             <div class="flex items-center justify-between">
-              <div class="flex items-center gap-4">
+              <div class="flex flex-col gap-4 md:flex-row md:items-center">
                 <span class="text-lg">Order History</span>
                 <SelectButton v-model="selectedTableOption" :options="tableOptions" />
               </div>
