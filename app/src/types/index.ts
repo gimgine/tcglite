@@ -25,3 +25,15 @@ export interface OrderCsvRecord {
   profit?: number;
   feePercentage?: number;
 }
+
+export interface PullSheetCsvRecord {
+  productLine: string;
+  productName: string;
+  condition: string;
+  number: number;
+  set: string;
+  rarity: string;
+  quantity: number;
+  mainPhotoUrl: string;
+  setReleaseDate: string;
+}
