@@ -3,21 +3,39 @@
     <div class="col-span-12 md:col-span-3">
       <div class="flex flex-col gap-2 rounded-md bg-white p-6">
         <div class="text-sm text-gray-600">Profit</div>
-        <div>{{ formatCurrency(totalProfit(orders)) }}</div>
+        <div class="flex gap-4 text-lg">
+          <div>{{ formatCurrency(totalProfit(orders)) }}</div>
+          <div :class="[totalProfit(orders, true) > 0 ? 'text-green-600' : totalProfit(orders, true) === 0 ? 'invisible' : 'text-red-600']">
+            <i :class="['pi', totalProfit(orders, true) >= 0 ? 'pi-arrow-up' : 'pi-arrow-down']" />
+            {{ formatCurrency(totalProfit(orders, true)) }}
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="col-span-12 md:col-span-3">
       <div class="flex flex-col gap-2 rounded-md bg-white p-6">
         <div class="text-sm text-gray-600">Gross Sales</div>
-        <div>{{ formatCurrency(grossSales(orders)) }}</div>
+        <div class="flex gap-4 text-lg">
+          <div>{{ formatCurrency(grossSales(orders)) }}</div>
+          <div :class="[grossSales(orders, true) > 0 ? 'text-green-600' : grossSales(orders, true) === 0 ? 'invisible' : 'text-red-600']">
+            <i :class="['pi', grossSales(orders, true) >= 0 ? 'pi-arrow-up' : 'pi-arrow-down']" />
+            {{ formatCurrency(grossSales(orders, true)) }}
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="col-span-12 md:col-span-3">
       <div class="flex flex-col gap-2 rounded-md bg-white p-6">
         <div class="text-sm text-gray-600">Orders</div>
-        <div>{{ orders.length }}</div>
+        <div class="flex gap-4 text-lg">
+          <div>{{ orders.length }}</div>
+          <div :class="!orders.filter((o) => isToday(new Date(o.orderDate))).length ? 'invisible' : 'text-green-600'">
+            <i class="pi pi-arrow-up" />
+            {{ orders.filter((o) => isToday(new Date(o.orderDate))).length }}
+          </div>
+        </div>
       </div>
     </div>
 
@@ -30,7 +48,19 @@
 
     <div class="col-span-12">
       <div class="rounded-md bg-white p-4 pt-0">
-        <DataTable v-model:expanded-rows="expandedRows" :value="orders" removable-sort filter-display="menu" data-key="orderNumber" striped-rows>
+        <DataTable
+          v-model:expanded-rows="expandedRows"
+          :value="orders"
+          sort-field="orderDate"
+          :sort-order="-1"
+          removable-sort
+          filter-display="menu"
+          data-key="orderNumber"
+          striped-rows
+          paginator
+          :rows="10"
+          :rows-per-page-options="[10, 25, 50, 100, 500]"
+        >
           <template #header>
             <div class="flex items-center justify-between">
               <div class="flex flex-col gap-4 md:flex-row md:items-center">
@@ -343,20 +373,17 @@ const formatCurrency = (value: number) => {
   return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 };
 
-const totalProfit = (orders: OrdersRecord[]) => {
-  let profit = 0;
-  orders.forEach((order) => {
-    profit += order.profit ?? 0;
-  });
-  return profit;
+const isToday = (date: Date): boolean => {
+  const today = new Date();
+  return date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
 };
 
-const grossSales = (orders: OrdersRecord[]) => {
-  let gross = 0;
-  orders.forEach((order) => {
-    gross += order.totalPrice ?? 0;
-  });
-  return gross;
+const totalProfit = (orders: OrdersRecord[], today?: boolean) => {
+  return orders.filter((order) => !today || isToday(new Date(order.orderDate))).reduce((sum, order) => sum + (order.profit ?? 0), 0);
+};
+
+const grossSales = (orders: OrdersRecord[], today?: boolean) => {
+  return orders.filter((order) => !today || isToday(new Date(order.orderDate))).reduce((sum, order) => sum + (order.totalPrice ?? 0), 0);
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------
