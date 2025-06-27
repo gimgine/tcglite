@@ -1,11 +1,11 @@
 <template>
-  <div class="flex h-[calc(100vh-10rem)] w-full flex-col items-center justify-center">
-    <div class="relative w-full max-w-2xl">
+  <div class="flex w-full flex-grow flex-col items-center justify-center">
+    <div :class="`relative w-full ${currentMode === 'pullSheet' ? 'max-w-3xl' : 'max-w-2xl'}`">
       <div class="absolute -top-10 right-0">
         <Button icon="pi pi-undo" variant="text" rounded size="small" severity="secondary" @click="handleReset" />
       </div>
 
-      <div class="rounded-md bg-white p-8 shadow">
+      <div class="overflow-scroll rounded-md bg-white p-8 shadow">
         <span class="text-3xl font-semibold">Order Helper</span>
 
         <div v-show="currentMode === 'upload'" class="flex h-full flex-col justify-between">
@@ -31,16 +31,18 @@
           </div>
         </div>
 
-        <div v-show="currentMode === 'pullSheet'" class="flex h-full flex-col justify-between">
+        <div v-show="currentMode === 'pullSheet'" class="flex flex-col justify-between">
           <span class="my-4 text-xl">Pull Sheet</span>
 
-          <div class="grid grid-cols-12 gap-8">
+          <div class="grid max-h-[38rem] grid-cols-12 gap-8 overflow-scroll">
             <div v-for="setGroup in groupedBySet" :key="setGroup.set" class="col-span-6">
               <span class="text-sm text-gray-600">{{ setGroup.set }}</span>
               <ul>
-                <li v-for="pull in setGroup.pulls" :key="pull.productName">
+                <li v-for="pull in setGroup.pulls" :key="pull.productName" class="mb-1">
+                  <span v-if="pull.condition.includes('Foil')" class="bg-rainbow mr-1 rounded-md px-2 text-white drop-shadow">F</span>
                   <b>{{ `${pull.quantity} ` }}</b>
-                  <span>{{ `${pull.productName} [#${pull.number}]` }}</span>
+                  <span class="italic">{{ `${abbrCondition(pull.condition as Condition)} ` }}</span>
+                  <span>{{ `${pull.productName} #${pull.number}` }}</span>
                 </li>
               </ul>
             </div>
@@ -110,6 +112,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 // Types ------------------------------------------------------------------------------
 type HelperMode = 'upload' | 'pullSheet' | 'shipping';
+type Condition = 'Near Mint' | 'Lightly Played' | 'Moderately Played' | 'Heavily Played';
 
 // Component Info (props/emits) -------------------------------------------------------
 
@@ -336,9 +339,26 @@ const parseShippingExport = async (file: Blob): Promise<OrderCsvRecord[]> => {
   });
 };
 
+const abbrCondition = (condition: Condition) => {
+  const abbreviations: Record<Condition, string> = {
+    'Near Mint': 'NM',
+    'Lightly Played': 'LP',
+    'Moderately Played': 'MP',
+    'Heavily Played': 'HP'
+  };
+
+  for (const key of Object.keys(abbreviations)) {
+    if (condition.includes(key)) {
+      return abbreviations[key as Condition];
+    }
+  }
+};
+
 // Lifecycle Hooks --------------------------------------------------------------------
 onMounted(async () => {
   window.addEventListener('keydown', handleKey);
+
+  // pullSheet.value = await parsePullSheet(await (await fetch('/public/TCGplayer_PullSheet_20250625_093438.csv')).blob());
 });
 
 onUnmounted(() => {

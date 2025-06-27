@@ -1,6 +1,6 @@
 <template>
   <Toast />
-  <div class="fixed top-0 left-0 z-10 flex h-16 w-full items-center bg-white px-4">
+  <div class="sticky top-0 left-0 z-10 flex h-16 w-full items-center bg-white px-4">
     <span class="text-xl">Gimgine Trading Post</span>
     <div class="ml-8 flex h-full items-center gap-8">
       <RouterLink
@@ -25,7 +25,7 @@
       </RouterLink>
     </div>
   </div>
-  <div class="min-h-screen px-4 pt-20 pb-6 lg:px-20 lg:pt-24 lg:pb-16">
+  <div class="flex min-h-[calc(100vh-4rem)] flex-col px-4 lg:px-20 lg:py-10">
     <router-view />
   </div>
 </template>
@@ -40,5 +40,6 @@ const route = useRoute();
 <style>
 body {
   background-color: var(--p-surface-100);
+  height: 100%;
 }
 </style>
