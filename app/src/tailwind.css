@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 @layer utilities {
-  .bg-rainbow {
+  .bg-foil {
     background-image: linear-gradient(
       to right,
       #f87171, /* red-400 */

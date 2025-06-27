@@ -39,7 +39,7 @@
               <span class="text-sm text-gray-600">{{ setGroup.set }}</span>
               <ul>
                 <li v-for="pull in setGroup.pulls" :key="pull.productName" class="mb-1">
-                  <span v-if="pull.condition.includes('Foil')" class="bg-rainbow mr-1 rounded-md px-2 text-white drop-shadow">F</span>
+                  <span v-if="pull.condition.includes('Foil')" class="bg-foil mr-1 rounded-md px-2 text-white drop-shadow">F</span>
                   <b>{{ `${pull.quantity} ` }}</b>
                   <span class="italic">{{ `${abbrCondition(pull.condition as Condition)} ` }}</span>
                   <span>{{ `${pull.productName} #${pull.number}` }}</span>
