@@ -1,49 +1,22 @@
 <template>
   <div class="grid grid-cols-12 gap-4">
     <div class="col-span-12 md:col-span-3">
-      <div class="flex flex-col gap-2 rounded-md bg-white p-6">
-        <div class="text-sm text-gray-600">Profit</div>
-        <div class="flex gap-4 text-lg">
-          <div>{{ formatCurrency(totalProfit(orders)) }}</div>
-          <div :class="[totalProfit(orders, true) > 0 ? 'text-green-600' : totalProfit(orders, true) === 0 ? 'invisible' : 'text-red-600']">
-            <i :class="['pi', totalProfit(orders, true) >= 0 ? 'pi-arrow-up' : 'pi-arrow-down']" />
-            {{ formatCurrency(totalProfit(orders, true)) }}
-          </div>
-        </div>
-      </div>
+      <StatIndicator label="Profit" :details="totalProfit(orders)" :change="totalProfit(orders, true)" is-currency />
     </div>
 
     <div class="col-span-12 md:col-span-3">
-      <div class="flex flex-col gap-2 rounded-md bg-white p-6">
-        <div class="text-sm text-gray-600">Gross Sales</div>
-        <div class="flex gap-4 text-lg">
-          <div>{{ formatCurrency(grossSales(orders)) }}</div>
-          <div :class="[grossSales(orders, true) > 0 ? 'text-green-600' : grossSales(orders, true) === 0 ? 'invisible' : 'text-red-600']">
-            <i :class="['pi', grossSales(orders, true) >= 0 ? 'pi-arrow-up' : 'pi-arrow-down']" />
-            {{ formatCurrency(grossSales(orders, true)) }}
-          </div>
-        </div>
-      </div>
+      <StatIndicator label="Gross Sales" :details="grossSales(orders)" :change="grossSales(orders, true)" is-currency />
     </div>
 
     <div class="col-span-12 md:col-span-3">
-      <div class="flex flex-col gap-2 rounded-md bg-white p-6">
-        <div class="text-sm text-gray-600">Orders</div>
-        <div class="flex gap-4 text-lg">
-          <div>{{ orders.length }}</div>
-          <div :class="!orders.filter((o) => isToday(new Date(o.orderDate))).length ? 'invisible' : 'text-green-600'">
-            <i class="pi pi-arrow-up" />
-            {{ orders.filter((o) => isToday(new Date(o.orderDate))).length }}
-          </div>
-        </div>
-      </div>
+      <StatIndicator label="Orders" :details="orders.length" :change="orders.filter((o) => isToday(new Date(o.orderDate))).length" />
     </div>
 
     <div class="col-span-12 md:col-span-3">
-      <div class="flex flex-col gap-2 rounded-md bg-white p-6">
-        <div class="text-sm text-gray-600">Last Updated</div>
-        <div>{{ new Date(Math.max(...orders.map((order) => new Date(order.created!).getTime()))).toLocaleString() }}</div>
-      </div>
+      <StatIndicator
+        label="Last Updated"
+        :details="new Date(Math.max(...orders.map((order) => new Date(order.created!).getTime()))).toLocaleString()"
+      />
     </div>
 
     <div class="col-span-12">
@@ -125,64 +98,24 @@
     </div>
   </div>
 
-  <Dialog v-model:visible="shippingDialogVisible" modal>
-    <DataTable :value="shippingFlaggedOrders">
-      <template #header>
-        <span>Confirm Shipping Method</span>
-      </template>
-      <Column header="Name">
-        <template #body="slotProps">
-          {{ `${slotProps.data.firstName} ${slotProps.data.lastName}` }}
-        </template>
-      </Column>
-      <Column field="orderDate" header="Order Date">
-        <template #body="slotProps">
-          {{ slotProps.data.orderDate.toLocaleDateString() }}
-        </template>
-      </Column>
-      <Column header="Total Price">
-        <template #body="slotProps">
-          {{ formatCurrency(slotProps.data.productValue + slotProps.data.shippingFee) }}
-        </template>
-      </Column>
-      <Column header="Shipping">
-        <template #body="slotProps">
-          <Select v-model="slotProps.data.shippingCost" :options="shippingMethods" option-label="name" option-value="cost">
-            <template #value="selectSlotProps">
-              <span
-                :class="`rounded-sm px-2 py-0.5 text-xs font-bold ${selectSlotProps.value === TRACKING.cost ? 'bg-blue-200 text-blue-600' : 'bg-pink-200 text-pink-600'}`"
-              >
-                {{ getShippingMethod(selectSlotProps.value)?.name }}
-              </span>
-            </template>
-            <template #option="selectSlotProps">
-              <span
-                :class="`rounded-sm px-2 py-0.5 text-xs font-bold ${selectSlotProps.option.cost === TRACKING.cost ? 'bg-blue-200 text-blue-600' : 'bg-pink-200 text-pink-600'}`"
-              >
-                {{ selectSlotProps.option.name }}
-              </span>
-            </template>
-          </Select>
-        </template>
-      </Column>
-    </DataTable>
-    <template #footer>
-      <Button label="Submit" :loading="isSubmitLoading" @click="handleSubmitClick" />
-    </template>
-  </Dialog>
+  <ShippingModal ref="shippingModal" :orders="shippingFlaggedOrders" @submit="handleSubmitClick" />
 </template>
 
 <script setup lang="ts">
+import ShippingModal from '@/components/ShippingModal.vue';
+import StatIndicator from '@/components/StatIndicator.vue';
 import type { OrderCsvRecord } from '@/types';
 import { Collections, type OrdersRecord } from '@/types/pocketbase-types';
+import { formatCurrency, isToday } from '@/util/functions';
 import pb from '@/util/pocketbase';
-import { Button, Column, DataTable, Dialog, FileUpload, type FileUploadSelectEvent, Select, useToast } from 'primevue';
+import { Column, DataTable, FileUpload, type FileUploadSelectEvent, useToast } from 'primevue';
 import { computed, onMounted, ref } from 'vue';
 // Types ------------------------------------------------------------------------------
 
 // Component Info (props/emits) -------------------------------------------------------
 
 // Template Refs ----------------------------------------------------------------------
+const shippingModal = ref({} as InstanceType<typeof ShippingModal>);
 
 // Variables --------------------------------------------------------------------------
 const ENVELOPE = { cost: 1, name: 'Envelope' };
@@ -201,10 +134,8 @@ const shippingMethods = ref<{ cost: number; name: string }[]>([ENVELOPE, TRACKIN
 
 const expandedRows = ref({});
 
-const shippingDialogVisible = ref(false);
 const newOrders = ref<OrderCsvRecord[]>([]);
 const shippingFlaggedOrders = computed(() => newOrders.value.filter((o) => o.productValue + o.shippingFee > QUESTIONABLE_TRACKING_THRESHOLD));
-const isSubmitLoading = ref(false);
 
 // Provided ---------------------------------------------------------------------------
 
@@ -307,7 +238,7 @@ const handleCsvClick = async (event: FileUploadSelectEvent) => {
   newOrders.value = parsedOrders;
 
   if (shippingFlaggedOrders.value.length > 0) {
-    shippingDialogVisible.value = true;
+    shippingModal.value.open();
     return;
   }
 
@@ -322,13 +253,13 @@ const handleCsvClick = async (event: FileUploadSelectEvent) => {
 };
 
 const handleSubmitClick = () => {
-  isSubmitLoading.value = true;
+  shippingModal.value.toggleSubmitLoading();
 
   shippingFlaggedOrders.value.forEach((o) => setOrderFinancial(o));
 
   createOrders()
     .then(() => {
-      shippingDialogVisible.value = false;
+      shippingModal.value.close();
       toast.add({
         severity: 'success',
         summary: 'Orders Added',
@@ -337,7 +268,7 @@ const handleSubmitClick = () => {
       });
     })
     .finally(() => {
-      isSubmitLoading.value = false;
+      shippingModal.value.toggleSubmitLoading();
     });
 };
 
@@ -367,15 +298,6 @@ const refreshOrders = async () => {
 
 const getShippingMethod = (shippingCost: number) => {
   return shippingMethods.value.find((sm) => sm.cost === shippingCost);
-};
-
-const formatCurrency = (value: number) => {
-  return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-};
-
-const isToday = (date: Date): boolean => {
-  const today = new Date();
-  return date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
 };
 
 const totalProfit = (orders: OrdersRecord[], today?: boolean) => {
