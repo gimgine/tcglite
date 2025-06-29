@@ -9,7 +9,7 @@
     </div>
 
     <div class="col-span-12 md:col-span-3">
-      <StatIndicator label="Orders" :details="orders.length" :change="orders.filter((o) => isToday(new Date(o.orderDate))).length" />
+      <StatIndicator label="Orders" :details="orders.length" :change="orders.filter((o) => isToday(new Date(o.created ?? ''))).length" />
     </div>
 
     <div class="col-span-12 md:col-span-3">
@@ -301,11 +301,11 @@ const getShippingMethod = (shippingCost: number) => {
 };
 
 const totalProfit = (orders: OrdersRecord[], today?: boolean) => {
-  return orders.filter((order) => !today || isToday(new Date(order.orderDate))).reduce((sum, order) => sum + (order.profit ?? 0), 0);
+  return orders.filter((order) => !today || isToday(new Date(order.created ?? ''))).reduce((sum, order) => sum + (order.profit ?? 0), 0);
 };
 
 const grossSales = (orders: OrdersRecord[], today?: boolean) => {
-  return orders.filter((order) => !today || isToday(new Date(order.orderDate))).reduce((sum, order) => sum + (order.totalPrice ?? 0), 0);
+  return orders.filter((order) => !today || isToday(new Date(order.created ?? ''))).reduce((sum, order) => sum + (order.totalPrice ?? 0), 0);
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------
