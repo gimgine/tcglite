@@ -244,7 +244,9 @@ const parsePullSheet = async (file: Blob): Promise<PullSheetCsvRecord[]> => {
         'Rarity',
         'Quantity',
         'Main Photo URL',
-        'Set Release Date'
+        'Set Release Date',
+        'SkuId',
+        'Order Quantity'
       ];
 
       if (header.join(',') !== expectedHeader.join(',')) {
@@ -258,7 +260,7 @@ const parsePullSheet = async (file: Blob): Promise<PullSheetCsvRecord[]> => {
 
         const splitLine = parseCSVLine(line);
         if (splitLine[0] === 'Orders Contained in Pull Sheet:') continue;
-        if (splitLine.length < 9) continue;
+        if (splitLine.length < 11) continue;
 
         const newPull: PullSheetCsvRecord = {
           productLine: splitLine[0],
