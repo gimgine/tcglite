@@ -5,7 +5,7 @@
         <Button icon="pi pi-undo" variant="text" rounded size="small" severity="secondary" @click="handleReset" />
       </div>
 
-      <div class="overflow-scroll rounded-md bg-white p-8 shadow">
+      <div class="rounded-md bg-white p-8 shadow">
         <span class="text-3xl font-semibold">Order Helper</span>
 
         <div v-show="currentMode === 'upload'" class="flex h-full flex-col justify-between">
@@ -34,7 +34,7 @@
         <div v-show="currentMode === 'pullSheet'" class="flex flex-col justify-between">
           <span class="my-4 text-xl">Pull Sheet</span>
 
-          <div class="grid max-h-[38rem] grid-cols-12 gap-8 overflow-scroll">
+          <div class="grid max-h-[38rem] grid-cols-12 gap-8 overflow-y-auto">
             <div v-for="setGroup in groupedBySet" :key="setGroup.set" class="col-span-6">
               <span class="text-sm text-gray-600">{{ setGroup.set }}</span>
               <ul>
