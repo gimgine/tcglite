@@ -48,11 +48,11 @@
 
 <script setup lang="ts">
 import { Button, Column, DataTable, Select, Dialog } from 'primevue';
-import type { OrderCsvRecord } from '@/types';
+import type { ShippingCsvRecord } from '@/types';
 import { formatCurrency } from '@/util/functions';
 import { ref } from 'vue';
 
-defineProps<{ orders: OrderCsvRecord[] }>();
+defineProps<{ orders: ShippingCsvRecord[] }>();
 
 defineEmits<{ submit: [] }>();
 

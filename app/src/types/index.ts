@@ -1,4 +1,4 @@
-export interface OrderCsvRecord {
+export interface ShippingCsvRecord {
   orderNumber: string;
   firstName: string;
   lastName: string;
