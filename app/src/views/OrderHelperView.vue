@@ -160,7 +160,7 @@ const formattedShipping = computed(() => {
 // Injections -------------------------------------------------------------------------
 
 // Watchers ---------------------------------------------------------------------------
-watch(groupedBySet, (newValue) => console.log(newValue));
+
 // Methods ----------------------------------------------------------------------------
 const handleKey = (event: KeyboardEvent) => {
   if (currentMode.value !== 'shipping') return;
