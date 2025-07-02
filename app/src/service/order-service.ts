@@ -1,20 +1,46 @@
 import type { ShippingCsvRecord } from '@/types';
 import { Collections } from '@/types/pocketbase-types';
-import { parseShippingCsv } from '@/util/csv-parse';
+import { parseShippingCsv, type ShippingCsv } from '@/util/csv-parse';
 import pb from '@/util/pocketbase';
 
 export class OrderService {
   readonly ENVELOPE = { cost: 1, name: 'Envelope' };
   readonly TRACKING = { cost: 5, name: 'Tracking' };
-  readonly TRACKING_THRESHOLD = 30;
+  readonly SHIPPING_METHODS = [this.ENVELOPE, this.TRACKING];
+  readonly TRACKING_THRESHOLD = 35;
   readonly TEMP_COGS = 0.26;
 
-  convertCsv = async (file: File) => {
-    const parsed = await parseShippingCsv(file);
-    const existingOrders = await pb.collection(Collections.Orders).getFullList();
+  create = async (config: { file?: File; orders?: ShippingCsv[] }) => {
+    const { file, orders } = config;
+    if ((!file && !orders) || (file && orders)) return;
+
+    const csvData = config.file ? await parseShippingCsv(config.file) : config.orders!;
+    const newOrders = this.convertCsv(csvData);
+
+    const existingOrderNumbers = new Set((await pb.collection(Collections.Orders).getFullList()).map((o) => o.orderNumber));
+    const filteredNewOrders = newOrders.filter((order) => !existingOrderNumbers.has(order.orderNumber));
+
+    if (!filteredNewOrders.length) {
+      throw new Error('No new orders were found in the CSV.');
+    }
+
+    const batch = pb.createBatch();
+
+    filteredNewOrders.forEach((order) => {
+      batch.collection(Collections.Orders).create(order);
+    });
+
+    await batch.send();
+  };
+
+  getShippingMethod = (shippingCost: number) => {
+    return this.SHIPPING_METHODS.find((sm) => sm.cost === shippingCost);
+  };
+
+  private convertCsv = (csv: ShippingCsv[]) => {
     const newOrders: ShippingCsvRecord[] = [];
 
-    for (const row of parsed) {
+    for (const row of csv) {
       const [year, month, day] = (row['Order Date'] ?? '0000-00-00').split('-');
       const newOrder: ShippingCsvRecord = {
         orderNumber: row['Order #'],
@@ -36,11 +62,7 @@ export class OrderService {
         carrier: row.Carrier
       };
 
-      if (existingOrders.some((o) => o.orderNumber === newOrder.orderNumber)) {
-        continue;
-      }
-
-      this.setOrderFinancial(newOrder, true);
+      this.setOrderFinancial(newOrder);
 
       newOrders.push(newOrder);
     }
@@ -48,32 +70,16 @@ export class OrderService {
     return newOrders;
   };
 
-  create = async (orders: ShippingCsvRecord[]) => {
-    if (!orders.length) {
-      throw new Error('No new orders were found in the CSV.');
-    }
-
-    const batch = pb.createBatch();
-
-    orders.forEach((order) => {
-      batch.collection(Collections.Orders).create(order);
-    });
-
-    await batch.send();
-  };
-
   determineDefaultShippingCost = (totalPrice: number) => {
     return totalPrice >= this.TRACKING_THRESHOLD ? this.TRACKING.cost : this.ENVELOPE.cost;
   };
 
-  setOrderFinancial = (order: ShippingCsvRecord, useDefaultShipping?: boolean) => {
+  setOrderFinancial = (order: ShippingCsvRecord) => {
     const totalPrice = order.productValue + order.shippingFee;
     const vendorFee = totalPrice * 0.1025;
     const processingFee = totalPrice * 0.025 + 0.3;
     const cogs = order.itemCount * this.TEMP_COGS;
-    const shippingCost = useDefaultShipping
-      ? this.determineDefaultShippingCost(totalPrice)
-      : (order.shippingCost ?? this.determineDefaultShippingCost(totalPrice));
+    const shippingCost = this.determineDefaultShippingCost(totalPrice);
     const profit = totalPrice - vendorFee - processingFee - cogs - shippingCost;
     const feePercentage = ((vendorFee + processingFee) / totalPrice) * 100;
 

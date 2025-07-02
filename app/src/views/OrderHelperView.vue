@@ -26,7 +26,10 @@
               icon="pi pi-arrow-right"
               icon-pos="right"
               :disabled="!pullSheet.length || !shippingExport.length"
-              @click="currentMode = 'pullSheet'"
+              @click="
+                currentMode = 'pullSheet';
+                shippingIndex = 0;
+              "
             />
           </div>
         </div>
@@ -97,18 +100,35 @@
           <div class="mt-4 flex items-center justify-between">
             <Button class="invisible w-fit" icon="pi pi-copy" label="Done" />
             <Button ref="copyButton" class="w-fit" icon="pi pi-copy" label="Copy" severity="info" @click="copyToClipboard" />
-            <Button class="w-fit" icon="pi pi-check" label="Done" :disabled="shippingIndex !== shippingExport.length - 1" @click="handleReset" />
+            <Button
+              class="w-fit"
+              icon="pi pi-check"
+              label="Done"
+              :disabled="shippingIndex !== shippingExport.length - 1"
+              @click="isUploadModalOpen = true"
+            />
           </div>
         </div>
       </div>
     </div>
   </div>
+
+  <Dialog v-model:visible="isUploadModalOpen" header="Upload Shipping Export" modal>
+    <span>Would you like to upload the shipping export CSV to the orders table?</span>
+
+    <template #footer>
+      <Button label="No" severity="secondary" @click="handleReset" />
+      <Button label="Yes" :loading="isYesLoading" @click="handleYes" />
+    </template>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
+import { OrderService } from '@/service/order-service';
+import { useOrderStore } from '@/store/order-store';
 import { parsePullSheetCsv, parseShippingCsv, type PullSheetCsv, type ShippingCsv } from '@/util/csv-parse';
-import { Button, FileUpload, useToast, type FileUploadSelectEvent } from 'primevue';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { Button, Dialog, FileUpload, useToast, type FileUploadSelectEvent } from 'primevue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 // Types ------------------------------------------------------------------------------
 type HelperMode = 'upload' | 'pullSheet' | 'shipping';
@@ -120,14 +140,18 @@ type Condition = 'Near Mint' | 'Lightly Played' | 'Moderately Played' | 'Heavily
 const copyButton = ref();
 
 // Variables --------------------------------------------------------------------------
+const orderService = new OrderService();
 
 // Reactive Variables -----------------------------------------------------------------
 const toast = useToast();
+const orderStore = useOrderStore();
 
 const pullSheet = ref<PullSheetCsv[]>([]);
 const shippingExport = ref<ShippingCsv[]>([]);
 
 const currentMode = ref<HelperMode>('upload');
+const isUploadModalOpen = ref(false);
+const isYesLoading = ref(false);
 
 const groupedBySet = computed(() => {
   const groups: Record<string, PullSheetCsv[]> = {};
@@ -181,6 +205,35 @@ const handleShippingExportUpload = async (event: FileUploadSelectEvent) => {
 
 const handleReset = () => {
   window.location.reload();
+};
+
+const handleYes = async () => {
+  isYesLoading.value = true;
+  await orderService
+    .create({ orders: shippingExport.value })
+    .then(() => {
+      // TODO check batch response and see if we can return the amount of records added
+      orderStore.refresh();
+      toast.add({
+        severity: 'success',
+        summary: 'Orders Added',
+        detail: `New orders were added.`,
+        life: 3000
+      });
+    })
+    .catch((error: Error) => {
+      toast.add({
+        severity: 'error',
+        summary: 'No Orders Found',
+        detail: error.message,
+        life: 3000
+      });
+    })
+    .finally(() => {
+      isYesLoading.value = false;
+      isUploadModalOpen.value = false;
+      currentMode.value = 'upload';
+    });
 };
 
 const handleGoLeft = async () => {

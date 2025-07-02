@@ -80,7 +80,7 @@
               <span
                 :class="`rounded-sm px-2 py-0.5 text-xs font-bold ${slotProps.data.shippingCost === orderService.TRACKING.cost ? 'bg-blue-200 text-blue-600' : 'bg-pink-200 text-pink-600'}`"
               >
-                {{ getShippingMethod(slotProps.data.shippingCost)?.name }}
+                {{ orderService.getShippingMethod(slotProps.data.shippingCost)?.name }}
               </span>
             </template>
           </Column>
@@ -101,42 +101,30 @@
       </div>
     </div>
   </div>
-
-  <ShippingModal ref="shippingModal" :orders="shippingFlaggedOrders" @submit="handleSubmitClick" />
 </template>
 
 <script setup lang="ts">
-import ShippingModal from '@/components/ShippingModal.vue';
 import StatIndicator from '@/components/StatIndicator.vue';
 import { OrderService } from '@/service/order-service';
 import { useOrderStore } from '@/store/order-store';
-import type { ShippingCsvRecord } from '@/types';
 import { type OrdersRecord } from '@/types/pocketbase-types';
 import { formatCurrency, isToday } from '@/util/functions';
 import { Column, DataTable, FileUpload, type FileUploadSelectEvent, useToast } from 'primevue';
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 // Types ------------------------------------------------------------------------------
 
 // Component Info (props/emits) -------------------------------------------------------
 
 // Template Refs ----------------------------------------------------------------------
-const shippingModal = ref({} as InstanceType<typeof ShippingModal>);
 
 // Variables --------------------------------------------------------------------------
-const QUESTIONABLE_TRACKING_THRESHOLD = 20;
-
 const orderService = new OrderService();
 const orderStore = useOrderStore();
 
 // Reactive Variables -----------------------------------------------------------------
 const toast = useToast();
 
-const shippingMethods = ref<{ cost: number; name: string }[]>([orderService.ENVELOPE, orderService.TRACKING]);
-
 const expandedRows = ref({});
-
-const newOrders = ref<ShippingCsvRecord[]>([]);
-const shippingFlaggedOrders = computed(() => newOrders.value.filter((o) => o.productValue + o.shippingFee > QUESTIONABLE_TRACKING_THRESHOLD));
 
 // Provided ---------------------------------------------------------------------------
 
@@ -148,49 +136,26 @@ const shippingFlaggedOrders = computed(() => newOrders.value.filter((o) => o.pro
 
 // Methods ----------------------------------------------------------------------------
 const handleCsvClick = async (event: FileUploadSelectEvent) => {
-  const convertedOrders = await orderService.convertCsv(event.files[0]);
-  newOrders.value = convertedOrders;
-
-  if (shippingFlaggedOrders.value.length > 0) {
-    shippingModal.value.open();
-    return;
-  }
-
-  orderService.create(convertedOrders).then(() => {
-    orderStore.refresh();
-    toast.add({
-      severity: 'success',
-      summary: 'Orders Added',
-      detail: `${convertedOrders.length} new orders were added.`,
-      life: 3000
-    });
-  });
-};
-
-const handleSubmitClick = () => {
-  shippingModal.value.toggleSubmitLoading();
-
-  shippingFlaggedOrders.value.forEach((o) => orderService.setOrderFinancial(o));
-
+  // TODO check batch response and see if we can return the amount of records added
   orderService
-    .create(newOrders.value)
+    .create({ file: event.files[0] })
     .then(() => {
-      shippingModal.value.close();
       orderStore.refresh();
       toast.add({
         severity: 'success',
         summary: 'Orders Added',
-        detail: `${newOrders.value.length} orders were added.`,
+        detail: `New orders were added.`,
         life: 3000
       });
     })
-    .finally(() => {
-      shippingModal.value.toggleSubmitLoading();
+    .catch((error: Error) => {
+      toast.add({
+        severity: 'error',
+        summary: 'No Orders Found',
+        detail: error.message,
+        life: 3000
+      });
     });
-};
-
-const getShippingMethod = (shippingCost: number) => {
-  return shippingMethods.value.find((sm) => sm.cost === shippingCost);
 };
 
 const totalProfit = (orders: OrdersRecord[], today?: boolean) => {
