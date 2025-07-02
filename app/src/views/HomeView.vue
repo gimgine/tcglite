@@ -40,7 +40,7 @@
                 <span class="text-lg">Order Profits</span>
               </div>
               <div>
-                <FileUpload mode="basic" choose-label="CSV" choose-icon="pi pi-file-arrow-up" accept=".csv" auto @select="handleCsvClick" />
+                <FileUpload mode="basic" choose-label="Shipping CSV" choose-icon="pi pi-file-arrow-up" accept=".csv" auto @select="handleCsvClick" />
               </div>
             </div>
           </template>
