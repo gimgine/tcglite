@@ -42,9 +42,17 @@
 
 <script setup lang="ts">
 import { Toast } from 'primevue';
+import { onMounted } from 'vue';
 import { RouterView, useRoute } from 'vue-router';
+import { useOrderStore } from './store/order-store';
 
 const route = useRoute();
+
+const orderStore = useOrderStore();
+
+onMounted(() => {
+  orderStore.refresh();
+});
 </script>
 
 <style>
