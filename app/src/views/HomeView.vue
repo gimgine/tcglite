@@ -106,6 +106,7 @@ import ShippingModal from '@/components/ShippingModal.vue';
 import StatIndicator from '@/components/StatIndicator.vue';
 import type { OrderCsvRecord } from '@/types';
 import { Collections, type OrdersRecord } from '@/types/pocketbase-types';
+import { parseShippingCsv } from '@/util/csv-parse';
 import { formatCurrency, isToday } from '@/util/functions';
 import pb from '@/util/pocketbase';
 import { Column, DataTable, FileUpload, type FileUploadSelectEvent, useToast } from 'primevue';
@@ -146,66 +147,40 @@ const shippingFlaggedOrders = computed(() => newOrders.value.filter((o) => o.pro
 // Watchers ---------------------------------------------------------------------------
 
 // Methods ----------------------------------------------------------------------------
-const parseOrderCsv = async (file: Blob): Promise<OrderCsvRecord[]> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
+const parseOrderCsv = async (file: File) => {
+  const parsed = await parseShippingCsv(file);
 
-    reader.onload = () => {
-      const result = reader.result as string;
-      const lines = result.split(/\r?\n/);
-
-      if (
-        lines[0] !==
-        'Order #,FirstName,LastName,Address1,Address2,City,State,PostalCode,Country,Order Date,Product Weight,Shipping Method,Item Count,Value Of Products,Shipping Fee Paid,Tracking #,Carrier'
-      ) {
-        console.warn('File not of correct type.');
-        return;
-      }
-
-      const newOrders = [];
-
-      for (const line of lines) {
-        if (line.split(',')[0] === 'Order #') continue;
-
-        const splitLine = line.split(',').map((v) => v.replace(/^"|"$/g, ''));
-        if (splitLine.length < 17) continue;
-
-        const [year, month, day] = splitLine[9].split('-');
-        const newOrder: OrderCsvRecord = {
-          orderNumber: splitLine[0],
-          firstName: splitLine[1],
-          lastName: splitLine[2],
-          address: splitLine[3],
-          addressTwo: splitLine[4],
-          city: splitLine[5],
-          state: splitLine[6],
-          postalCode: splitLine[7],
-          country: splitLine[8],
-          orderDate: new Date(Date.UTC(+year, +month - 1, +day, 12, 0, 0)),
-          productWeight: +splitLine[10],
-          shippingMethod: splitLine[11],
-          itemCount: +splitLine[12],
-          productValue: +splitLine[13],
-          shippingFee: +splitLine[14],
-          trackingNumber: splitLine[15],
-          carrier: splitLine[16]
-        };
-
-        if (orders.value.some((o) => o.orderNumber === newOrder.orderNumber)) {
-          continue;
-        }
-
-        setOrderFinancial(newOrder, true);
-
-        newOrders.push(newOrder);
-      }
-
-      resolve(newOrders);
+  newOrders.value = [];
+  for (const row of parsed) {
+    const [year, month, day] = (row['Order Date'] ?? '0000-00-00').split('-');
+    const newOrder: OrderCsvRecord = {
+      orderNumber: row['Order #'],
+      firstName: row.FirstName,
+      lastName: row.LastName,
+      address: row.Address1,
+      addressTwo: row.Address2,
+      city: row.City,
+      state: row.State,
+      postalCode: row.PostalCode,
+      country: row.Country,
+      orderDate: new Date(Date.UTC(+year, +month - 1, +day, 12, 0, 0)),
+      productWeight: row['Product Weight'],
+      shippingMethod: row['Shipping Method'],
+      itemCount: row['Item Count'],
+      productValue: row['Value Of Products'],
+      shippingFee: row['Shipping Fee Paid'],
+      trackingNumber: row['Tracking #'],
+      carrier: row.Carrier
     };
 
-    reader.onerror = (err) => reject(err);
-    reader.readAsText(file);
-  });
+    if (orders.value.some((o) => o.orderNumber === newOrder.orderNumber)) {
+      continue;
+    }
+
+    setOrderFinancial(newOrder, true);
+
+    newOrders.value.push(newOrder);
+  }
 };
 
 const setOrderFinancial = (order: OrderCsvRecord, useDefaultShipping?: boolean) => {
@@ -233,9 +208,9 @@ const determineDefaultShippingCost = (totalPrice: number) => {
 };
 
 const handleCsvClick = async (event: FileUploadSelectEvent) => {
-  const parsedOrders = await parseOrderCsv(event.files[0]);
+  parseShippingCsv(event.files[0]);
 
-  newOrders.value = parsedOrders;
+  await parseOrderCsv(event.files[0]);
 
   if (shippingFlaggedOrders.value.length > 0) {
     shippingModal.value.open();

@@ -3,7 +3,7 @@ export interface OrderCsvRecord {
   firstName: string;
   lastName: string;
   address: string;
-  addressTwo: string;
+  addressTwo?: string;
   city: string;
   state: string;
   postalCode: string;
@@ -14,8 +14,8 @@ export interface OrderCsvRecord {
   itemCount: number;
   productValue: number;
   shippingFee: number;
-  trackingNumber: string;
-  carrier: string;
+  trackingNumber?: string;
+  carrier?: string;
 
   totalPrice?: number;
   vendorFee?: number;

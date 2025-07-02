@@ -1,5 +1,5 @@
 Order #,FirstName,LastName,Address1,Address2,City,State,PostalCode,Country,Order Date,Product Weight,Shipping Method,Item Count,Value Of Products,Shipping Fee Paid,Tracking #,Carrier
 "95CE391B-88C6BA-4B457","Michael","Glick","223-C Village Ln","","Greensboro","NC","27409","US","2025-06-14","0.63","Standard (7-10 days)","9","23.33","1.31","",""
-"95CE391B-681C27-9DB77","Thomas","Jessen","458 E. 7th","","Red Wing","MN","55066","US","2025-06-14","0.07","Standard (7-10 days)","1","4.67","1.31","",""
+"95CE391B-681C27-9DB77","Thomas","Jessen","458 E. 7th","","Red Wing","MN","55066-7897","US","2025-06-14","0.07","Standard (7-10 days)","1","4.67","1.31","",""
 "95CE391B-85C6BA-4B457","Jim","Glick","223-C Village Ln","Apt 2A","Greensboro","NC","27409","US","2025-06-14","0.63","Standard (7-10 days)","9","45.33","1.31","",""
 "95CE391B-88C6HA-4B457","Frederick","Glick","223-C Village Ln","","Greensboro","NC","27409","US","2025-06-14","0.63","Standard (7-10 days)","9","78.33","1.31","",""

@@ -38,11 +38,11 @@
             <div v-for="setGroup in groupedBySet" :key="setGroup.set" class="col-span-6">
               <span class="text-sm text-gray-600">{{ setGroup.set }}</span>
               <ul>
-                <li v-for="pull in setGroup.pulls" :key="pull.productName" class="mb-1">
-                  <span v-if="pull.condition.includes('Foil')" class="bg-foil mr-1 rounded-md px-2 text-white drop-shadow">F</span>
-                  <b>{{ `${pull.quantity} ` }}</b>
-                  <span class="italic">{{ `${abbrCondition(pull.condition as Condition)} ` }}</span>
-                  <span>{{ `${pull.productName} #${pull.number}` }}</span>
+                <li v-for="pull in setGroup.pulls" :key="pull['Product Name']" class="mb-1">
+                  <span v-if="pull.Condition.includes('Foil')" class="bg-foil mr-1 rounded-md px-2 text-white drop-shadow">F</span>
+                  <b>{{ `${pull.Quantity} ` }}</b>
+                  <span class="italic">{{ `${abbrCondition(pull.Condition as Condition)} ` }}</span>
+                  <span>{{ `${pull['Product Name']} #${pull.Number}` }}</span>
                 </li>
               </ul>
             </div>
@@ -106,9 +106,9 @@
 </template>
 
 <script setup lang="ts">
-import type { OrderCsvRecord, PullSheetCsvRecord } from '@/types';
+import { parsePullSheetCsv, parseShippingCsv, type PullSheetCsv, type ShippingCsv } from '@/util/csv-parse';
 import { Button, FileUpload, useToast, type FileUploadSelectEvent } from 'primevue';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
 // Types ------------------------------------------------------------------------------
 type HelperMode = 'upload' | 'pullSheet' | 'shipping';
@@ -124,30 +124,30 @@ const copyButton = ref();
 // Reactive Variables -----------------------------------------------------------------
 const toast = useToast();
 
-const pullSheet = ref<PullSheetCsvRecord[]>([]);
-const shippingExport = ref<OrderCsvRecord[]>([]);
+const pullSheet = ref<PullSheetCsv[]>([]);
+const shippingExport = ref<ShippingCsv[]>([]);
 
 const currentMode = ref<HelperMode>('upload');
 
 const groupedBySet = computed(() => {
-  const groups: Record<string, PullSheetCsvRecord[]> = {};
+  const groups: Record<string, PullSheetCsv[]> = {};
 
   for (const record of pullSheet.value) {
-    if (!groups[record.set]) {
-      groups[record.set] = [];
+    if (!groups[record.Set]) {
+      groups[record.Set] = [];
     }
-    groups[record.set].push(record);
+    groups[record.Set].push(record);
   }
 
   return Object.entries(groups).map(([set, pulls]) => ({ set, pulls }));
 });
 
 const shippingIndex = ref(0);
-const selectedShipping = computed<OrderCsvRecord>(() => shippingExport.value[shippingIndex.value]);
+const selectedShipping = computed<ShippingCsv>(() => shippingExport.value[shippingIndex.value]);
 const formattedShipping = computed(() => {
   const r = selectedShipping.value;
   if (r)
-    return [`${r.firstName} ${r.lastName}`, r.address, r.addressTwo ? r.addressTwo : null, `${r.city}, ${r.state} ${r.postalCode}`]
+    return [`${r.FirstName} ${r.LastName}`, r.Address1, r.Address2 ? r.Address2 : null, `${r.City}, ${r.State} ${r.PostalCode}`]
       .filter(Boolean)
       .join('\n');
   else return null;
@@ -160,7 +160,7 @@ const formattedShipping = computed(() => {
 // Injections -------------------------------------------------------------------------
 
 // Watchers ---------------------------------------------------------------------------
-
+watch(groupedBySet, (newValue) => console.log(newValue));
 // Methods ----------------------------------------------------------------------------
 const handleKey = (event: KeyboardEvent) => {
   if (currentMode.value !== 'shipping') return;
@@ -170,12 +170,12 @@ const handleKey = (event: KeyboardEvent) => {
 };
 
 const handlePullSheetUpload = async (event: FileUploadSelectEvent) => {
-  const parsedPullSheet = await parsePullSheet(event.files[0]);
+  const parsedPullSheet = await parsePullSheetCsv(event.files[0]);
   pullSheet.value = parsedPullSheet;
 };
 
 const handleShippingExportUpload = async (event: FileUploadSelectEvent) => {
-  const parsedShippingExport = await parseShippingExport(event.files[0]);
+  const parsedShippingExport = await parseShippingCsv(event.files[0]);
   shippingExport.value = parsedShippingExport;
 };
 
@@ -199,146 +199,12 @@ const copyToClipboard = async () => {
   try {
     if (formattedShipping.value) {
       await navigator.clipboard.writeText(formattedShipping.value);
-      toast.add({ severity: 'success', summary: 'Copied', detail: 'Shipping address copied to clipboard.' });
+      toast.add({ severity: 'success', summary: 'Copied', detail: 'Shipping address copied to clipboard.', life: 3000 });
     }
   } catch (err) {
     console.error('Failed to copy:', err);
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to copy shipping address to clipboard.' });
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to copy shipping address to clipboard.', life: 3000 });
   }
-};
-
-const parsePullSheet = async (file: Blob): Promise<PullSheetCsvRecord[]> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    // Helper to parse CSV line respecting quotes
-    const parseCSVLine = (line: string): string[] => {
-      const regex = /"([^"]*)"|([^,]+)/g;
-      const result: string[] = [];
-      let match;
-
-      while ((match = regex.exec(line)) !== null) {
-        if (match[1] !== undefined) {
-          result.push(match[1]);
-        } else {
-          result.push(match[2]);
-        }
-      }
-
-      return result;
-    };
-
-    reader.onload = () => {
-      const result = reader.result as string;
-      const lines = result.trim().split(/\r?\n/);
-      const newPulls: PullSheetCsvRecord[] = [];
-
-      // Parse header
-      const header = parseCSVLine(lines[0]);
-      const expectedHeader = [
-        'Product Line',
-        'Product Name',
-        'Condition',
-        'Number',
-        'Set',
-        'Rarity',
-        'Quantity',
-        'Main Photo URL',
-        'Set Release Date',
-        'SkuId',
-        'Order Quantity'
-      ];
-
-      if (header.join(',') !== expectedHeader.join(',')) {
-        console.warn('Pull sheet not of correct type.');
-        return resolve([]);
-      }
-
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-
-        const splitLine = parseCSVLine(line);
-        if (splitLine[0] === 'Orders Contained in Pull Sheet:') continue;
-        if (splitLine.length < 11) continue;
-
-        const newPull: PullSheetCsvRecord = {
-          productLine: splitLine[0],
-          productName: splitLine[1],
-          condition: splitLine[2],
-          number: Number(splitLine[3]),
-          set: splitLine[4],
-          rarity: splitLine[5],
-          quantity: Number(splitLine[6]),
-          mainPhotoUrl: splitLine[7],
-          setReleaseDate: splitLine[8]
-        };
-
-        newPulls.push(newPull);
-      }
-
-      resolve(newPulls);
-    };
-
-    reader.onerror = (err) => reject(err);
-    reader.readAsText(file);
-  });
-};
-
-const parseShippingExport = async (file: Blob): Promise<OrderCsvRecord[]> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      const result = reader.result as string;
-      const lines = result.split(/\r?\n/);
-
-      if (
-        lines[0] !==
-        'Order #,FirstName,LastName,Address1,Address2,City,State,PostalCode,Country,Order Date,Product Weight,Shipping Method,Item Count,Value Of Products,Shipping Fee Paid,Tracking #,Carrier'
-      ) {
-        console.warn('File not of correct type.');
-        return;
-      }
-
-      const newOrders = [];
-
-      for (const line of lines) {
-        if (line.split(',')[0] === 'Order #') continue;
-
-        const splitLine = line.split(',').map((v) => v.replace(/^"|"$/g, ''));
-        if (splitLine.length < 17) continue;
-
-        const [year, month, day] = splitLine[9].split('-');
-        const newOrder: OrderCsvRecord = {
-          orderNumber: splitLine[0],
-          firstName: splitLine[1],
-          lastName: splitLine[2],
-          address: splitLine[3],
-          addressTwo: splitLine[4],
-          city: splitLine[5],
-          state: splitLine[6],
-          postalCode: splitLine[7],
-          country: splitLine[8],
-          orderDate: new Date(Date.UTC(+year, +month - 1, +day, 12, 0, 0)),
-          productWeight: +splitLine[10],
-          shippingMethod: splitLine[11],
-          itemCount: +splitLine[12],
-          productValue: +splitLine[13],
-          shippingFee: +splitLine[14],
-          trackingNumber: splitLine[15],
-          carrier: splitLine[16]
-        };
-
-        newOrders.push(newOrder);
-      }
-
-      resolve(newOrders);
-    };
-
-    reader.onerror = (err) => reject(err);
-    reader.readAsText(file);
-  });
 };
 
 const abbrCondition = (condition: Condition) => {
@@ -360,7 +226,11 @@ const abbrCondition = (condition: Condition) => {
 onMounted(async () => {
   window.addEventListener('keydown', handleKey);
 
-  // pullSheet.value = await parsePullSheet(await (await fetch('/public/TCGplayer_PullSheet_20250625_093438.csv')).blob());
+  // const response = await fetch('/TCGplayer_PullSheet_20250625_093438.csv');
+  // const blob = await response.blob();
+  // const file = new File([blob], 'PullSheet.csv', { type: blob.type });
+  // pullSheet.value = await parsePullSheetCsv(file);
+  // console.log(pullSheet.value);
 });
 
 onUnmounted(() => {
