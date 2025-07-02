@@ -23,6 +23,16 @@
         <i class="pi pi-box" />
         <span>Order Helper</span>
       </RouterLink>
+      <RouterLink
+        :class="[
+          'flex h-full items-center gap-2 transition-colors',
+          route.name === 'pricing' ? 'font-semibold text-purple-500' : 'text-gray-500 hover:text-gray-900'
+        ]"
+        :to="{ name: 'pricing' }"
+      >
+        <i class="pi pi-dollar" />
+        <span>Pricing</span>
+      </RouterLink>
     </div>
   </div>
   <div class="flex min-h-[calc(100vh-4rem)] flex-col px-4 lg:px-20 lg:py-10">

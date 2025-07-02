@@ -108,7 +108,7 @@
 <script setup lang="ts">
 import { parsePullSheetCsv, parseShippingCsv, type PullSheetCsv, type ShippingCsv } from '@/util/csv-parse';
 import { Button, FileUpload, useToast, type FileUploadSelectEvent } from 'primevue';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 // Types ------------------------------------------------------------------------------
 type HelperMode = 'upload' | 'pullSheet' | 'shipping';
