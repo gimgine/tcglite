@@ -25,7 +25,6 @@ export const parseShippingCsv = async (file: File): Promise<ShippingCsv[]> => {
     let aborted = false;
     Papa.parse(file, {
       preview: 1,
-      skipEmptyLines: true,
       complete: (results) => {
         const firstRow = results.data[0] as string[];
         if (firstRow.length !== 17) {
@@ -35,6 +34,7 @@ export const parseShippingCsv = async (file: File): Promise<ShippingCsv[]> => {
 
         Papa.parse<ShippingCsv>(file, {
           header: true,
+          skipEmptyLines: true,
           dynamicTyping: (header) => (header === 'PostalCode' ? false : true),
           complete(results) {
             resolve(results.data);
