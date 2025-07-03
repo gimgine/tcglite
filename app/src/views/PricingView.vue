@@ -1,6 +1,6 @@
 <template>
   <div class="grid grid-cols-12 gap-4">
-    <div class="col-span-12 rounded-md bg-white p-8 shadow lg:col-span-5">
+    <div class="col-span-12 rounded-md bg-white p-8 shadow lg:col-span-6">
       <span class="w-full text-sm text-gray-600">Pricing Options</span>
 
       <div class="mt-6 flex justify-between">
@@ -20,7 +20,7 @@
           </div>
         </div>
 
-        <Button label="Apply" icon="pi pi-pencil" :disabled="!pricing.length || !marketPriceMultiplier" @click="updateMarketPrice" />
+        <Button label="Apply" icon="pi pi-pencil" :disabled="!pricing.length || !marketPriceMultiplier" @click="updatePricing" />
       </div>
     </div>
     <div class="col-span-12 rounded-md bg-white p-8 shadow">
@@ -154,8 +154,7 @@ const handlePricingUpload = async (event: FileUploadSelectEvent) => {
   pricing.value = parsedPricing;
 };
 
-const updateMarketPrice = () => {
-  console.log(selectedRows.value);
+const updatePricing = () => {
   (selected.value ? selectedRows.value : pricing.value).forEach((product) => {
     if (product['TCG Market Price'] <= floorPrice.value) {
       product['TCG Marketplace Price'] = floorPrice.value;
@@ -166,6 +165,8 @@ const updateMarketPrice = () => {
 };
 
 const exportPricing = () => {
+  pricing.value.forEach((p) => (p['Add to Quantity'] = 0));
+
   const sanitized = pricing.value.map((row) => {
     const sanitizedRow: Record<string, string | number> = {};
 
