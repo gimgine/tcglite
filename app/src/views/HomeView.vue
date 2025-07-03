@@ -24,7 +24,7 @@
     </div>
 
     <div class="col-span-12">
-      <div class="rounded-md bg-white p-4 pt-0">
+      <div class="rounded-md bg-white p-4 pt-0 shadow">
         <DataTable
           v-model:expanded-rows="expandedRows"
           :value="orderStore.orders"
