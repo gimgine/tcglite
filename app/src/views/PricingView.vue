@@ -32,7 +32,7 @@
         filter-display="row"
         striped-rows
         paginator
-        :rows="10"
+        :rows="50"
         :rows-per-page-options="[10, 25, 50, 100, 500]"
         edit-mode="cell"
         @cell-edit-complete="(e) => (e.data[e.field] = e.newValue ? e.newValue : e.data[e.field])"
@@ -79,20 +79,24 @@
           <template #filter="{ filterModel, filterCallback }">
             <InputText v-model="filterModel.value" size="small" @input="filterCallback" />
           </template>
+          <template #body="slotProps">
+            {{ formatCurrency(slotProps.data['TCG Market Price']) }}
+          </template>
         </Column>
-        <Column field="TCG Direct Low" header="TCG Direct Low" sortable>
+        <Column field="TCG Low Price With Shipping" header="TCG Low w/ Shipping" sortable>
           <template #filter="{ filterModel, filterCallback }">
             <InputText v-model="filterModel.value" size="small" @input="filterCallback" />
           </template>
+          <template #body="slotProps">
+            {{ formatCurrency(slotProps.data['TCG Low Price With Shipping']) }}
+          </template>
         </Column>
-        <Column field="TCG Low Price With Shipping" header="TCG Low Price Shipping" sortable>
+        <Column field="TCG Low Price" header="TCG Low" sortable>
           <template #filter="{ filterModel, filterCallback }">
             <InputText v-model="filterModel.value" size="small" @input="filterCallback" />
           </template>
-        </Column>
-        <Column field="TCG Low Price" header="TCG Low Price" sortable>
-          <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" @input="filterCallback" />
+          <template #body="slotProps">
+            {{ formatCurrency(slotProps.data['TCG Low Price']) }}
           </template>
         </Column>
         <Column field="Total Quantity" header="Total Quantity" sortable>
@@ -100,38 +104,25 @@
             <InputText v-model="filterModel.value" size="small" @input="filterCallback" />
           </template>
         </Column>
-        <Column field="TCG Marketplace Price" header="TCG Marketplace Price" sortable>
+        <Column field="TCG Marketplace Price" header="Our Price" sortable>
           <template #filter="{ filterModel, filterCallback }">
             <InputText v-model="filterModel.value" size="small" @input="filterCallback" />
           </template>
           <template #editor="{ data, field }">
-            <InputText v-model="data[field]" type="number" size="small" autofocus fluid />
+            <InputNumber v-model="data[field]" size="small" autofocus fluid mode="currency" currency="USD" :step="0.01" />
+          </template>
+          <template #body="slotProps">
+            {{ formatCurrency(slotProps.data['TCG Marketplace Price']) }}
           </template>
         </Column>
       </DataTable>
     </div>
-    <!-- <div>
-    <span class="text-3xl font-semibold">Pricing</span>
-    <div class="my-4 flex flex-col items-center gap-8">
-      <div>
-        <FileUpload accept=".csv" mode="basic" @select="handlePricingUpload" />
-      </div>
-      <FloatLabel variant="on">
-        <InputNumber id="floorPrice" v-model="floorPrice" />
-        <label for="floorPrice">Floor Price</label>
-      </FloatLabel>
-      <FloatLabel variant="on">
-        <InputNumber id="marketPriceMultiplier" v-model="marketPriceMultiplier" />
-        <label for="marketPriceMultiplier">Market Price Multiplier</label>
-      </FloatLabel>
-      <Button class="ml-auto" label="Update Pricing" :disabled="!pricing.length || !floorPrice || !marketPriceMultiplier" @click="updatePricing" />
-    </div>
-  </div> -->
   </div>
 </template>
 
 <script setup lang="ts">
 import { parsePricingCsv, type PricingCsv } from '@/util/csv-parse';
+import { formatCurrency } from '@/util/functions';
 import { FilterMatchMode } from '@primevue/core/api';
 import Papa from 'papaparse';
 import { Button, Checkbox, Column, DataTable, FileUpload, FloatLabel, InputNumber, InputText, type FileUploadSelectEvent } from 'primevue';
@@ -148,7 +139,6 @@ const filters = ref({
   Rarity: { value: null, matchMode: FilterMatchMode.CONTAINS },
   Condition: { value: null, matchMode: FilterMatchMode.CONTAINS },
   'TCG Market Price': { value: null, matchMode: FilterMatchMode.CONTAINS },
-  'TCG Direct Low': { value: null, matchMode: FilterMatchMode.CONTAINS },
   'TCG Low Price With Shipping': { value: null, matchMode: FilterMatchMode.CONTAINS },
   'TCG Low Price': { value: null, matchMode: FilterMatchMode.CONTAINS },
   'Total Quantity': { value: null, matchMode: FilterMatchMode.CONTAINS },
