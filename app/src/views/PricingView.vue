@@ -1,21 +1,26 @@
 <template>
   <div class="grid grid-cols-12 gap-4">
-    <div class="col-span-12 rounded-md bg-white p-8 shadow lg:col-span-4">
-      <span class="w-full text-sm text-gray-600">Market Price</span>
-      <Button class="float-right" label="Update" size="small" :disabled="!pricing.length || !marketPriceMultiplier" @click="updateMarketPrice" />
-      <div class="mt-6 flex gap-2">
-        <FloatLabel variant="on">
-          <InputText id="floorPrice" v-model="floorPrice" size="small" type="number" fluid />
-          <label for="floorPrice">Floor Price</label>
-        </FloatLabel>
-        <FloatLabel variant="on">
-          <InputText id="marketPriceMultiplier" v-model="marketPriceMultiplier" size="small" type="number" fluid />
-          <label for="marketPriceMultiplier">Multiplier</label>
-        </FloatLabel>
-        <div class="flex items-center gap-1">
-          <Checkbox v-model="selected" input-id="selected" size="small" binary />
-          <label for="selected" class="text-xs text-gray-600">Selected</label>
+    <div class="col-span-12 rounded-md bg-white p-8 shadow lg:col-span-5">
+      <span class="w-full text-sm text-gray-600">Pricing Options</span>
+
+      <div class="mt-6 flex justify-between">
+        <div class="flex gap-2">
+          <FloatLabel variant="on">
+            <InputNumber id="floorPrice" v-model="floorPrice" type="number" fluid currency="USD" mode="currency" :step="0.01" />
+            <label for="floorPrice">Floor Price</label>
+          </FloatLabel>
+
+          <FloatLabel variant="on">
+            <InputNumber id="marketPriceMultiplier" v-model="marketPriceMultiplier" type="number" fluid :step="0.1" :min-fraction-digits="1" />
+            <label for="marketPriceMultiplier">Multiplier</label>
+          </FloatLabel>
+          <div class="flex items-center gap-1">
+            <Checkbox v-model="selected" input-id="selected" binary />
+            <label for="selected" class="ml-1 text-sm text-gray-600">Selected Only</label>
+          </div>
         </div>
+
+        <Button label="Apply" icon="pi pi-pencil" :disabled="!pricing.length || !marketPriceMultiplier" @click="updateMarketPrice" />
       </div>
     </div>
     <div class="col-span-12 rounded-md bg-white p-8 shadow">
@@ -127,13 +132,12 @@
 
 <script setup lang="ts">
 import { parsePricingCsv, type PricingCsv } from '@/util/csv-parse';
-import Papa from 'papaparse';
-import { FileUpload, type FileUploadSelectEvent, DataTable, Column, InputText, FloatLabel, Button, Checkbox } from 'primevue';
-import { ref } from 'vue';
 import { FilterMatchMode } from '@primevue/core/api';
-
+import Papa from 'papaparse';
+import { Button, Checkbox, Column, DataTable, FileUpload, FloatLabel, InputNumber, InputText, type FileUploadSelectEvent } from 'primevue';
+import { ref } from 'vue';
 const floorPrice = ref(0.2);
-const marketPriceMultiplier = ref(1);
+const marketPriceMultiplier = ref(1.0);
 const selected = ref(false);
 
 const filters = ref({
