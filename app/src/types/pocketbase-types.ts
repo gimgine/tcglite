@@ -11,8 +11,8 @@ export enum Collections {
   Mfas = '_mfas',
   Otps = '_otps',
   Superusers = '_superusers',
+  Expenses = 'expenses',
   Orders = 'orders',
-  Shipping = 'shipping',
   Users = 'users'
 }
 
@@ -88,6 +88,16 @@ export type SuperusersRecord = {
   verified?: boolean;
 };
 
+export type ExpensesRecord = {
+  created?: IsoDateString;
+  id: string;
+  name?: string;
+  price?: number;
+  quantity?: string;
+  updated?: IsoDateString;
+  url?: string;
+};
+
 export type OrdersRecord = {
   address: string;
   addressTwo?: string;
@@ -118,15 +128,6 @@ export type OrdersRecord = {
   vendorFee?: number;
 };
 
-export type ShippingRecord = {
-  color?: string;
-  cost?: number;
-  created?: IsoDateString;
-  id: string;
-  name?: string;
-  updated?: IsoDateString;
-};
-
 export type UsersRecord = {
   avatar?: string;
   created?: IsoDateString;
@@ -146,8 +147,8 @@ export type ExternalauthsResponse<Texpand = unknown> = Required<ExternalauthsRec
 export type MfasResponse<Texpand = unknown> = Required<MfasRecord> & BaseSystemFields<Texpand>;
 export type OtpsResponse<Texpand = unknown> = Required<OtpsRecord> & BaseSystemFields<Texpand>;
 export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> & AuthSystemFields<Texpand>;
+export type ExpensesResponse<Texpand = unknown> = Required<ExpensesRecord> & BaseSystemFields<Texpand>;
 export type OrdersResponse<Texpand = unknown> = Required<OrdersRecord> & BaseSystemFields<Texpand>;
-export type ShippingResponse<Texpand = unknown> = Required<ShippingRecord> & BaseSystemFields<Texpand>;
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>;
 
 // Types containing all Records and Responses, useful for creating typing helper functions
@@ -158,8 +159,8 @@ export type CollectionRecords = {
   _mfas: MfasRecord;
   _otps: OtpsRecord;
   _superusers: SuperusersRecord;
+  expenses: ExpensesRecord;
   orders: OrdersRecord;
-  shipping: ShippingRecord;
   users: UsersRecord;
 };
 
@@ -169,8 +170,8 @@ export type CollectionResponses = {
   _mfas: MfasResponse;
   _otps: OtpsResponse;
   _superusers: SuperusersResponse;
+  expenses: ExpensesResponse;
   orders: OrdersResponse;
-  shipping: ShippingResponse;
   users: UsersResponse;
 };
 
@@ -183,7 +184,7 @@ export type TypedPocketBase = PocketBase & {
   collection(idOrName: '_mfas'): RecordService<MfasResponse>;
   collection(idOrName: '_otps'): RecordService<OtpsResponse>;
   collection(idOrName: '_superusers'): RecordService<SuperusersResponse>;
+  collection(idOrName: 'expenses'): RecordService<ExpensesResponse>;
   collection(idOrName: 'orders'): RecordService<OrdersResponse>;
-  collection(idOrName: 'shipping'): RecordService<ShippingResponse>;
   collection(idOrName: 'users'): RecordService<UsersResponse>;
 };
