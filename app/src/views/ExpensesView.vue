@@ -1,36 +1,42 @@
 <template>
-  <div class="w-full rounded-md bg-white p-8 shadow">
-    <DataTable
-      :value="expenses"
-      removable-sort
-      filter-display="menu"
-      data-key="id"
-      striped-rows
-      paginator
-      :rows="10"
-      :rows-per-page-options="[10, 25, 50, 100, 500]"
-    >
-      <template #header>
-        <div class="flex items-center justify-between">
-          <div class="flex flex-col gap-4 md:flex-row md:items-center">
-            <span class="text-lg">Expenses</span>
+  <div class="grid grid-cols-12 gap-4">
+    <div class="col-span-12 md:col-span-3">
+      <StatIndicator label="Total Expenses" :details="totalExpenses()" is-currency />
+    </div>
+
+    <div class="col-span-12 w-full rounded-md bg-white p-8 shadow">
+      <DataTable
+        :value="expenses"
+        removable-sort
+        filter-display="menu"
+        data-key="id"
+        striped-rows
+        paginator
+        :rows="10"
+        :rows-per-page-options="[10, 25, 50, 100, 500]"
+      >
+        <template #header>
+          <div class="flex items-center justify-between">
+            <div class="flex flex-col gap-4 md:flex-row md:items-center">
+              <span class="text-lg">Expenses</span>
+            </div>
+            <Button label="Add" icon="pi pi-plus" @click="isAddModalVisible = true" />
           </div>
-          <Button label="Add" icon="pi pi-plus" @click="isAddModalVisible = true" />
-        </div>
-      </template>
-      <Column field="quantity" header="Quantity" />
-      <Column field="name" header="Name" />
-      <Column field="price" header="Price">
-        <template #body="slotProps">
-          {{ formatCurrency(slotProps.data.price) }}
         </template>
-      </Column>
-      <Column field="url" header="URL">
-        <template #body="slotProps">
-          <a class="text-blue-500" :href="slotProps.data.url" target="_blank">{{ slotProps.data.url }}</a>
-        </template>
-      </Column>
-    </DataTable>
+        <Column field="quantity" header="Quantity" />
+        <Column field="name" header="Name" />
+        <Column field="price" header="Price">
+          <template #body="slotProps">
+            {{ formatCurrency(slotProps.data.price) }}
+          </template>
+        </Column>
+        <Column field="url" header="URL">
+          <template #body="slotProps">
+            <a class="text-blue-500" :href="slotProps.data.url" target="_blank">{{ slotProps.data.url }}</a>
+          </template>
+        </Column>
+      </DataTable>
+    </div>
   </div>
 
   <Dialog v-model:visible="isAddModalVisible" modal header="Add Expense">
@@ -71,6 +77,7 @@
 </template>
 
 <script setup lang="ts">
+import StatIndicator from '@/components/StatIndicator.vue';
 import { Collections, type ExpensesRecord } from '@/types/pocketbase-types';
 import { formatCurrency } from '@/util/functions';
 import pb from '@/util/pocketbase';
@@ -145,6 +152,10 @@ const handleSubmit = async (event: FormSubmitEvent) => {
   event.reset();
   isSubmitLoading.value = false;
   isAddModalVisible.value = false;
+};
+
+const totalExpenses = () => {
+  return expenses.value.reduce((sum, order) => sum + (order.price ?? 0), 0);
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------
