@@ -1,6 +1,6 @@
 <template>
   <div class="grid grid-cols-12 gap-4">
-    <div class="col-span-12 rounded-md bg-white p-8 shadow">
+    <div class="col-span-12 rounded-md bg-white p-6 shadow">
       <span class="text-sm text-gray-600">Pricing Options</span>
       <Button
         v-tooltip.top="'ManaBox Converter'"
@@ -10,7 +10,7 @@
         severity="secondary"
         @click="navigateManaBoxConverter"
       />
-      <div class="mt-8 flex justify-between">
+      <div class="mt-6 flex justify-between">
         <div class="flex gap-2">
           <FloatLabel variant="on">
             <InputNumber id="floorPrice" v-model="floorPrice" type="number" fluid currency="USD" mode="currency" :step="0.01" />

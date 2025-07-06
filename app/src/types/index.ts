@@ -1,5 +1,5 @@
-export interface ShippingCsvRecord {
-  orderNumber: string;
+export interface OrderRequest {
+  id: string;
   firstName: string;
   lastName: string;
   address: string;
@@ -26,14 +26,12 @@ export interface ShippingCsvRecord {
   feePercentage?: number;
 }
 
-export interface PullSheetCsvRecord {
-  productLine: string;
-  productName: string;
+export interface CardRequest {
+  name: string;
   condition: string;
-  number: number;
+  number: string;
   set: string;
   rarity: string;
+  order: string;
   quantity: number;
-  mainPhotoUrl: string;
-  setReleaseDate: string;
 }

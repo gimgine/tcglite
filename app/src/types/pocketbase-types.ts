@@ -11,6 +11,7 @@ export enum Collections {
   Mfas = '_mfas',
   Otps = '_otps',
   Superusers = '_superusers',
+  Cards = 'cards',
   Expenses = 'expenses',
   Orders = 'orders',
   Users = 'users'
@@ -88,6 +89,19 @@ export type SuperusersRecord = {
   verified?: boolean;
 };
 
+export type CardsRecord = {
+  condition?: string;
+  created?: IsoDateString;
+  id: string;
+  name?: string;
+  number?: string;
+  order?: RecordIdString;
+  quantity: number;
+  rarity?: string;
+  set?: string;
+  updated?: IsoDateString;
+};
+
 export type ExpensesRecord = {
   created?: IsoDateString;
   id: string;
@@ -112,7 +126,6 @@ export type OrdersRecord = {
   itemCount: number;
   lastName: string;
   orderDate: IsoDateString;
-  orderNumber: string;
   postalCode: string;
   processingFee?: number;
   productValue: number;
@@ -147,6 +160,7 @@ export type ExternalauthsResponse<Texpand = unknown> = Required<ExternalauthsRec
 export type MfasResponse<Texpand = unknown> = Required<MfasRecord> & BaseSystemFields<Texpand>;
 export type OtpsResponse<Texpand = unknown> = Required<OtpsRecord> & BaseSystemFields<Texpand>;
 export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> & AuthSystemFields<Texpand>;
+export type CardsResponse<Texpand = unknown> = Required<CardsRecord> & BaseSystemFields<Texpand>;
 export type ExpensesResponse<Texpand = unknown> = Required<ExpensesRecord> & BaseSystemFields<Texpand>;
 export type OrdersResponse<Texpand = unknown> = Required<OrdersRecord> & BaseSystemFields<Texpand>;
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>;
@@ -159,6 +173,7 @@ export type CollectionRecords = {
   _mfas: MfasRecord;
   _otps: OtpsRecord;
   _superusers: SuperusersRecord;
+  cards: CardsRecord;
   expenses: ExpensesRecord;
   orders: OrdersRecord;
   users: UsersRecord;
@@ -170,6 +185,7 @@ export type CollectionResponses = {
   _mfas: MfasResponse;
   _otps: OtpsResponse;
   _superusers: SuperusersResponse;
+  cards: CardsResponse;
   expenses: ExpensesResponse;
   orders: OrdersResponse;
   users: UsersResponse;
@@ -184,6 +200,7 @@ export type TypedPocketBase = PocketBase & {
   collection(idOrName: '_mfas'): RecordService<MfasResponse>;
   collection(idOrName: '_otps'): RecordService<OtpsResponse>;
   collection(idOrName: '_superusers'): RecordService<SuperusersResponse>;
+  collection(idOrName: 'cards'): RecordService<CardsResponse>;
   collection(idOrName: 'expenses'): RecordService<ExpensesResponse>;
   collection(idOrName: 'orders'): RecordService<OrdersResponse>;
   collection(idOrName: 'users'): RecordService<UsersResponse>;

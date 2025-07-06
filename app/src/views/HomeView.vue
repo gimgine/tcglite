@@ -32,7 +32,7 @@
           :sort-order="-1"
           removable-sort
           filter-display="menu"
-          data-key="orderNumber"
+          data-key="id"
           striped-rows
           paginator
           :rows="10"
@@ -43,13 +43,28 @@
               <div class="flex flex-col gap-4 md:flex-row md:items-center">
                 <span class="text-lg">Order Profits</span>
               </div>
-              <div>
-                <FileUpload mode="basic" choose-label="Shipping CSV" choose-icon="pi pi-file-arrow-up" accept=".csv" auto @select="handleCsvClick" />
+              <div class="flex gap-2">
+                <FileUpload
+                  mode="basic"
+                  choose-label="Pull Sheet"
+                  choose-icon="pi pi-file-arrow-up"
+                  accept=".csv"
+                  auto
+                  @select="handlePullSheetCsvClick"
+                />
+                <FileUpload
+                  mode="basic"
+                  choose-label="Shipping Export"
+                  choose-icon="pi pi-file-arrow-up"
+                  accept=".csv"
+                  auto
+                  @select="handleCsvClick"
+                />
               </div>
             </div>
           </template>
           <Column expander />
-          <Column field="orderNumber" header="Order Number" sortable />
+          <Column field="id" header="Order Number" sortable />
           <Column field="firstName" header="First Name" sortable />
           <Column field="lastName" header="Last Name" sortable />
           <Column field="orderDate" header="Order Date" sortable>
@@ -94,7 +109,7 @@
 
           <template #expansion="slotProps">
             <div>
-              <span>{{ slotProps.data.orderNumber }}</span>
+              <span>{{ slotProps.data.id }}</span>
             </div>
           </template>
         </DataTable>
@@ -105,6 +120,7 @@
 
 <script setup lang="ts">
 import StatIndicator from '@/components/StatIndicator.vue';
+import { CardService } from '@/service/card-service';
 import { OrderService } from '@/service/order-service';
 import { useOrderStore } from '@/store/order-store';
 import { type OrdersRecord } from '@/types/pocketbase-types';
@@ -120,6 +136,8 @@ import { ref } from 'vue';
 // Variables --------------------------------------------------------------------------
 const orderService = new OrderService();
 const orderStore = useOrderStore();
+
+const cardService = new CardService();
 
 // Reactive Variables -----------------------------------------------------------------
 const toast = useToast();
@@ -151,7 +169,28 @@ const handleCsvClick = async (event: FileUploadSelectEvent) => {
     .catch((error: Error) => {
       toast.add({
         severity: 'error',
-        summary: 'No Orders Found',
+        summary: 'Error',
+        detail: error.message,
+        life: 3000
+      });
+    });
+};
+
+const handlePullSheetCsvClick = async (event: FileUploadSelectEvent) => {
+  cardService
+    .create({ file: event.files[0] })
+    .then(() => {
+      toast.add({
+        severity: 'success',
+        summary: 'Cards Added',
+        detail: `New cards were added.`,
+        life: 3000
+      });
+    })
+    .catch((error: Error) => {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
         detail: error.message,
         life: 3000
       });

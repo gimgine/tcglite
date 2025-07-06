@@ -53,14 +53,14 @@ export interface PullSheetCsv {
   'Product Line': string;
   'Product Name': string;
   Condition: string;
-  Number: number;
+  Number: string;
   Set: string;
   Rarity: string;
   Quantity: number;
   'Main Photo URL': string;
   'Set Release Date': string;
   SkuId: number;
-  'Order Quantity': number;
+  'Order Quantity': string;
 }
 
 export const parsePullSheetCsv = async (file: File): Promise<PullSheetCsv[]> => {

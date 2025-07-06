@@ -1,4 +1,4 @@
-import type { ShippingCsvRecord } from '@/types';
+import type { OrderRequest } from '@/types';
 import { Collections } from '@/types/pocketbase-types';
 import { parseShippingCsv, type ShippingCsv } from '@/util/csv-parse';
 import pb from '@/util/pocketbase';
@@ -15,18 +15,18 @@ export class OrderService {
     if ((!file && !orders) || (file && orders)) return;
 
     const csvData = config.file ? await parseShippingCsv(config.file) : config.orders!;
-    const newOrders = this.convertCsv(csvData);
+    const orderRequests = this.createRequestsFromCsv(csvData);
 
-    const existingOrderNumbers = new Set((await pb.collection(Collections.Orders).getFullList()).map((o) => o.orderNumber));
-    const filteredNewOrders = newOrders.filter((order) => !existingOrderNumbers.has(order.orderNumber));
+    const existingOrderNumbers = new Set((await pb.collection(Collections.Orders).getFullList()).map((o) => o.id));
+    const newOrderRequests = orderRequests.filter((order) => !existingOrderNumbers.has(order.id));
 
-    if (!filteredNewOrders.length) {
+    if (!newOrderRequests.length) {
       throw new Error('No new orders were found in the CSV.');
     }
 
     const batch = pb.createBatch();
 
-    filteredNewOrders.forEach((order) => {
+    newOrderRequests.forEach((order) => {
       batch.collection(Collections.Orders).create(order);
     });
 
@@ -37,13 +37,13 @@ export class OrderService {
     return this.SHIPPING_METHODS.find((sm) => sm.cost === shippingCost);
   };
 
-  private convertCsv = (csv: ShippingCsv[]) => {
-    const newOrders: ShippingCsvRecord[] = [];
+  private createRequestsFromCsv = (csv: ShippingCsv[]) => {
+    const orderRequests: OrderRequest[] = [];
 
     for (const row of csv) {
       const [year, month, day] = (row['Order Date'] ?? '0000-00-00').split('-');
-      const newOrder: ShippingCsvRecord = {
-        orderNumber: row['Order #'],
+      const newOrder: OrderRequest = {
+        id: row['Order #'],
         firstName: row.FirstName,
         lastName: row.LastName,
         address: row.Address1,
@@ -64,17 +64,17 @@ export class OrderService {
 
       this.setOrderFinancial(newOrder);
 
-      newOrders.push(newOrder);
+      orderRequests.push(newOrder);
     }
 
-    return newOrders;
+    return orderRequests;
   };
 
-  determineDefaultShippingCost = (totalPrice: number) => {
+  private determineDefaultShippingCost = (totalPrice: number) => {
     return totalPrice >= this.TRACKING_THRESHOLD ? this.TRACKING.cost : this.ENVELOPE.cost;
   };
 
-  setOrderFinancial = (order: ShippingCsvRecord) => {
+  private setOrderFinancial = (order: OrderRequest) => {
     const totalPrice = order.productValue + order.shippingFee;
     const vendorFee = totalPrice * 0.1025;
     const processingFee = totalPrice * 0.025 + 0.3;
