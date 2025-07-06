@@ -1,6 +1,7 @@
 import type { CardRequest } from '@/types';
-import { Collections } from '@/types/pocketbase-types';
+import { Collections, type CardsRecord } from '@/types/pocketbase-types';
 import { parsePullSheetCsv, type PullSheetCsv } from '@/util/csv-parse';
+import { chunkArray } from '@/util/functions';
 import pb from '@/util/pocketbase';
 
 export class CardService {
@@ -12,9 +13,16 @@ export class CardService {
     const cardRequests = this.createRequestsFromCsv(csvData);
 
     const orderIds = Array.from(new Set(cardRequests.map((c) => c.order))).filter(Boolean);
-    const res = orderIds.length
-      ? await pb.collection(Collections.Cards).getFullList({ filter: orderIds.map((id) => `order="${id}"`).join(' || ') })
-      : [];
+
+    const orderIdChunks = chunkArray(orderIds, 75);
+
+    const res: CardsRecord[] = [];
+
+    for (const chunk of orderIdChunks) {
+      const filter = chunk.map((id) => `order="${id}"`).join(' || ');
+      const chunkRes = await pb.collection(Collections.Cards).getFullList({ filter });
+      res.push(...chunkRes);
+    }
 
     const existingKeys = new Set(res.map((rc) => `${rc.order}||${rc.condition}||${rc.set}||${rc.number}||${rc.name}`));
 
