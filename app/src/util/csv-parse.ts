@@ -119,7 +119,7 @@ export const parsePricingCsv = async (file: File): Promise<PricingCsv[]> => {
       preview: 1,
       complete: (results) => {
         const firstRow = results.data[0] as string[];
-        if (firstRow.length !== 16) {
+        if (firstRow.length !== 16 && firstRow.length !== 3) {
           aborted = true;
           return;
         }

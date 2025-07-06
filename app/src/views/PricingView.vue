@@ -1,9 +1,16 @@
 <template>
   <div class="grid grid-cols-12 gap-4">
-    <div class="col-span-12 rounded-md bg-white p-8 shadow lg:col-span-6">
-      <span class="w-full text-sm text-gray-600">Pricing Options</span>
-
-      <div class="mt-6 flex justify-between">
+    <div class="col-span-12 rounded-md bg-white p-8 shadow">
+      <span class="text-sm text-gray-600">Pricing Options</span>
+      <Button
+        v-tooltip.top="'ManaBox Converter'"
+        icon="pi pi-wrench"
+        class="float-right"
+        size="small"
+        severity="secondary"
+        @click="navigateManaBoxConverter"
+      />
+      <div class="mt-8 flex justify-between">
         <div class="flex gap-2">
           <FloatLabel variant="on">
             <InputNumber id="floorPrice" v-model="floorPrice" type="number" fluid currency="USD" mode="currency" :step="0.01" />
@@ -32,7 +39,7 @@
         filter-display="row"
         striped-rows
         paginator
-        :rows="50"
+        :rows="10"
         :rows-per-page-options="[10, 25, 50, 100, 500]"
         edit-mode="cell"
         @cell-edit-complete="(e) => (e.data[e.field] = e.newValue ? e.newValue : e.data[e.field])"
@@ -127,6 +134,15 @@ import { FilterMatchMode } from '@primevue/core/api';
 import Papa from 'papaparse';
 import { Button, Checkbox, Column, DataTable, FileUpload, FloatLabel, InputNumber, InputText, type FileUploadSelectEvent } from 'primevue';
 import { ref } from 'vue';
+// Types ------------------------------------------------------------------------------
+
+// Component Info (props/emits) -------------------------------------------------------
+
+// Template Refs ----------------------------------------------------------------------
+
+// Variables --------------------------------------------------------------------------
+
+// Reactive Variables -----------------------------------------------------------------
 const floorPrice = ref(0.2);
 const marketPriceMultiplier = ref(1.0);
 const selected = ref(false);
@@ -149,6 +165,15 @@ const pricing = ref<PricingCsv[]>([]);
 
 const selectedRows = ref<PricingCsv[]>([]);
 
+// Provided ---------------------------------------------------------------------------
+
+// Exposed ----------------------------------------------------------------------------
+
+// Injections -------------------------------------------------------------------------
+
+// Watchers ---------------------------------------------------------------------------
+
+// Methods ----------------------------------------------------------------------------
 const handlePricingUpload = async (event: FileUploadSelectEvent) => {
   const parsedPricing = await parsePricingCsv(event.files[0]);
   pricing.value = parsedPricing;
@@ -156,10 +181,12 @@ const handlePricingUpload = async (event: FileUploadSelectEvent) => {
 
 const updatePricing = () => {
   (selected.value ? selectedRows.value : pricing.value).forEach((product) => {
-    if (product['TCG Market Price'] <= floorPrice.value) {
+    const marketPrice = product['TCG Market Price'] ?? product['TCG Marketplace Price'];
+
+    if (marketPrice <= floorPrice.value) {
       product['TCG Marketplace Price'] = floorPrice.value;
     } else {
-      product['TCG Marketplace Price'] = +(product['TCG Market Price'] * marketPriceMultiplier.value).toFixed(2);
+      product['TCG Marketplace Price'] = +(marketPrice * marketPriceMultiplier.value).toFixed(2);
     }
   });
 };
@@ -190,4 +217,10 @@ const exportPricing = () => {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 };
+
+const navigateManaBoxConverter = () => {
+  window.open('https://mtg.yourfriendshouse.co/', '_blank');
+};
+
+// Lifecycle Hooks --------------------------------------------------------------------
 </script>

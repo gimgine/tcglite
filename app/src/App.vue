@@ -20,6 +20,7 @@
         ]"
         :to="{ name: 'expenses' }"
       >
+        <i class="pi pi-credit-card" />
         <span>Expenses</span>
       </RouterLink>
       <RouterLink

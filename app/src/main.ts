@@ -1,5 +1,6 @@
 import Aura from '@primeuix/themes/aura';
 import { PrimeVue } from '@primevue/core';
+import Tooltip from 'primevue/tooltip';
 import { createPinia } from 'pinia';
 import { ToastService } from 'primevue';
 import { createApp } from 'vue';
@@ -15,5 +16,6 @@ const pinia = createPinia();
 app.use(router);
 app.use(pinia);
 app.use(PrimeVue, { theme: { preset: Aura, options: { darkModeSelector: false } } });
+app.directive('tooltip', Tooltip);
 app.use(ToastService);
 app.mount('#app');
