@@ -10,24 +10,32 @@
         severity="secondary"
         @click="navigateManaBoxConverter"
       />
-      <div class="mt-6 flex justify-between">
+      <Message size="small" severity="secondary" class="my-1 w-fit">
+        Use <code>l</code> for the low price and <code>m</code> for the market price in the formula.
+      </Message>
+      <div class="mt-3 flex items-end justify-between">
         <div class="flex gap-2">
           <FloatLabel variant="on">
             <InputNumber id="floorPrice" v-model="floorPrice" type="number" fluid currency="USD" mode="currency" :step="0.01" />
             <label for="floorPrice">Floor Price</label>
           </FloatLabel>
-
-          <FloatLabel variant="on">
-            <InputNumber id="marketPriceMultiplier" v-model="marketPriceMultiplier" type="number" fluid :step="0.1" :min-fraction-digits="1" />
-            <label for="marketPriceMultiplier">Multiplier</label>
-          </FloatLabel>
+          <div class="flex flex-col">
+            <FloatLabel variant="on">
+              <label for="formula">Formula</label>
+              <InputText id="formula" v-model="formula" />
+            </FloatLabel>
+          </div>
+          <div class="flex items-center gap-1">
+            <Checkbox v-model="maxMarket" input-id="maxMarket" binary />
+            <label for="maxMarket" class="ml-1 text-sm text-gray-600">Max Market</label>
+          </div>
           <div class="flex items-center gap-1">
             <Checkbox v-model="selected" input-id="selected" binary />
             <label for="selected" class="ml-1 text-sm text-gray-600">Selected Only</label>
           </div>
         </div>
 
-        <Button label="Apply" icon="pi pi-pencil" :disabled="!pricing.length || !marketPriceMultiplier" @click="updatePricing" />
+        <Button label="Apply" icon="pi pi-pencil" :disabled="!pricing.length || !formula" @click="updatePricing" />
       </div>
     </div>
     <div class="col-span-12 rounded-md bg-white p-8 shadow">
@@ -54,37 +62,37 @@
         <Column selection-mode="multiple" header-style="width: 3rem"></Column>
         <Column field="TCGplayer Id" header="TCGPlayer ID" sortable>
           <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" type="number" size="small" @input="filterCallback" />
+            <InputText v-model="filterModel.value" type="number" size="small" fluid @input="filterCallback" />
           </template>
         </Column>
         <Column field="Set Name" header="Set Name" sortable>
           <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" @input="filterCallback" />
+            <InputText v-model="filterModel.value" size="small" fluid @input="filterCallback" />
           </template>
         </Column>
         <Column field="Product Name" header="Product Name" sortable>
           <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" @input="filterCallback" />
+            <InputText v-model="filterModel.value" size="small" fluid @input="filterCallback" />
           </template>
         </Column>
         <Column field="Number" header="Number" sortable>
           <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" @input="filterCallback" />
+            <InputText v-model="filterModel.value" size="small" fluid @input="filterCallback" />
           </template>
         </Column>
         <Column field="Rarity" header="Rarity" sortable>
           <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" @input="filterCallback" />
+            <InputText v-model="filterModel.value" size="small" fluid @input="filterCallback" />
           </template>
         </Column>
         <Column field="Condition" header="Condition" sortable>
           <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" @input="filterCallback" />
+            <InputText v-model="filterModel.value" size="small" fluid @input="filterCallback" />
           </template>
         </Column>
         <Column field="TCG Market Price" header="TCG Market Price" sortable>
           <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" @input="filterCallback" />
+            <InputText v-model="filterModel.value" size="small" fluid @input="filterCallback" />
           </template>
           <template #body="slotProps">
             {{ formatCurrency(slotProps.data['TCG Market Price']) }}
@@ -92,7 +100,7 @@
         </Column>
         <Column field="TCG Low Price With Shipping" header="TCG Low w/ Shipping" sortable>
           <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" @input="filterCallback" />
+            <InputText v-model="filterModel.value" size="small" fluid @input="filterCallback" />
           </template>
           <template #body="slotProps">
             {{ formatCurrency(slotProps.data['TCG Low Price With Shipping']) }}
@@ -100,7 +108,7 @@
         </Column>
         <Column field="TCG Low Price" header="TCG Low" sortable>
           <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" @input="filterCallback" />
+            <InputText v-model="filterModel.value" size="small" fluid @input="filterCallback" />
           </template>
           <template #body="slotProps">
             {{ formatCurrency(slotProps.data['TCG Low Price']) }}
@@ -108,12 +116,12 @@
         </Column>
         <Column field="Total Quantity" header="Total Quantity" sortable>
           <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" @input="filterCallback" />
+            <InputText v-model="filterModel.value" size="small" fluid @input="filterCallback" />
           </template>
         </Column>
         <Column field="TCG Marketplace Price" header="Our Price" sortable>
           <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" @input="filterCallback" />
+            <InputText v-model="filterModel.value" size="small" fluid @input="filterCallback" />
           </template>
           <template #editor="{ data, field }">
             <InputNumber v-model="data[field]" size="small" autofocus fluid mode="currency" currency="USD" :step="0.01" />
@@ -132,7 +140,19 @@ import { parsePricingCsv, type PricingCsv } from '@/util/csv-parse';
 import { formatCurrency } from '@/util/functions';
 import { FilterMatchMode } from '@primevue/core/api';
 import Papa from 'papaparse';
-import { Button, Checkbox, Column, DataTable, FileUpload, FloatLabel, InputNumber, InputText, type FileUploadSelectEvent } from 'primevue';
+import {
+  Button,
+  Checkbox,
+  Column,
+  DataTable,
+  FileUpload,
+  FloatLabel,
+  InputNumber,
+  InputText,
+  Message,
+  useToast,
+  type FileUploadSelectEvent
+} from 'primevue';
 import { ref } from 'vue';
 // Types ------------------------------------------------------------------------------
 
@@ -143,8 +163,11 @@ import { ref } from 'vue';
 // Variables --------------------------------------------------------------------------
 
 // Reactive Variables -----------------------------------------------------------------
+const toast = useToast();
+
+const formula = ref('');
 const floorPrice = ref(0.2);
-const marketPriceMultiplier = ref(1.0);
+const maxMarket = ref(false);
 const selected = ref(false);
 
 const filters = ref({
@@ -180,15 +203,47 @@ const handlePricingUpload = async (event: FileUploadSelectEvent) => {
 };
 
 const updatePricing = () => {
-  (selected.value ? selectedRows.value : pricing.value).forEach((product) => {
-    const marketPrice = product['TCG Market Price'] ?? product['TCG Marketplace Price'];
-
-    if (marketPrice <= floorPrice.value) {
-      product['TCG Marketplace Price'] = floorPrice.value;
-    } else {
-      product['TCG Marketplace Price'] = +(marketPrice * marketPriceMultiplier.value).toFixed(2);
+  if (!/^[0-9lm+\-*/().]+$/.test(formula.value))
+    return toast.add({
+      severity: 'error',
+      summary: 'Invalid Formula',
+      detail: 'The formula only allows numbers, l, m, and basic math symbols.',
+      life: 3000
+    });
+  try {
+    eval(formula.value.replace('l', '1').replace('m', '1'));
+  } catch (e) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error Evaluating Formula',
+      detail: e,
+      life: 3000
+    });
+    return;
+  }
+  const rows = selected.value ? selectedRows.value : pricing.value;
+  const errorRows: PricingCsv[] = [];
+  rows.forEach((product) => {
+    try {
+      const value = eval(formula.value.replace('l', `${product['TCG Low Price']}`).replace('m', `${product['TCG Market Price']}`));
+      product['TCG Marketplace Price'] = Math.max(floorPrice.value, maxMarket.value ? Math.min(product['TCG Market Price'], value) : value);
+    } catch {
+      errorRows.push(product);
     }
   });
+  if (rows.length - errorRows.length > 0)
+    toast.add({
+      severity: 'success',
+      summary: 'Updated Prices',
+      detail: `Successfully updated the prices for ${rows.length - errorRows.length} records.`,
+      life: 3000
+    });
+  if (errorRows.length > 0)
+    toast.add({
+      severity: 'error',
+      summary: 'Error Updating Prices',
+      detail: `There was an error updating the price for the records with the following IDs: \n ${errorRows.map((r) => r['TCGplayer Id'])}`
+    });
 };
 
 const exportPricing = () => {
