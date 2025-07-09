@@ -26,8 +26,8 @@
             </FloatLabel>
           </div>
           <div class="flex items-center gap-1">
-            <Checkbox v-model="maxMarket" input-id="maxMarket" binary />
-            <label for="maxMarket" class="ml-1 text-sm text-gray-600">Max Market</label>
+            <Checkbox v-model="minLow" input-id="minLow" binary />
+            <label for="minLow" class="ml-1 text-sm text-gray-600">Minimum Low</label>
           </div>
           <div class="flex items-center gap-1">
             <Checkbox v-model="selected" input-id="selected" binary />
@@ -167,7 +167,7 @@ const toast = useToast();
 
 const formula = ref('');
 const floorPrice = ref(0.2);
-const maxMarket = ref(false);
+const minLow = ref(false);
 const selected = ref(false);
 
 const filters = ref({
@@ -226,7 +226,7 @@ const updatePricing = () => {
   rows.forEach((product) => {
     try {
       const value = eval(formula.value.replace('l', `${product['TCG Low Price']}`).replace('m', `${product['TCG Market Price']}`));
-      product['TCG Marketplace Price'] = Math.max(floorPrice.value, maxMarket.value ? Math.min(product['TCG Market Price'], value) : value);
+      product['TCG Marketplace Price'] = +Math.max(floorPrice.value, minLow.value ? Math.max(product['TCG Low Price'], value) : value).toFixed(2);
     } catch {
       errorRows.push(product);
     }
