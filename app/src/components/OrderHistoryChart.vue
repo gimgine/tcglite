@@ -46,7 +46,7 @@ const chartOptions: ChartOptions = {
 // Reactive Variables -----------------------------------------------------------------
 const orderStore = useOrderStore();
 
-const chartData = computed<ChartData>(() => {
+const chartData = computed<ChartData | undefined>(() => {
   if (dateRange.value.length !== 2 || !dateRange.value[0] || !dateRange.value[1]) return;
   const start = dayjs(dateRange.value[0]).startOf('day');
   const end = dayjs(dateRange.value[1]).endOf('day');
