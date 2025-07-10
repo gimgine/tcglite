@@ -3,6 +3,7 @@ import HomeView from '../views/HomeView.vue';
 import OrderHelperView from '../views/OrderHelperView.vue';
 import PricingView from '@/views/PricingView.vue';
 import ExpensesView from '@/views/ExpensesView.vue';
+import StatsView from '@/views/StatsView.vue';
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -26,6 +27,11 @@ const router = createRouter({
       path: '/expenses',
       name: 'expenses',
       component: ExpensesView
+    },
+    {
+      path: '/stats',
+      name: 'stats',
+      component: StatsView
     }
   ]
 });

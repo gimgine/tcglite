@@ -16,6 +16,16 @@
       <RouterLink
         :class="[
           'flex h-full items-center gap-2 transition-colors',
+          route.name === 'stats' ? 'font-semibold text-purple-500' : 'text-gray-500 hover:text-gray-900'
+        ]"
+        :to="{ name: 'stats' }"
+      >
+        <i class="pi pi-chart-line" />
+        <span>Stats</span>
+      </RouterLink>
+      <RouterLink
+        :class="[
+          'flex h-full items-center gap-2 transition-colors',
           route.name === 'expenses' ? 'font-semibold text-purple-500' : 'text-gray-500 hover:text-gray-900'
         ]"
         :to="{ name: 'expenses' }"
