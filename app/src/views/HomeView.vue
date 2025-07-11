@@ -202,7 +202,12 @@ const totalProfit = (orders: OrdersRecord[], today?: boolean) => {
 };
 
 const grossSales = (orders: OrdersRecord[], today?: boolean) => {
-  return orders.filter((order) => !today || isToday(new Date(order.created ?? ''))).reduce((sum, order) => sum + (order.totalPrice ?? 0), 0);
+  const filtered = orders.filter((order) => !today || isToday(new Date(order.created ?? '')));
+
+  const sales = filtered.reduce((sum, order) => sum + (order.totalPrice ?? 0), 0);
+  const fees = filtered.reduce((sum, order) => sum + (order.vendorFee ?? 0) + (order.processingFee ?? 0), 0);
+
+  return sales - fees;
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------
