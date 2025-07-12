@@ -159,11 +159,6 @@ const copyToClipboard = async () => {
 
 onMounted(() => {
   window.addEventListener('keydown', handleKey);
-  // const response = await fetch('/TCGplayer_PullSheet_20250625_093438.csv');
-  // const blob = await response.blob();
-  // const file = new File([blob], 'PullSheet.csv', { type: blob.type });
-  // pullSheet.value = await parsePullSheetCsv(file);
-  // console.log(pullSheet.value);
 });
 
 onUnmounted(() => {

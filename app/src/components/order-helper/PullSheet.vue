@@ -2,11 +2,11 @@
   <div class="flex flex-col justify-between">
     <span class="my-4 text-xl">Pull Sheet</span>
 
-    <div class="grid max-h-[38rem] grid-cols-12 gap-8 overflow-y-auto">
+    <div class="grid max-h-[60vh] grid-cols-12 gap-8 overflow-y-auto">
       <div v-for="setGroup in groupedBySet" :key="setGroup.set" class="col-span-6">
         <div class="mb-2 border-b border-gray-300 text-sm text-gray-600">
           <span>{{ setGroup.set }}</span>
-          <span class="float-right">{{ ` (${setGroup.pulls.length})` }}</span>
+          <span class="float-right">{{ ` (${setGroup.pulls.reduce((sum, v) => sum + v.Quantity, 0)})` }}</span>
         </div>
         <ul>
           <li v-for="pull in setGroup.pulls" :key="pull['Product Name']" class="mb-1">
@@ -75,4 +75,11 @@ const abbrCondition = (condition: Condition) => {
     }
   }
 };
+
+// onMounted(async () => {
+//   const response = await fetch('/TCGplayer_PullSheet_20250625_093438.csv');
+//   const blob = await response.blob();
+//   const file = new File([blob], 'PullSheet.csv', { type: blob.type });
+//   innerPullSheet.value = await parsePullSheetCsv(file);
+// });
 </script>
