@@ -27,16 +27,32 @@
 import { parsePullSheetCsv, parseShippingCsv, type PullSheetCsv, type ShippingCsv } from '@/util/csv-parse';
 import { type FileUploadSelectEvent, FileUpload, Button } from 'primevue';
 import { ref } from 'vue';
+// Types ------------------------------------------------------------------------------
 
-const pullSheet = ref<PullSheetCsv[]>([]);
-const shippingExport = ref<ShippingCsv[]>([]);
-
+// Component Info (props/emits) -------------------------------------------------------
 const emit = defineEmits<{
   next: [];
   pullSheetUpload: [pullSheet: PullSheetCsv[]];
   shippingExportUpload: [shippingExport: ShippingCsv[]];
 }>();
 
+// Template Refs ----------------------------------------------------------------------
+
+// Variables --------------------------------------------------------------------------
+
+// Reactive Variables -----------------------------------------------------------------
+const pullSheet = ref<PullSheetCsv[]>([]);
+const shippingExport = ref<ShippingCsv[]>([]);
+
+// Provided ---------------------------------------------------------------------------
+
+// Exposed ----------------------------------------------------------------------------
+
+// Injections -------------------------------------------------------------------------
+
+// Watchers ---------------------------------------------------------------------------
+
+// Methods ----------------------------------------------------------------------------
 const handlePullSheetUpload = async (event: FileUploadSelectEvent) => {
   const parsedPullSheet = await parsePullSheetCsv(event.files[0]);
   pullSheet.value = parsedPullSheet;
@@ -48,4 +64,6 @@ const handleShippingExportUpload = async (event: FileUploadSelectEvent) => {
   shippingExport.value = parsedShippingExport;
   emit('shippingExportUpload', shippingExport.value);
 };
+
+// Lifecycle Hooks --------------------------------------------------------------------
 </script>

@@ -37,6 +37,7 @@
           paginator
           :rows="10"
           :rows-per-page-options="[10, 25, 50, 100, 500]"
+          @row-expand="handleRowExpand"
         >
           <template #header>
             <div class="flex items-center justify-between">
@@ -125,7 +126,7 @@ import { OrderService } from '@/service/order-service';
 import { useOrderStore } from '@/store/order-store';
 import { type OrdersRecord } from '@/types/pocketbase-types';
 import { formatCurrency, isToday } from '@/util/functions';
-import { Column, DataTable, FileUpload, type FileUploadSelectEvent, useToast } from 'primevue';
+import { Column, DataTable, type DataTableRowExpandEvent, FileUpload, type FileUploadSelectEvent, useToast } from 'primevue';
 import { ref } from 'vue';
 // Types ------------------------------------------------------------------------------
 
@@ -195,6 +196,10 @@ const handlePullSheetCsvClick = async (event: FileUploadSelectEvent) => {
         life: 3000
       });
     });
+};
+
+const handleRowExpand = (event: DataTableRowExpandEvent<OrdersRecord>) => {
+  console.log(event);
 };
 
 const totalProfit = (orders: OrdersRecord[], today?: boolean) => {

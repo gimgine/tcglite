@@ -14,6 +14,7 @@ export enum Collections {
   Cards = 'cards',
   Expenses = 'expenses',
   Orders = 'orders',
+  Sets = 'sets',
   Users = 'users'
 }
 
@@ -141,6 +142,14 @@ export type OrdersRecord = {
   vendorFee?: number;
 };
 
+export type SetsRecord = {
+  code?: string;
+  created?: IsoDateString;
+  id: string;
+  tcgplayer: string;
+  updated?: IsoDateString;
+};
+
 export type UsersRecord = {
   avatar?: string;
   created?: IsoDateString;
@@ -163,6 +172,7 @@ export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> &
 export type CardsResponse<Texpand = unknown> = Required<CardsRecord> & BaseSystemFields<Texpand>;
 export type ExpensesResponse<Texpand = unknown> = Required<ExpensesRecord> & BaseSystemFields<Texpand>;
 export type OrdersResponse<Texpand = unknown> = Required<OrdersRecord> & BaseSystemFields<Texpand>;
+export type SetsResponse<Texpand = unknown> = Required<SetsRecord> & BaseSystemFields<Texpand>;
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>;
 
 // Types containing all Records and Responses, useful for creating typing helper functions
@@ -176,6 +186,7 @@ export type CollectionRecords = {
   cards: CardsRecord;
   expenses: ExpensesRecord;
   orders: OrdersRecord;
+  sets: SetsRecord;
   users: UsersRecord;
 };
 
@@ -188,6 +199,7 @@ export type CollectionResponses = {
   cards: CardsResponse;
   expenses: ExpensesResponse;
   orders: OrdersResponse;
+  sets: SetsResponse;
   users: UsersResponse;
 };
 
@@ -203,5 +215,6 @@ export type TypedPocketBase = PocketBase & {
   collection(idOrName: 'cards'): RecordService<CardsResponse>;
   collection(idOrName: 'expenses'): RecordService<ExpensesResponse>;
   collection(idOrName: 'orders'): RecordService<OrdersResponse>;
+  collection(idOrName: 'sets'): RecordService<SetsResponse>;
   collection(idOrName: 'users'): RecordService<UsersResponse>;
 };

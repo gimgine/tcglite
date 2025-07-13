@@ -14,9 +14,16 @@
 <script setup lang="ts">
 import { formatCurrency } from '@/util/functions';
 import { computed } from 'vue';
+// Types ------------------------------------------------------------------------------
 
+// Component Info (props/emits) -------------------------------------------------------
 const props = defineProps<{ label: string; details: string | number; change?: number; isCurrency?: boolean }>();
 
+// Template Refs ----------------------------------------------------------------------
+
+// Variables --------------------------------------------------------------------------
+
+// Reactive Variables -----------------------------------------------------------------
 const formattedDetails = computed(() => {
   if (typeof props.details === 'number') {
     return props.isCurrency ? formatCurrency(props.details) : props.details;
@@ -26,4 +33,16 @@ const formattedDetails = computed(() => {
 });
 
 const formattedChange = computed(() => (props.isCurrency ? formatCurrency(props.change) : props.change));
+
+// Provided ---------------------------------------------------------------------------
+
+// Exposed ----------------------------------------------------------------------------
+
+// Injections -------------------------------------------------------------------------
+
+// Watchers ---------------------------------------------------------------------------
+
+// Methods ----------------------------------------------------------------------------
+
+// Lifecycle Hooks --------------------------------------------------------------------
 </script>

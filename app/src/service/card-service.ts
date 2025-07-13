@@ -14,7 +14,7 @@ export class CardService {
 
     const orderIds = Array.from(new Set(cardRequests.map((c) => c.order))).filter(Boolean);
 
-    const orderIdChunks = chunkArray(orderIds, 75);
+    const orderIdChunks = chunkArray(orderIds, 75); // maximum query filter size is 3500 chars
 
     const res: CardsRecord[] = [];
 

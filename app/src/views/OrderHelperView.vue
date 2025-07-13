@@ -1,6 +1,6 @@
 <template>
   <div class="flex w-full flex-grow flex-col items-center justify-center">
-    <div :class="`relative w-full ${$router.currentRoute.value.name === 'pullSheet' ? 'max-w-3xl' : 'max-w-2xl'}`">
+    <div :class="`relative w-full ${$router.currentRoute.value.name === 'pullSheet' ? 'max-w-4xl' : 'max-w-2xl'}`">
       <div class="absolute -top-10 right-0">
         <Button icon="pi pi-undo" variant="text" rounded size="small" severity="secondary" @click="handleReset" />
       </div>
@@ -16,6 +16,7 @@
             @pull-sheet-upload="pullSheet = $event"
             @shipping-export-upload="shippingExport = $event"
             @next="handleNext"
+            @back="handleBack"
           />
         </router-view>
       </div>
@@ -27,7 +28,7 @@
 import router from '@/router';
 import { type PullSheetCsv, type ShippingCsv } from '@/util/csv-parse';
 import { Button } from 'primevue';
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 
 // Types ------------------------------------------------------------------------------
 
@@ -50,7 +51,6 @@ const shippingExport = ref<ShippingCsv[]>([]);
 // Watchers ---------------------------------------------------------------------------
 
 // Methods ----------------------------------------------------------------------------
-
 const handleNext = () => {
   const currentRouteName = router.currentRoute.value.name;
   if (currentRouteName === 'upload') {
@@ -60,9 +60,24 @@ const handleNext = () => {
   }
 };
 
+const handleBack = () => {
+  const currentRouteName = router.currentRoute.value.name;
+  if (currentRouteName === 'pullSheet') {
+    router.push({ name: 'upload' });
+  } else if (currentRouteName === 'shipping') {
+    router.push({ name: 'pullSheet' });
+  }
+};
+
 const handleReset = () => {
   router.push({ name: 'upload' });
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------
+onMounted(async () => {
+  // const response = await fetch('/TCGplayer_PullSheet_20250625_093438.csv');
+  // const blob = await response.blob();
+  // const file = new File([blob], 'PullSheet.csv', { type: blob.type });
+  // pullSheet.value = await parsePullSheetCsv(file);
+});
 </script>

@@ -46,7 +46,7 @@
       </div>
     </div>
     <div class="mt-4 flex items-center justify-between">
-      <Button class="invisible w-fit" icon="pi pi-copy" label="Done" />
+      <Button severity="secondary" label="Back" icon="pi pi-arrow-left" icon-pos="left" @click="$emit('back')" />
       <Button ref="copyButton" class="w-fit" icon="pi pi-copy" label="Copy" severity="info" @click="copyToClipboard" />
       <Button
         class="w-fit"
@@ -75,11 +75,18 @@ import { useOrderStore } from '@/store/order-store';
 import { type ShippingCsv } from '@/util/csv-parse';
 import { Button, useToast, Dialog } from 'primevue';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+// Types ------------------------------------------------------------------------------
 
+// Component Info (props/emits) -------------------------------------------------------
 const props = defineProps<{ shippingExport: ShippingCsv[] }>();
+defineEmits<{ back: [] }>();
 
+// Template Refs ----------------------------------------------------------------------
 const copyButton = ref();
 
+// Variables --------------------------------------------------------------------------
+
+// Reactive Variables -----------------------------------------------------------------
 const toast = useToast();
 const orderStore = useOrderStore();
 
@@ -98,6 +105,15 @@ const formattedShipping = computed(() => {
   else return null;
 });
 
+// Provided ---------------------------------------------------------------------------
+
+// Exposed ----------------------------------------------------------------------------
+
+// Injections -------------------------------------------------------------------------
+
+// Watchers ---------------------------------------------------------------------------
+
+// Methods ----------------------------------------------------------------------------
 const handleKey = (event: KeyboardEvent) => {
   if (event.key === 'ArrowLeft') handleGoLeft();
   if (event.key === 'ArrowRight') handleGoRight();
@@ -157,6 +173,7 @@ const copyToClipboard = async () => {
   }
 };
 
+// Lifecycle Hooks --------------------------------------------------------------------
 onMounted(() => {
   window.addEventListener('keydown', handleKey);
 });
