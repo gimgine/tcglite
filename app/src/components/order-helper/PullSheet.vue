@@ -126,7 +126,7 @@ const handleHover = (pull: PullSheetCsv) => {
 
   hoverTimeout = setTimeout(async () => {
     const setCode = setStore.setsMap.get(pull.Set);
-    if (setCode === undefined) {
+    if (setCode === undefined || setCode === '') {
       imageError.value = true;
       imageErrorMessage.value = 'Set mapping not found. Does it exist?';
       return;
@@ -136,6 +136,12 @@ const handleHover = (pull: PullSheetCsv) => {
 
     try {
       const scryfallRes = await axios.get(`https://api.scryfall.com/cards/${setCode}/${number}`);
+
+      if (scryfallRes.data.card_faces) {
+        hoveredImage.value = scryfallRes.data.card_faces[0].image_uris.normal;
+        return;
+      }
+
       hoveredImage.value = scryfallRes.data.image_uris.normal;
     } catch (error) {
       console.error('Error loading Scryfall image:', error);
