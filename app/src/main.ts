@@ -10,6 +10,10 @@ import router from './router';
 import 'primeicons/primeicons.css';
 import './tailwind.css';
 
+import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
+
+ModuleRegistry.registerModules([AllCommunityModule]);
+
 const app = createApp(App);
 const pinia = createPinia();
 

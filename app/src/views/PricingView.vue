@@ -39,98 +39,12 @@
       </div>
     </div>
     <div class="col-span-12 rounded-md bg-white p-8 shadow">
-      <DataTable
-        v-model:filters="filters"
-        v-model:selection="selectedRows"
-        :value="pricing"
-        removable-sort
-        filter-display="row"
-        striped-rows
-        paginator
-        :rows="10"
-        :rows-per-page-options="[10, 25, 50, 100, 500]"
-        edit-mode="cell"
-        @cell-edit-complete="(e) => (e.data[e.field] = e.newValue ? e.newValue : e.data[e.field])"
-      >
-        <template #header>
-          <div class="flex items-center gap-2">
-            <span class="mr-auto text-lg">Pricing Table</span>
-            <FileUpload mode="basic" choose-label="Pricing CSV" choose-icon="pi pi-dollar" accept=".csv" auto @select="handlePricingUpload" />
-            <Button label="Export" icon="pi pi-file-export" @click="exportPricing" />
-          </div>
-        </template>
-        <Column selection-mode="multiple" header-style="width: 3rem"></Column>
-        <Column field="TCGplayer Id" header="TCGPlayer ID" sortable>
-          <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" type="number" size="small" fluid @input="filterCallback" />
-          </template>
-        </Column>
-        <Column field="Set Name" header="Set Name" sortable>
-          <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" fluid @input="filterCallback" />
-          </template>
-        </Column>
-        <Column field="Product Name" header="Product Name" sortable>
-          <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" fluid @input="filterCallback" />
-          </template>
-        </Column>
-        <Column field="Number" header="Number" sortable>
-          <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" fluid @input="filterCallback" />
-          </template>
-        </Column>
-        <Column field="Rarity" header="Rarity" sortable>
-          <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" fluid @input="filterCallback" />
-          </template>
-        </Column>
-        <Column field="Condition" header="Condition" sortable>
-          <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" fluid @input="filterCallback" />
-          </template>
-        </Column>
-        <Column field="TCG Market Price" header="TCG Market Price" sortable>
-          <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" fluid @input="filterCallback" />
-          </template>
-          <template #body="slotProps">
-            {{ formatCurrency(slotProps.data['TCG Market Price']) }}
-          </template>
-        </Column>
-        <Column field="TCG Low Price With Shipping" header="TCG Low w/ Shipping" sortable>
-          <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" fluid @input="filterCallback" />
-          </template>
-          <template #body="slotProps">
-            {{ formatCurrency(slotProps.data['TCG Low Price With Shipping']) }}
-          </template>
-        </Column>
-        <Column field="TCG Low Price" header="TCG Low" sortable>
-          <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" fluid @input="filterCallback" />
-          </template>
-          <template #body="slotProps">
-            {{ formatCurrency(slotProps.data['TCG Low Price']) }}
-          </template>
-        </Column>
-        <Column field="Total Quantity" header="Total Quantity" sortable>
-          <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" fluid @input="filterCallback" />
-          </template>
-        </Column>
-        <Column field="TCG Marketplace Price" header="Our Price" sortable>
-          <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" size="small" fluid @input="filterCallback" />
-          </template>
-          <template #editor="{ data, field }">
-            <InputNumber v-model="data[field]" size="small" autofocus fluid mode="currency" currency="USD" :step="0.01" />
-          </template>
-          <template #body="slotProps">
-            {{ formatCurrency(slotProps.data['TCG Marketplace Price']) }}
-          </template>
-        </Column>
-      </DataTable>
+      <div class="mb-2 flex items-center gap-2">
+        <span class="mr-auto text-lg font-semibold">Pricing Table</span>
+        <FileUpload mode="basic" choose-label="Pricing CSV" choose-icon="pi pi-dollar" accept=".csv" auto @select="handlePricingUpload" />
+        <Button label="Export" icon="pi pi-file-export" @click="exportPricing" />
+      </div>
+      <ag-grid-vue ref="grid" class="h-[calc(100vh-28rem)]" :grid-options :column-defs :row-data="pricing" />
     </div>
   </div>
 </template>
@@ -138,29 +52,70 @@
 <script setup lang="ts">
 import { parsePricingCsv, type PricingCsv } from '@/util/csv-parse';
 import { formatCurrency } from '@/util/functions';
-import { FilterMatchMode } from '@primevue/core/api';
+import type { ColDef, GridOptions, ValueFormatterParams } from 'ag-grid-community';
+import { AgGridVue } from 'ag-grid-vue3';
 import Papa from 'papaparse';
-import {
-  Button,
-  Checkbox,
-  Column,
-  DataTable,
-  FileUpload,
-  FloatLabel,
-  InputNumber,
-  InputText,
-  Message,
-  useToast,
-  type FileUploadSelectEvent
-} from 'primevue';
-import { ref } from 'vue';
+import { Button, Checkbox, FileUpload, FloatLabel, InputNumber, InputText, Message, useToast, type FileUploadSelectEvent } from 'primevue';
+import { nextTick, ref } from 'vue';
+
 // Types ------------------------------------------------------------------------------
 
 // Component Info (props/emits) -------------------------------------------------------
 
 // Template Refs ----------------------------------------------------------------------
+const grid = ref();
 
 // Variables --------------------------------------------------------------------------
+const gridOptions: GridOptions<PricingCsv> = {
+  defaultColDef: { filter: true },
+  pagination: true,
+  paginationPageSize: 20,
+  rowSelection: { mode: 'multiRow', selectAll: 'filtered' },
+  suppressCellFocus: true,
+  onModelUpdated: (e) => {
+    e.api.autoSizeAllColumns();
+    nextTick(() => {
+      if (e.api.getAllDisplayedColumnGroups()!.reduce((acc, c) => acc + c.getActualWidth(), 0) < grid.value?.$el.clientWidth) {
+        e.api.sizeColumnsToFit();
+      }
+    });
+  },
+  onSelectionChanged: (e) => {
+    selectedRows.value = e.api.getSelectedRows();
+  }
+};
+const columnDefs: ColDef<PricingCsv>[] = [
+  { field: 'TCGplayer Id', headerName: 'ID' },
+  { field: 'Set Name', headerName: 'Set' },
+  { field: 'Product Name', headerName: 'Name' },
+  { field: 'Number' },
+  { field: 'Rarity' },
+  { field: 'Condition' },
+  {
+    field: 'TCG Market Price',
+    headerName: 'Market Price',
+    valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data['TCG Market Price']) ?? ''
+  },
+  {
+    field: 'TCG Direct Low',
+    headerName: 'Direct Low',
+    valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data['TCG Direct Low']) ?? ''
+  },
+  {
+    field: 'TCG Low Price With Shipping',
+    headerName: 'Low Shipping',
+    valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data['TCG Low Price With Shipping']) ?? ''
+  },
+  { field: 'TCG Low Price', headerName: 'Low', valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data['TCG Low Price']) ?? '' },
+  {
+    field: 'TCG Marketplace Price',
+    headerName: 'Our Price',
+    valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data['TCG Marketplace Price']) ?? '',
+    editable: true,
+    singleClickEdit: true
+  },
+  { field: 'Total Quantity', headerName: 'Quantity' }
+];
 
 // Reactive Variables -----------------------------------------------------------------
 const toast = useToast();
@@ -169,20 +124,6 @@ const formula = ref('');
 const floorPrice = ref(0.2);
 const minLow = ref(false);
 const selected = ref(false);
-
-const filters = ref({
-  'TCGplayer Id': { value: null, matchMode: FilterMatchMode.CONTAINS },
-  'Set Name': { value: null, matchMode: FilterMatchMode.CONTAINS },
-  'Product Name': { value: null, matchMode: FilterMatchMode.CONTAINS },
-  Number: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  Rarity: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  Condition: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  'TCG Market Price': { value: null, matchMode: FilterMatchMode.CONTAINS },
-  'TCG Low Price With Shipping': { value: null, matchMode: FilterMatchMode.CONTAINS },
-  'TCG Low Price': { value: null, matchMode: FilterMatchMode.CONTAINS },
-  'Total Quantity': { value: null, matchMode: FilterMatchMode.CONTAINS },
-  'TCG Marketplace Price': { value: null, matchMode: FilterMatchMode.CONTAINS }
-});
 
 const pricing = ref<PricingCsv[]>([]);
 
