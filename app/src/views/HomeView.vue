@@ -47,6 +47,14 @@
               <div class="flex gap-2">
                 <FileUpload
                   mode="basic"
+                  choose-label="Check Orders"
+                  choose-icon="pi pi-search"
+                  accept=".csv"
+                  auto
+                  @select="handleCheckOrdersCsvClick"
+                />
+                <FileUpload
+                  mode="basic"
                   choose-label="Pull Sheet"
                   choose-icon="pi pi-file-arrow-up"
                   accept=".csv"
@@ -117,6 +125,23 @@
       </div>
     </div>
   </div>
+
+  <Dialog v-model:visible="isCheckModalVisible" header="Orders Stats" position="topright">
+    <div class="grid grid-cols-3 gap-10">
+      <div class="col-span-1 flex flex-col">
+        <span class="text-sm text-gray-600">Orders</span>
+        <span>{{ checkingOrders.length }}</span>
+      </div>
+      <div class="col-span-1 flex flex-col">
+        <span class="text-sm text-gray-600">Gross Sales</span>
+        <span>{{ formatCurrency(csvGrossSales(checkingOrders)) }}</span>
+      </div>
+      <div class="col-span-1 flex flex-col">
+        <span class="text-sm text-gray-600">Cards Sold</span>
+        <span>{{ checkingOrders.reduce((sum, order) => sum + order['Item Count'], 0) }}</span>
+      </div>
+    </div>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -125,8 +150,9 @@ import { CardService } from '@/service/card-service';
 import { OrderService } from '@/service/order-service';
 import { useOrderStore } from '@/store/order-store';
 import { type OrdersRecord } from '@/types/pocketbase-types';
+import { parseShippingCsv, type ShippingCsv } from '@/util/csv-parse';
 import { formatCurrency, isToday } from '@/util/functions';
-import { Column, DataTable, type DataTableRowExpandEvent, FileUpload, type FileUploadSelectEvent, useToast } from 'primevue';
+import { Column, DataTable, type DataTableRowExpandEvent, Dialog, FileUpload, type FileUploadSelectEvent, useToast } from 'primevue';
 import { ref } from 'vue';
 // Types ------------------------------------------------------------------------------
 
@@ -144,6 +170,8 @@ const cardService = new CardService();
 const toast = useToast();
 
 const expandedRows = ref({});
+const isCheckModalVisible = ref(false);
+const checkingOrders = ref<ShippingCsv[]>([]);
 
 // Provided ---------------------------------------------------------------------------
 
@@ -198,6 +226,12 @@ const handlePullSheetCsvClick = async (event: FileUploadSelectEvent) => {
     });
 };
 
+const handleCheckOrdersCsvClick = async (event: FileUploadSelectEvent) => {
+  const shippingCsv = await parseShippingCsv(event.files[0]);
+  isCheckModalVisible.value = true;
+  checkingOrders.value = shippingCsv;
+};
+
 const handleRowExpand = (event: DataTableRowExpandEvent<OrdersRecord>) => {
   console.log(event);
 };
@@ -211,6 +245,17 @@ const grossSales = (orders: OrdersRecord[], today?: boolean) => {
 
   const sales = filtered.reduce((sum, order) => sum + (order.totalPrice ?? 0), 0);
   const fees = filtered.reduce((sum, order) => sum + (order.vendorFee ?? 0) + (order.processingFee ?? 0), 0);
+
+  return sales - fees;
+};
+
+const csvGrossSales = (orders: ShippingCsv[]) => {
+  const totalPrice = (order: ShippingCsv) => order['Value Of Products'] + order['Shipping Fee Paid'];
+  const vendorFee = (order: ShippingCsv) => totalPrice(order) * 0.1025;
+  const processingFee = (order: ShippingCsv) => totalPrice(order) * 0.025 + 0.3;
+
+  const sales = orders.reduce((sum, order) => sum + totalPrice(order), 0);
+  const fees = orders.reduce((sum, order) => sum + vendorFee(order) + processingFee(order), 0);
 
   return sales - fees;
 };
