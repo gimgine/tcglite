@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 import router from '@/router';
-import { type PullSheetCsv, type ShippingCsv } from '@/util/csv-parse';
+import { parsePullSheetCsv, parseShippingCsv, type PullSheetCsv, type ShippingCsv } from '@/util/csv-parse';
 import { Button } from 'primevue';
 import { onMounted, ref } from 'vue';
 
@@ -75,9 +75,9 @@ const handleReset = () => {
 
 // Lifecycle Hooks --------------------------------------------------------------------
 onMounted(async () => {
-  // const response = await fetch('/TCGplayer_PullSheet_20250625_093438.csv');
+  // const response = await fetch('/TCGplayer_ShippingExport.csv');
   // const blob = await response.blob();
-  // const file = new File([blob], 'PullSheet.csv', { type: blob.type });
-  // pullSheet.value = await parsePullSheetCsv(file);
+  // const file = new File([blob], 'ShippingExport.csv', { type: blob.type });
+  // shippingExport.value = await parseShippingCsv(file);
 });
 </script>

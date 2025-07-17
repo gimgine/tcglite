@@ -1,5 +1,5 @@
 Order #,FirstName,LastName,Address1,Address2,City,State,PostalCode,Country,Order Date,Product Weight,Shipping Method,Item Count,Value Of Products,Shipping Fee Paid,Tracking #,Carrier
-"95CE391B-E519D6-CB549","Dave","Muhlbradt","711 THORSEN LN","","BATAVIA","IL","60510-9245","US","2025-06-24","0.28","Standard (7-10 days)","4","20.68","1.31","",""
+"95CE391B-E519D6-CB549","Dave","Muhlbradt","711 THORSEN LN","","BATAVIA","IL","60510-9245","US","2025-06-24","0.28","Standard (7-10 days)","12","20.68","1.31","",""
 "95CE391B-32A42F-0792C","Jonathan","Castro","2343 125TH ST","","COLLEGE POINT","NY","11356-2621","US","2025-06-24","0.21","Standard (7-10 days)","3","1.88","1.31","",""
 "95CE391B-EF3C8B-6D2ED","Kaleb","Markham","150 S MAIN ST APT 112","","EULESS","TX","76040-4602","US","2025-06-24","0.14","Standard (7-10 days)","2","2.68","1.31","",""
 "95CE391B-5ABAD5-36B0C","Timothy","Touch","10539 WACO ST","","COMMERCE CITY","CO","80022-9010","US","2025-06-24","0.07","Standard (7-10 days)","1","0.69","1.31","",""

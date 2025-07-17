@@ -27,7 +27,7 @@
           @keyup="handleGoLeft"
         />
       </div>
-      <div class="mx-28 flex flex-col rounded border border-gray-200 shadow">
+      <div :class="['mx-28 flex flex-col rounded border border-gray-200 shadow', isBigOrder ? 'animate-flash' : '']">
         <div class="p-4 font-mono whitespace-pre-line">
           {{ formattedShipping }}
         </div>
@@ -74,7 +74,7 @@ import { OrderService } from '@/service/order-service';
 import { useOrderStore } from '@/store/order-store';
 import { type ShippingCsv } from '@/util/csv-parse';
 import { Button, useToast, Dialog } from 'primevue';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 // Types ------------------------------------------------------------------------------
 
 // Component Info (props/emits) -------------------------------------------------------
@@ -91,6 +91,14 @@ const toast = useToast();
 const orderStore = useOrderStore();
 
 const orderService = new OrderService();
+
+const isBigOrder = computed(() => {
+  if (selectedShipping.value) {
+    return selectedShipping.value['Item Count'] >= 10;
+  } else {
+    return false;
+  }
+});
 
 const isUploadModalOpen = ref(false);
 const isYesLoading = ref(false);
@@ -112,6 +120,19 @@ const formattedShipping = computed(() => {
 // Injections -------------------------------------------------------------------------
 
 // Watchers ---------------------------------------------------------------------------
+let intervalId: NodeJS.Timeout | undefined = undefined;
+watch(isBigOrder, (newValue) => {
+  if (newValue) {
+    if (!intervalId) {
+      intervalId = setInterval(() => {
+        toast.add({ summary: 'Big Order Alert', detail: 'Additional postage may be required.', severity: 'error', life: 1000 });
+      }, 1000);
+    }
+  } else {
+    clearInterval(intervalId);
+    intervalId = undefined;
+  }
+});
 
 // Methods ----------------------------------------------------------------------------
 const handleKey = (event: KeyboardEvent) => {
@@ -179,6 +200,27 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  if (intervalId) {
+    clearInterval(intervalId);
+  }
   window.removeEventListener('keydown', handleKey);
 });
 </script>
+
+<style>
+@keyframes flash {
+  0%,
+  100% {
+    background-color: var(--color-red-100);
+    color: black;
+  }
+  50% {
+    background-color: white;
+    color: black;
+  }
+}
+
+.animate-flash {
+  animation: flash 1.5s infinite;
+}
+</style>
