@@ -23,13 +23,18 @@
             <Button label="Add" icon="pi pi-plus" @click="isAddModalVisible = true" />
           </div>
         </template>
-        <Column field="quantity" header="Quantity" />
+        <Column field="type" header="Type">
+          <template #body="slotProps">
+            <Tag :severity="getTypeSeverity(slotProps.data.type)" :value="slotProps.data.type" />
+          </template>
+        </Column>
         <Column field="name" header="Name" />
         <Column field="price" header="Price">
           <template #body="slotProps">
             {{ formatCurrency(slotProps.data.price) }}
           </template>
         </Column>
+        <Column field="quantity" header="Quantity" />
         <Column field="url" header="URL">
           <template #body="slotProps">
             <a class="text-blue-500" :href="slotProps.data.url" target="_blank">{{ slotProps.data.url }}</a>
@@ -78,11 +83,11 @@
 
 <script setup lang="ts">
 import StatIndicator from '@/components/StatIndicator.vue';
-import { Collections, type ExpensesRecord } from '@/types/pocketbase-types';
+import { Collections, ExpensesTypeOptions, type ExpensesRecord } from '@/types/pocketbase-types';
 import { formatCurrency } from '@/util/functions';
 import pb from '@/util/pocketbase';
 import { Form, type FormSubmitEvent } from '@primevue/forms';
-import { Button, Column, DataTable, Dialog, InputText, InputNumber, Message, IconField, InputIcon } from 'primevue';
+import { Button, Column, DataTable, Dialog, InputText, InputNumber, Message, IconField, InputIcon, Tag, type TagProps } from 'primevue';
 import { onMounted, reactive, ref } from 'vue';
 // Types ------------------------------------------------------------------------------
 interface FormValues {
@@ -156,6 +161,17 @@ const handleSubmit = async (event: FormSubmitEvent) => {
 
 const totalExpenses = () => {
   return expenses.value.reduce((sum, order) => sum + (order.price ?? 0), 0);
+};
+
+const getTypeSeverity = (type: ExpensesTypeOptions): TagProps['severity'] => {
+  switch (type) {
+    case ExpensesTypeOptions.cards:
+      return 'success';
+    case ExpensesTypeOptions.supplies:
+      return 'info';
+    case ExpensesTypeOptions.other:
+      return 'secondary';
+  }
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------
