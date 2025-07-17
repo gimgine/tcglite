@@ -17,10 +17,13 @@
       >
         <template #header>
           <div class="flex items-center justify-between">
-            <div class="flex flex-col gap-4 md:flex-row md:items-center">
+            <div class="flex gap-4 md:flex-row md:items-center">
               <span class="text-lg">Expenses</span>
             </div>
-            <Button label="Add" icon="pi pi-plus" @click="isAddModalVisible = true" />
+            <div class="flex items-center gap-2">
+              <Button label="Profit" icon="pi pi-refresh" :loading="isRefreshProfitLoading" @click="handleRefreshProfitClick" />
+              <Button label="Add" icon="pi pi-plus" @click="isAddModalVisible = true" />
+            </div>
           </div>
         </template>
         <Column field="type" header="Type">
@@ -87,7 +90,7 @@ import { Collections, ExpensesTypeOptions, type ExpensesRecord } from '@/types/p
 import { formatCurrency } from '@/util/functions';
 import pb from '@/util/pocketbase';
 import { Form, type FormSubmitEvent } from '@primevue/forms';
-import { Button, Column, DataTable, Dialog, InputText, InputNumber, Message, IconField, InputIcon, Tag, type TagProps } from 'primevue';
+import { Button, Column, DataTable, Dialog, IconField, InputIcon, InputNumber, InputText, Message, Tag, useToast, type TagProps } from 'primevue';
 import { onMounted, reactive, ref } from 'vue';
 // Types ------------------------------------------------------------------------------
 interface FormValues {
@@ -102,12 +105,14 @@ interface FormValues {
 // Template Refs ----------------------------------------------------------------------
 
 // Variables --------------------------------------------------------------------------
+const toast = useToast();
 
 // Reactive Variables -----------------------------------------------------------------
 const expenses = ref<ExpensesRecord[]>([]);
 
 const isAddModalVisible = ref(false);
 const isSubmitLoading = ref(false);
+const isRefreshProfitLoading = ref(false);
 
 const initialValues = reactive({
   quantity: 1,
@@ -172,6 +177,19 @@ const getTypeSeverity = (type: ExpensesTypeOptions): TagProps['severity'] => {
     case ExpensesTypeOptions.other:
       return 'secondary';
   }
+};
+
+const handleRefreshProfitClick = () => {
+  isRefreshProfitLoading.value = true;
+
+  const cardExpenses = expenses.value.filter((e) => e.type === ExpensesTypeOptions.cards);
+
+  const totalSpentOnCards = cardExpenses.reduce((sum, expense) => sum + (expense.price ?? 0), 0);
+  const quantityCardsPurchased = cardExpenses.reduce((sum, expense) => sum + (expense.quantity ?? 0), 0);
+  const averageCogs = totalSpentOnCards / quantityCardsPurchased;
+
+  toast.add({ detail: `Average COGS: ${averageCogs}` });
+  isRefreshProfitLoading.value = false;
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------

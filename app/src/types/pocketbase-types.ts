@@ -113,7 +113,7 @@ export type ExpensesRecord = {
   id: string;
   name?: string;
   price?: number;
-  quantity?: string;
+  quantity?: number;
   type?: ExpensesTypeOptions;
   updated?: IsoDateString;
   url?: string;
