@@ -78,8 +78,11 @@ const orderStore = useOrderStore();
 
 const pbUrl = import.meta.env.DEV ? 'http://localhost:8090/_/' : 'https://gimgine-tcg.pockethost.io/_/';
 
+onMounted(() => {});
+
 onMounted(() => {
   orderStore.refresh();
+  if (import.meta.env.DEV) document.title = 'DEV - Gimgine Trading Post';
 });
 </script>
 
