@@ -37,6 +37,32 @@ export class OrderService {
     return this.SHIPPING_METHODS.find((sm) => sm.cost === shippingCost);
   };
 
+  refreshProfit = async (historicalCogs: { date: string; averageCogs: number }[]) => {
+    const orders = await pb.collection(Collections.Orders).getFullList();
+
+    const batch = pb.createBatch();
+
+    orders.forEach((order) => {
+      for (let i = 0; i < historicalCogs.length; i++) {
+        const orderDateMs = new Date(order.orderDate).getTime();
+
+        if (!(i === historicalCogs.length - 1) && orderDateMs >= new Date(historicalCogs[i + 1].date).getTime()) {
+          continue;
+        }
+
+        const newCogsForOrder = order.itemCount * historicalCogs[i].averageCogs;
+        batch.collection(Collections.Orders).update(order.id, {
+          date: order.orderDate,
+          cogs: newCogsForOrder,
+          profit: order.totalPrice - order.vendorFee - order.processingFee - newCogsForOrder - order.shippingCost
+        });
+        break;
+      }
+    });
+
+    await batch.send();
+  };
+
   private createRequestsFromCsv = (csv: ShippingCsv[]) => {
     const orderRequests: OrderRequest[] = [];
 

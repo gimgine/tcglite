@@ -103,12 +103,19 @@ export type CardsRecord = {
   updated?: IsoDateString;
 };
 
+export enum ExpensesTypeOptions {
+  'cards' = 'cards',
+  'supplies' = 'supplies',
+  'other' = 'other'
+}
 export type ExpensesRecord = {
   created?: IsoDateString;
   id: string;
   name?: string;
   price?: number;
-  quantity?: string;
+  purchaseDate?: IsoDateString;
+  quantity?: number;
+  type?: ExpensesTypeOptions;
   updated?: IsoDateString;
   url?: string;
 };
