@@ -58,8 +58,8 @@
     </div>
   </div>
 
-  <Dialog v-model:visible="isUploadModalOpen" header="Upload Shipping Export" modal>
-    <span>Would you like to upload the shipping export CSV to the orders table?</span>
+  <Dialog v-model:visible="isUploadModalOpen" header="Upload Exports" modal>
+    <span>Would you like to upload the shipping export CSV and the pull sheet CSV to the server?</span>
 
     <template #footer>
       <Button label="No" severity="secondary" @click="$router.push({ name: 'upload' })" />
@@ -70,15 +70,16 @@
 
 <script setup lang="ts">
 import router from '@/router';
+import { CardService } from '@/service/card-service';
 import { OrderService } from '@/service/order-service';
 import { useOrderStore } from '@/store/order-store';
-import { type ShippingCsv } from '@/util/csv-parse';
+import { type PullSheetCsv, type ShippingCsv } from '@/util/csv-parse';
 import { Button, useToast, Dialog } from 'primevue';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 // Types ------------------------------------------------------------------------------
 
 // Component Info (props/emits) -------------------------------------------------------
-const props = defineProps<{ shippingExport: ShippingCsv[] }>();
+const props = defineProps<{ shippingExport: ShippingCsv[]; pullSheet: PullSheetCsv[] }>();
 defineEmits<{ back: [] }>();
 
 // Template Refs ----------------------------------------------------------------------
@@ -91,6 +92,7 @@ const toast = useToast();
 const orderStore = useOrderStore();
 
 const orderService = new OrderService();
+const cardService = new CardService();
 
 const isBigOrder = computed(() => {
   if (selectedShipping.value) {
@@ -171,6 +173,25 @@ const handleYes = async () => {
       toast.add({
         severity: 'error',
         summary: 'No Orders Found',
+        detail: error.message,
+        life: 3000
+      });
+    });
+
+  await cardService
+    .create({ cards: props.pullSheet })
+    .then(() => {
+      toast.add({
+        severity: 'success',
+        summary: 'Cards Added',
+        detail: `New cards were added.`,
+        life: 3000
+      });
+    })
+    .catch((error: Error) => {
+      toast.add({
+        severity: 'error',
+        summary: 'No Cards Found',
         detail: error.message,
         life: 3000
       });
