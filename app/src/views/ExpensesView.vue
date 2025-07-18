@@ -3,6 +3,9 @@
     <div class="col-span-12 md:col-span-3">
       <StatIndicator label="Total Expenses" :details="totalExpenses()" is-currency />
     </div>
+    <div class="col-span-12 md:col-span-3">
+      <StatIndicator label="Average COGS" :details="averageCogs()" is-currency />
+    </div>
 
     <div class="col-span-12 w-full rounded-md bg-white p-8 shadow">
       <DataTable
@@ -218,6 +221,13 @@ const handleSubmit = async (event: FormSubmitEvent) => {
 
 const totalExpenses = () => {
   return expenses.value.reduce((sum, order) => sum + (order.price ?? 0), 0);
+};
+
+const averageCogs = () => {
+  const cardExpenses = expenses.value.filter((e) => e.type === ExpensesTypeOptions.cards);
+  const totalSpentOnCards = cardExpenses.reduce((sum, expense) => sum + (expense.price ?? 0), 0);
+  const quantityCardsPurchased = cardExpenses.reduce((sum, expense) => sum + (expense.quantity ?? 0), 0);
+  return totalSpentOnCards / quantityCardsPurchased;
 };
 
 const getTypeSeverity = (type: ExpensesTypeOptions): TagProps['severity'] => {
