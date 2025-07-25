@@ -85,11 +85,11 @@ const gridOptions: GridOptions<PricingCsv> = {
   }
 };
 const columnDefs: ColDef<PricingCsv>[] = [
-  { field: 'TCGplayer Id', headerName: 'ID' },
+  { field: 'TCGplayer Id', headerName: 'ID', hide: true },
   { field: 'Set Name', headerName: 'Set' },
   { field: 'Product Name', headerName: 'Name' },
   { field: 'Number' },
-  { field: 'Rarity' },
+  { field: 'Rarity', hide: true },
   { field: 'Condition' },
   {
     field: 'TCG Market Price',
@@ -99,11 +99,13 @@ const columnDefs: ColDef<PricingCsv>[] = [
   {
     field: 'TCG Direct Low',
     headerName: 'Direct Low',
+    hide: true,
     valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data['TCG Direct Low']) ?? ''
   },
   {
     field: 'TCG Low Price With Shipping',
     headerName: 'Low Shipping',
+    hide: true,
     valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data['TCG Low Price With Shipping']) ?? ''
   },
   { field: 'TCG Low Price', headerName: 'Low', valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data['TCG Low Price']) ?? '' },

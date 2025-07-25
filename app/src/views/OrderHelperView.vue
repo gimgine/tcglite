@@ -75,9 +75,9 @@ const handleReset = () => {
 
 // Lifecycle Hooks --------------------------------------------------------------------
 onMounted(async () => {
-  // const response = await fetch('/TCGplayer_ShippingExport.csv');
-  // const blob = await response.blob();
-  // const file = new File([blob], 'ShippingExport.csv', { type: blob.type });
-  // shippingExport.value = await parseShippingCsv(file);
+  const response = await fetch('/TCGplayer_ShippingExport.csv');
+  const blob = await response.blob();
+  const file = new File([blob], 'ShippingExport.csv', { type: blob.type });
+  shippingExport.value = await parseShippingCsv(file);
 });
 </script>

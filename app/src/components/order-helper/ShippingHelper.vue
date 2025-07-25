@@ -12,7 +12,21 @@
       <span class="rounded border border-gray-400 bg-gray-200 px-1 py-0.5 font-mono">Space</span> to copy to the clipboard.
     </span>
 
-    <div class="mr-32 text-right text-sm">{{ `${shippingIndex + 1} of ${shippingExport.length}` }}</div>
+    <div class="mr-32 text-right text-sm">
+      <span
+        v-show="postageRequired !== ''"
+        v-tooltip.top="'1 oz: <= 10 cards\n2 oz: <= 22 cards\n3 oz: <= 38 cards'"
+        class="mr-2 rounded-sm bg-gray-100 px-2 py-0.5 text-xs font-bold"
+      >
+        {{ postageRequired }}
+      </span>
+      <span
+        :class="`mr-2 rounded-sm px-2 py-0.5 text-xs font-bold ${shippingMethod === 'Tracking' ? 'bg-blue-200 text-blue-600' : 'bg-pink-200 text-pink-600'}`"
+      >
+        {{ shippingMethod }}
+      </span>
+      <span>{{ `${shippingIndex + 1} of ${shippingExport.length}` }}</span>
+    </div>
 
     <div class="relative my-2 h-full w-full">
       <div class="absolute top-1/3 left-9 flex flex-col items-center">
@@ -99,6 +113,37 @@ const isBigOrder = computed(() => {
     return selectedShipping.value['Item Count'] >= 10;
   } else {
     return false;
+  }
+});
+
+const shippingMethod = computed(() => {
+  if (selectedShipping.value) {
+    return selectedShipping.value['Value Of Products'] + selectedShipping.value['Shipping Fee Paid'] >= new OrderService().TRACKING_THRESHOLD
+      ? 'Tracking'
+      : 'Envelope';
+  } else {
+    return '';
+  }
+});
+
+const postageRequired = computed(() => {
+  if (selectedShipping.value) {
+    const cardCount = selectedShipping.value['Item Count'];
+    if (shippingMethod.value === 'Envelope') {
+      if (cardCount <= 10) {
+        return '1 oz';
+      } else if (cardCount <= 22) {
+        return '2 oz';
+      } else if (cardCount <= 38) {
+        return '3 oz';
+      } else {
+        return 'Too big';
+      }
+    } else {
+      return '';
+    }
+  } else {
+    return '';
   }
 });
 
