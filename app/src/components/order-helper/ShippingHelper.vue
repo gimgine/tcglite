@@ -15,7 +15,7 @@
     <div class="mr-32 text-right text-sm">
       <span
         v-show="postageRequired !== ''"
-        v-tooltip.top="'1 oz: <= 10 cards\n2 oz: <= 22 cards\n3 oz: <= 38 cards'"
+        v-tooltip.top="`1 oz: <= ${ONE_OUNCE_LIMIT} cards\n2 oz: <= ${TWO_OUNCE_LIMIT} cards\n3 oz: <= ${THREE_OUNCE_LIMIT} cards`"
         class="mr-2 rounded-sm bg-gray-100 px-2 py-0.5 text-xs font-bold"
       >
         {{ postageRequired }}
@@ -100,6 +100,9 @@ defineEmits<{ back: [] }>();
 const copyButton = ref();
 
 // Variables --------------------------------------------------------------------------
+const ONE_OUNCE_LIMIT = 10;
+const TWO_OUNCE_LIMIT = 20;
+const THREE_OUNCE_LIMIT = 35;
 
 // Reactive Variables -----------------------------------------------------------------
 const toast = useToast();
@@ -130,11 +133,11 @@ const postageRequired = computed(() => {
   if (selectedShipping.value) {
     const cardCount = selectedShipping.value['Item Count'];
     if (shippingMethod.value === 'Envelope') {
-      if (cardCount <= 10) {
+      if (cardCount <= ONE_OUNCE_LIMIT) {
         return '1 oz';
-      } else if (cardCount <= 22) {
+      } else if (cardCount <= TWO_OUNCE_LIMIT) {
         return '2 oz';
-      } else if (cardCount <= 38) {
+      } else if (cardCount <= THREE_OUNCE_LIMIT) {
         return '3 oz';
       } else {
         return 'Too big';
