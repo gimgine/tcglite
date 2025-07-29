@@ -6,7 +6,7 @@ import ExpensesView from '@/views/ExpensesView.vue';
 import StatsView from '@/views/StatsView.vue';
 import OrderHelperUpload from '@/components/order-helper/OrderHelperUpload.vue';
 import PullSheet from '@/components/order-helper/PullSheet.vue';
-import ShippingHelper from '@/components/order-helper/ShippingHelper.vue';
+import ShippingHelper from '@/components/order-helper/shipping/ShippingHelper.vue';
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),

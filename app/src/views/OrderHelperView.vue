@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 import router from '@/router';
-import { parsePullSheetCsv, parseShippingCsv, type PullSheetCsv, type ShippingCsv } from '@/util/csv-parse';
+import { parseShippingCsv, type PullSheetCsv, type ShippingCsv } from '@/util/csv-parse';
 import { Button } from 'primevue';
 import { onMounted, ref } from 'vue';
 
@@ -62,10 +62,16 @@ const handleNext = () => {
 
 const handleBack = () => {
   const currentRouteName = router.currentRoute.value.name;
+
   if (currentRouteName === 'pullSheet') {
     router.push({ name: 'upload' });
   } else if (currentRouteName === 'shipping') {
-    router.push({ name: 'pullSheet' });
+    console.log(pullSheet.value);
+    if (!pullSheet.value.length) {
+      router.push({ name: 'upload' });
+    } else {
+      router.push({ name: 'pullSheet' });
+    }
   }
 };
 
