@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 import router from '@/router';
-import { parseShippingCsv, type PullSheetCsv, type ShippingCsv } from '@/util/csv-parse';
+import { parsePullSheetCsv, parseShippingCsv, type PullSheetCsv, type ShippingCsv } from '@/util/csv-parse';
 import { Button } from 'primevue';
 import { onMounted, ref } from 'vue';
 
@@ -81,9 +81,19 @@ const handleReset = () => {
 
 // Lifecycle Hooks --------------------------------------------------------------------
 onMounted(async () => {
-  const response = await fetch('/TCGplayer_ShippingExport.csv');
-  const blob = await response.blob();
-  const file = new File([blob], 'ShippingExport.csv', { type: blob.type });
-  shippingExport.value = await parseShippingCsv(file);
+  // load test data
+  if (import.meta.env.DEV) {
+    const shipResponse = await fetch('/TCGplayer_ShippingExport.csv');
+    const pullResponse = await fetch('/TCGplayer_PullSheet.csv');
+
+    const shipBlob = await shipResponse.blob();
+    const pullBlob = await pullResponse.blob();
+
+    const shipFile = new File([shipBlob], 'ShippingExport.csv', { type: shipBlob.type });
+    const pullFile = new File([pullBlob], 'PullSheet.csv', { type: pullBlob.type });
+
+    shippingExport.value = await parseShippingCsv(shipFile);
+    pullSheet.value = await parsePullSheetCsv(pullFile);
+  }
 });
 </script>
