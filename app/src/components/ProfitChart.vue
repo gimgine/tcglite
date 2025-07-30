@@ -72,7 +72,7 @@ const chartData = computed<ChartData | undefined>(() => {
     ]
   };
 });
-const total = computed(() => chartData.value?.datasets[0].data?.reduce((acc, e) => acc + e, 0).toFixed(2) ?? 0);
+const total = computed(() => (chartData.value?.datasets[0].data as number[])?.reduce((acc, e) => acc + e, 0).toFixed(2) ?? 0);
 const dateRange = ref([dayjs().subtract(6, 'day').toDate(), new Date()]);
 
 // Provided ---------------------------------------------------------------------------
