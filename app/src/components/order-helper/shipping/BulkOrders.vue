@@ -64,7 +64,7 @@
 
   <div class="mt-4 flex items-center justify-between">
     <Button severity="secondary" label="Back" icon="pi pi-arrow-left" icon-pos="left" @click="$emit('back')" />
-    <Button ref="copyButton" class="w-fit" icon="pi pi-download" label="Order CSV" severity="info" @click="handleCsvDownload" />
+    <Button ref="copyButton" class="w-fit" icon="pi pi-download" label="Contacts CSV" severity="info" @click="handleCsvDownload" />
     <Button class="w-fit" icon="pi pi-check" label="Done" :disabled="shippingIndex !== bulkOrders.length - 1" @click="$emit('done')" />
   </div>
 </template>
