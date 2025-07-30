@@ -1,6 +1,7 @@
 <template>
-  <div class="mb-4 flex items-center justify-between">
+  <div class="mb-4 flex items-center gap-2">
     <span class="text-xl font-bold">Order History</span>
+    <div class="mr-auto rounded border border-gray-200 bg-gray-100 px-2 py-1 text-sm">Total: {{ total }}</div>
     <date-picker v-model="dateRange" selection-mode="range" :manual-input="false" :max-date="new Date()" class="w-54" />
   </div>
   <chart type="line" :data="chartData" :options="chartOptions" />
@@ -71,6 +72,7 @@ const chartData = computed<ChartData | undefined>(() => {
     ]
   };
 });
+const total = computed(() => chartData.value?.datasets[0].data?.reduce((acc, e) => acc + e, 0) ?? 0);
 const dateRange = ref([dayjs().subtract(6, 'day').toDate(), new Date()]);
 
 // Provided ---------------------------------------------------------------------------
