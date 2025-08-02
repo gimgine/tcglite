@@ -1,10 +1,17 @@
 <template>
-  <div class="mb-4 flex items-center gap-2">
-    <span class="text-xl font-bold">Profit</span>
-    <div class="mr-auto rounded border border-gray-200 bg-gray-100 px-2 py-1 text-sm">Total: {{ total }}</div>
-    <date-picker v-model="dateRange" selection-mode="range" :manual-input="false" :max-date="new Date()" class="w-54" />
+  <div class="flex items-center gap-2">
+    <span class="mr-auto text-xl font-bold">Profit</span>
+    <div class="rounded border border-gray-200 bg-gray-100 px-2 py-1 text-sm">Total: {{ total }}</div>
+    <div class="rounded border border-gray-200 bg-gray-100 px-2 py-1 text-sm">
+      Average: {{ (total / dayjs(dateRange[1]).diff(dateRange[0], 'days')).toFixed(2) }}
+    </div>
   </div>
-  <chart type="line" :data="chartData" :options="chartOptions" />
+  <div class="my-2 flex items-center gap-2">
+    <Button size="small" @click="setMonth">Month</Button>
+    <Button size="small" class="mr-auto" @click="setWeek"> Week </Button>
+    <date-picker v-model="dateRange" size="small" selection-mode="range" :manual-input="false" :max-date="new Date()" class="w-48" />
+  </div>
+  <chart class="my-2" type="line" :data="chartData" :options="chartOptions" />
 </template>
 
 <script setup lang="ts">
@@ -12,7 +19,7 @@ import { useOrderStore } from '@/store/order-store';
 import { type ChartData, type ChartOptions } from 'chart.js';
 import Chart from 'primevue/chart';
 import { computed, ref } from 'vue';
-import { DatePicker } from 'primevue';
+import { DatePicker, Button } from 'primevue';
 import dayjs from 'dayjs';
 // Types ------------------------------------------------------------------------------
 
@@ -84,6 +91,13 @@ const dateRange = ref([dayjs().subtract(6, 'day').toDate(), new Date()]);
 // Watchers ---------------------------------------------------------------------------
 
 // Methods ----------------------------------------------------------------------------
+const setWeek = () => {
+  dateRange.value = [dayjs(dateRange.value[1]).subtract(6, 'day').toDate(), dateRange.value[1]];
+};
+
+const setMonth = () => {
+  dateRange.value = [dayjs(dateRange.value[1]).subtract(30, 'day').toDate(), dateRange.value[1]];
+};
 
 // Lifecycle Hooks --------------------------------------------------------------------
 </script>
