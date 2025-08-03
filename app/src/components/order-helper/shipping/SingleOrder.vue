@@ -78,7 +78,7 @@ defineEmits<{ back: []; done: [] }>();
 const copyButton = ref();
 
 // Variables --------------------------------------------------------------------------
-const ONE_OUNCE_LIMIT = 10;
+const ONE_OUNCE_LIMIT = 9;
 const TWO_OUNCE_LIMIT = 20;
 const THREE_OUNCE_LIMIT = 35;
 
@@ -87,7 +87,7 @@ const toast = useToast();
 
 const isBigOrder = computed(() => {
   if (selectedShipping.value) {
-    return selectedShipping.value['Item Count'] >= 10;
+    return selectedShipping.value['Item Count'] > ONE_OUNCE_LIMIT;
   } else {
     return false;
   }

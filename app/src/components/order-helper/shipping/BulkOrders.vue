@@ -91,7 +91,7 @@ defineEmits<{ back: []; done: [] }>();
 const copyButton = ref();
 
 // Variables --------------------------------------------------------------------------
-const ONE_OUNCE_LIMIT = 10;
+const ONE_OUNCE_LIMIT = 9;
 const TWO_OUNCE_LIMIT = 20;
 const THREE_OUNCE_LIMIT = 35;
 
