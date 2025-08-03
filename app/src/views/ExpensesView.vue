@@ -8,50 +8,16 @@
     </div>
 
     <div class="col-span-12 w-full rounded-md bg-white p-8 shadow">
-      <DataTable
-        :value="expenses"
-        removable-sort
-        filter-display="menu"
-        data-key="id"
-        striped-rows
-        paginator
-        :rows="25"
-        :rows-per-page-options="[10, 25, 50, 100, 500]"
-      >
-        <template #header>
-          <div class="flex items-center justify-between">
-            <div class="flex gap-4 md:flex-row md:items-center">
-              <span class="text-lg">Expenses</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <Button label="Profit" icon="pi pi-refresh" :loading="isRefreshProfitLoading" @click="handleRefreshProfitClick" />
-              <Button label="Add" icon="pi pi-plus" @click="isAddModalVisible = true" />
-            </div>
-          </div>
-        </template>
-        <Column field="type" header="Type" sortable>
-          <template #body="slotProps">
-            <Tag :severity="getTypeSeverity(slotProps.data.type)" :value="slotProps.data.type" />
-          </template>
-        </Column>
-        <Column field="name" header="Name" sortable />
-        <Column field="price" header="Price" sortable>
-          <template #body="slotProps">
-            {{ formatCurrency(slotProps.data.price) }}
-          </template>
-        </Column>
-        <Column field="quantity" header="Quantity" sortable />
-        <Column field="purchaseDate" header="Purchase Date" sortable>
-          <template #body="slotProps">
-            {{ slotProps.data.purchaseDate ? new Date(slotProps.data.purchaseDate).toLocaleDateString() : '' }}
-          </template>
-        </Column>
-        <Column field="url" header="URL" sortable>
-          <template #body="slotProps">
-            <a class="text-blue-500" :href="slotProps.data.url" target="_blank">{{ slotProps.data.url }}</a>
-          </template>
-        </Column>
-      </DataTable>
+      <div class="mb-2 flex items-center justify-between">
+        <div class="flex gap-4 md:flex-row md:items-center">
+          <span class="text-lg">Expenses</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <Button label="Profit" icon="pi pi-refresh" :loading="isRefreshProfitLoading" @click="handleRefreshProfitClick" />
+          <Button label="Add" icon="pi pi-plus" @click="isAddModalVisible = true" />
+        </div>
+      </div>
+      <ag-grid-vue ref="grid" class="h-[calc(100vh-24rem)]" :grid-options :column-defs :row-data="expenses" />
     </div>
   </div>
 
@@ -114,23 +80,10 @@ import { Collections, ExpensesTypeOptions, type ExpensesRecord } from '@/types/p
 import { formatCurrency } from '@/util/functions';
 import pb from '@/util/pocketbase';
 import { Form, type FormSubmitEvent } from '@primevue/forms';
-import {
-  Button,
-  Column,
-  DataTable,
-  Dialog,
-  IconField,
-  InputIcon,
-  Select,
-  InputNumber,
-  InputText,
-  Message,
-  Tag,
-  useToast,
-  DatePicker,
-  type TagProps
-} from 'primevue';
-import { onMounted, reactive, ref } from 'vue';
+import { Button, Dialog, IconField, InputIcon, Select, InputNumber, InputText, Message, useToast, DatePicker } from 'primevue';
+import { onMounted, reactive, ref, nextTick } from 'vue';
+import type { GridOptions, ValueFormatterParams, ValueGetterParams } from 'ag-grid-community';
+import { AgGridVue } from 'ag-grid-vue3';
 // Types ------------------------------------------------------------------------------
 interface FormValues {
   type?: string;
@@ -144,10 +97,42 @@ interface FormValues {
 // Component Info (props/emits) -------------------------------------------------------
 
 // Template Refs ----------------------------------------------------------------------
+const grid = ref();
 
 // Variables --------------------------------------------------------------------------
 const toast = useToast();
-
+const gridOptions: GridOptions<ExpensesRecord> = {
+  defaultColDef: { filter: true },
+  pagination: true,
+  paginationPageSize: 20,
+  suppressCellFocus: true,
+  onModelUpdated: (e) => {
+    e.api.autoSizeAllColumns();
+    nextTick(() => {
+      if (e.api.getAllDisplayedColumnGroups()!.reduce((acc, c) => acc + c.getActualWidth(), 0) < grid.value?.$el.clientWidth) {
+        e.api.sizeColumnsToFit();
+      }
+    });
+  }
+};
+const columnDefs: ColumnDef<ExpensesRecord>[] = [
+  {
+    field: 'type',
+    cellRenderer: (params) => `<span class="${getTypeClass(params.data.type)} border p-1 rounded text-xs text-gray-600">${params.data.type}</span>`
+  },
+  { field: 'name' },
+  { field: 'price', valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data.price) },
+  { field: 'quantity' },
+  {
+    field: 'purchaseDate',
+    valueGetter: (params: ValueGetterParams) => (params.data.purchaseDate ? new Date(params.data.purchaseDate).toLocaleDateString() : '-')
+  },
+  {
+    field: 'url',
+    headerName: 'URL',
+    cellRenderer: (params) => `<a class="text-blue-500" href="${params.data.url}" target="_blank">${params.data.url}</a>`
+  }
+];
 // Reactive Variables -----------------------------------------------------------------
 const expenses = ref<ExpensesRecord[]>([]);
 
@@ -230,14 +215,14 @@ const averageCogs = () => {
   return totalSpentOnCards / quantityCardsPurchased;
 };
 
-const getTypeSeverity = (type: ExpensesTypeOptions): TagProps['severity'] => {
+const getTypeClass = (type: ExpensesTypeOptions): string => {
   switch (type) {
     case ExpensesTypeOptions.cards:
-      return 'success';
+      return 'bg-green-200 border-green-300';
     case ExpensesTypeOptions.supplies:
-      return 'info';
+      return 'bg-blue-200 border-blue-300';
     case ExpensesTypeOptions.other:
-      return 'secondary';
+      return 'bg-gray-200 border-gray-300';
   }
 };
 

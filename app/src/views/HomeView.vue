@@ -24,104 +24,25 @@
     </div>
 
     <div class="col-span-12">
-      <div class="rounded-md bg-white p-4 pt-0 shadow">
-        <DataTable
-          v-model:expanded-rows="expandedRows"
-          :value="orderStore.orders"
-          sort-field="orderDate"
-          :sort-order="-1"
-          removable-sort
-          filter-display="menu"
-          data-key="id"
-          striped-rows
-          paginator
-          :rows="10"
-          :rows-per-page-options="[10, 25, 50, 100, 500]"
-          @row-expand="handleRowExpand"
-        >
-          <template #header>
-            <div class="flex items-center justify-between">
-              <div class="flex flex-col gap-4 md:flex-row md:items-center">
-                <span class="text-lg">Order Profits</span>
-              </div>
-              <div class="flex gap-2">
-                <FileUpload
-                  mode="basic"
-                  choose-label="Check Orders"
-                  choose-icon="pi pi-search"
-                  accept=".csv"
-                  auto
-                  @select="handleCheckOrdersCsvClick"
-                />
-                <FileUpload
-                  mode="basic"
-                  choose-label="Pull Sheet"
-                  choose-icon="pi pi-file-arrow-up"
-                  accept=".csv"
-                  auto
-                  @select="handlePullSheetCsvClick"
-                />
-                <FileUpload
-                  mode="basic"
-                  choose-label="Shipping Export"
-                  choose-icon="pi pi-file-arrow-up"
-                  accept=".csv"
-                  auto
-                  @select="handleCsvClick"
-                />
-              </div>
-            </div>
-          </template>
-          <Column expander />
-          <Column field="id" header="Order Number" sortable />
-          <Column field="firstName" header="First Name" sortable />
-          <Column field="lastName" header="Last Name" sortable />
-          <Column field="orderDate" header="Order Date" sortable>
-            <template #body="slotProps">
-              {{ new Date(slotProps.data.orderDate).toLocaleDateString() }}
-            </template>
-          </Column>
-          <Column field="itemCount" header="Item Count" sortable />
-          <Column field="totalPrice" header="Total Price" sortable>
-            <template #body="slotProps">
-              {{ formatCurrency(slotProps.data.totalPrice) }}
-            </template>
-          </Column>
-          <Column header="Fees">
-            <template #body="slotProps">
-              <span class="text-orange-600">
-                {{ formatCurrency(slotProps.data.processingFee + slotProps.data.vendorFee) }}
-              </span>
-            </template>
-          </Column>
-          <Column field="cogs" header="COGS" sortable>
-            <template #body="slotProps">
-              {{ formatCurrency(slotProps.data.cogs) }}
-            </template>
-          </Column>
-          <Column field="shippingCost" header="Shipping" sortable>
-            <template #body="slotProps">
-              <span
-                :class="`rounded-sm px-2 py-0.5 text-xs font-bold ${slotProps.data.shippingCost === orderService.TRACKING.cost ? 'bg-blue-200 text-blue-600' : 'bg-pink-200 text-pink-600'}`"
-              >
-                {{ orderService.getShippingMethod(slotProps.data.shippingCost)?.name }}
-              </span>
-            </template>
-          </Column>
-          <Column field="profit" header="Profit/Loss" sortable>
-            <template #body="slotProps">
-              <span :class="slotProps.data.profit > 0 ? 'text-green-600' : 'text-red-600'">
-                {{ formatCurrency(slotProps.data.profit) }}
-              </span>
-            </template>
-          </Column>
-
-          <template #expansion="slotProps">
-            <div>
-              <span>{{ slotProps.data.id }}</span>
-            </div>
-          </template>
-        </DataTable>
+      <div class="rounded-md bg-white p-8 shadow">
+        <div class="mb-2 flex items-center justify-between">
+          <div class="flex flex-col gap-4 md:flex-row md:items-center">
+            <span class="text-lg">Order Profits</span>
+          </div>
+          <div class="flex gap-2">
+            <FileUpload mode="basic" choose-label="Check Orders" choose-icon="pi pi-search" accept=".csv" auto @select="handleCheckOrdersCsvClick" />
+            <FileUpload
+              mode="basic"
+              choose-label="Pull Sheet"
+              choose-icon="pi pi-file-arrow-up"
+              accept=".csv"
+              auto
+              @select="handlePullSheetCsvClick"
+            />
+            <FileUpload mode="basic" choose-label="Shipping Export" choose-icon="pi pi-file-arrow-up" accept=".csv" auto @select="handleCsvClick" />
+          </div>
+        </div>
+        <ag-grid-vue ref="grid" class="h-[calc(100vh-24rem)]" :grid-options :column-defs :row-data="orderStore.orders" />
       </div>
     </div>
   </div>
@@ -152,13 +73,16 @@ import { useOrderStore } from '@/store/order-store';
 import { type OrdersRecord } from '@/types/pocketbase-types';
 import { parseShippingCsv, type ShippingCsv } from '@/util/csv-parse';
 import { formatCurrency, isToday } from '@/util/functions';
-import { Column, DataTable, type DataTableRowExpandEvent, Dialog, FileUpload, type FileUploadSelectEvent, useToast } from 'primevue';
-import { ref } from 'vue';
+import { Dialog, FileUpload, type FileUploadSelectEvent, useToast } from 'primevue';
+import { ref, nextTick } from 'vue';
+import type { GridOptions, ValueFormatterParams } from 'ag-grid-community';
+import { AgGridVue } from 'ag-grid-vue3';
 // Types ------------------------------------------------------------------------------
 
 // Component Info (props/emits) -------------------------------------------------------
 
 // Template Refs ----------------------------------------------------------------------
+const grid = ref();
 
 // Variables --------------------------------------------------------------------------
 const orderService = new OrderService();
@@ -166,10 +90,56 @@ const orderStore = useOrderStore();
 
 const cardService = new CardService();
 
+const gridOptions: GridOptions<OrdersRecord> = {
+  defaultColDef: { filter: true },
+  pagination: true,
+  paginationPageSize: 20,
+  suppressCellFocus: true,
+  onModelUpdated: (e) => {
+    e.api.autoSizeAllColumns();
+    nextTick(() => {
+      if (e.api.getAllDisplayedColumnGroups()!.reduce((acc, c) => acc + c.getActualWidth(), 0) < grid.value?.$el.clientWidth) {
+        e.api.sizeColumnsToFit();
+      }
+    });
+  }
+};
+const columnDefs: ColumnDef<OrdersRecord>[] = [
+  { field: 'id', headerName: 'Order Number' },
+  { field: 'firstName', headerName: 'First Name' },
+  { field: 'lastName', headerName: 'Last Name' },
+  {
+    field: 'orderDate',
+    headerName: 'Order Date',
+    valueFormatter: (params: ValueFormatterParams) => new Date(params.data.orderDate).toLocaleDateString()
+  },
+  { field: 'itemCount' },
+  { field: 'totalPrice', valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data.totalPrice) ?? '' },
+  {
+    headerName: 'Fees',
+    cellClass: 'text-orange-600',
+    valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data.processingFee + params.data.vendorFee) ?? ''
+  },
+  { field: 'cogs', headerName: 'COGS', valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data.cogs) ?? '' },
+  {
+    field: 'shippingCost',
+    headerName: 'Shipping',
+    cellRenderer: (
+      params
+    ) => `<span class="rounded-sm px-2 py-0.5 text-xs font-bold ${params.data.shippingCost === orderService.TRACKING.cost ? 'bg-blue-200 text-blue-600' : 'bg-pink-200 text-pink-600'}">
+                ${orderService.getShippingMethod(params.data.shippingCost)?.name}
+              </span>`
+  },
+  {
+    field: 'profit',
+    cellClass: (params) => (params.data.profit > 0 ? 'text-green-600' : 'text-red-600'),
+    valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data.profit) ?? ''
+  }
+];
+
 // Reactive Variables -----------------------------------------------------------------
 const toast = useToast();
 
-const expandedRows = ref({});
 const isCheckModalVisible = ref(false);
 const checkingOrders = ref<ShippingCsv[]>([]);
 
@@ -230,10 +200,6 @@ const handleCheckOrdersCsvClick = async (event: FileUploadSelectEvent) => {
   const shippingCsv = await parseShippingCsv(event.files[0]);
   isCheckModalVisible.value = true;
   checkingOrders.value = shippingCsv;
-};
-
-const handleRowExpand = (event: DataTableRowExpandEvent<OrdersRecord>) => {
-  console.log(event);
 };
 
 const totalProfit = (orders: OrdersRecord[], today?: boolean) => {

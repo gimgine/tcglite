@@ -1,17 +1,18 @@
 <template>
   <div class="grid grid-cols-12 gap-4">
     <div class="col-span-12 rounded-md bg-white p-4 shadow md:col-span-6">
-      <order-history-chart />
+      <stat-chart y-label="# of Orders" :data-getter="orderDataGetter" />
     </div>
     <div class="col-span-12 rounded-md bg-white p-4 shadow md:col-span-6">
-      <profit-chart />
+      <stat-chart y-label="Profit ($)" :data-getter="profitDataGetter" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import OrderHistoryChart from '@/components/OrderHistoryChart.vue';
-import ProfitChart from '@/components/ProfitChart.vue';
+import StatChart from '@/components/StatChart.vue';
+import { useOrderStore } from '@/store/order-store';
+import dayjs, { type Dayjs } from 'dayjs';
 
 // Types ------------------------------------------------------------------------------
 
@@ -22,6 +23,7 @@ import ProfitChart from '@/components/ProfitChart.vue';
 // Variables --------------------------------------------------------------------------
 
 // Reactive Variables -----------------------------------------------------------------
+const orderStore = useOrderStore();
 
 // Provided ---------------------------------------------------------------------------
 
@@ -32,6 +34,27 @@ import ProfitChart from '@/components/ProfitChart.vue';
 // Watchers ---------------------------------------------------------------------------
 
 // Methods ----------------------------------------------------------------------------
+const orderDataGetter = (start: Dayjs, end: Dayjs, diff: number) => {
+  return orderStore.orders
+    .map((o) => dayjs(o.orderDate).startOf('day'))
+    .filter((d) => !d.isBefore(start) && !d.isAfter(end))
+    .reduce((acc, d) => {
+      const diffInDays = end.diff(d, 'day');
+      acc[diff - diffInDays - 1] += 1;
+      return acc;
+    }, new Array(diff).fill(0));
+};
+
+const profitDataGetter = (start: Dayjs, end: Dayjs, diff: number) => {
+  return orderStore.orders
+    .filter((o) => !dayjs(o.orderDate).isBefore(start) && !dayjs(o.orderDate).isAfter(end))
+    .reduce((acc, o) => {
+      const d = dayjs(o.orderDate);
+      const diffInDays = end.diff(d, 'day');
+      acc[diff - diffInDays - 1] += o.profit;
+      return acc;
+    }, new Array(diff).fill(0));
+};
 
 // Lifecycle Hooks --------------------------------------------------------------------
 </script>
