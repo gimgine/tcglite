@@ -1,6 +1,6 @@
 <template>
   <div class="flex items-center gap-2">
-    <span class="mr-auto text-xl font-bold">Order History</span>
+    <span class="mr-auto text-xl font-bold">{{ header }}</span>
     <Message size="small" severity="secondary">Total: {{ total }}</Message>
     <Message size="small" severity="secondary"> Average: {{ (total / dayjs(dateRange[1]).diff(dateRange[0], 'days')).toFixed(2) }} </Message>
   </div>
@@ -21,7 +21,7 @@ import dayjs, { type Dayjs } from 'dayjs';
 // Types ------------------------------------------------------------------------------
 
 // Component Info (props/emits) -------------------------------------------------------
-const props = defineProps<{ dataGetter: (start: Dayjs, end: Dayjs, diff: number) => number[]; yLabel: string }>();
+const props = defineProps<{ dataGetter: (start: Dayjs, end: Dayjs, diff: number) => number[]; yLabel: string; header: string }>();
 
 // Template Refs ----------------------------------------------------------------------
 

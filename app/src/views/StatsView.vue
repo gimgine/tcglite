@@ -1,10 +1,10 @@
 <template>
   <div class="grid grid-cols-12 gap-4">
     <div class="col-span-12 rounded-md bg-white p-4 shadow md:col-span-6">
-      <stat-chart y-label="# of Orders" :data-getter="orderDataGetter" />
+      <stat-chart header="Order History" y-label="# of Orders" :data-getter="orderDataGetter" />
     </div>
     <div class="col-span-12 rounded-md bg-white p-4 shadow md:col-span-6">
-      <stat-chart y-label="Profit ($)" :data-getter="profitDataGetter" />
+      <stat-chart header="Profit" y-label="Profit ($)" :data-getter="profitDataGetter" />
     </div>
   </div>
 </template>
