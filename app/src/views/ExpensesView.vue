@@ -82,7 +82,7 @@ import pb from '@/util/pocketbase';
 import { Form, type FormSubmitEvent } from '@primevue/forms';
 import { Button, Dialog, IconField, InputIcon, Select, InputNumber, InputText, Message, useToast, DatePicker } from 'primevue';
 import { onMounted, reactive, ref, nextTick } from 'vue';
-import type { GridOptions, ValueFormatterParams, ValueGetterParams } from 'ag-grid-community';
+import type { GridOptions, ColDef, ValueFormatterParams, ValueGetterParams, ICellRendererParams } from 'ag-grid-community';
 import { AgGridVue } from 'ag-grid-vue3';
 // Types ------------------------------------------------------------------------------
 interface FormValues {
@@ -115,13 +115,14 @@ const gridOptions: GridOptions<ExpensesRecord> = {
     });
   }
 };
-const columnDefs: ColumnDef<ExpensesRecord>[] = [
+const columnDefs: ColDef<ExpensesRecord>[] = [
   {
     field: 'type',
-    cellRenderer: (params) => `<span class="${getTypeClass(params.data.type)} border p-1 rounded text-xs text-gray-600">${params.data.type}</span>`
+    cellRenderer: (params: ICellRendererParams) =>
+      `<span class="${getTypeClass(params.data.type)} border p-1 rounded text-xs text-gray-600">${params.data.type}</span>`
   },
   { field: 'name' },
-  { field: 'price', valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data.price) },
+  { field: 'price', valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data.price) ?? '-' },
   { field: 'quantity' },
   {
     field: 'purchaseDate',
@@ -130,7 +131,7 @@ const columnDefs: ColumnDef<ExpensesRecord>[] = [
   {
     field: 'url',
     headerName: 'URL',
-    cellRenderer: (params) => `<a class="text-blue-500" href="${params.data.url}" target="_blank">${params.data.url}</a>`
+    cellRenderer: (params: ICellRendererParams) => `<a class="text-blue-500" href="${params.data.url}" target="_blank">${params.data.url}</a>`
   }
 ];
 // Reactive Variables -----------------------------------------------------------------

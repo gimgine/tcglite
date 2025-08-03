@@ -75,7 +75,7 @@ import { parseShippingCsv, type ShippingCsv } from '@/util/csv-parse';
 import { formatCurrency, isToday } from '@/util/functions';
 import { Dialog, FileUpload, type FileUploadSelectEvent, useToast } from 'primevue';
 import { ref, nextTick } from 'vue';
-import type { GridOptions, ValueFormatterParams } from 'ag-grid-community';
+import type { GridOptions, ValueFormatterParams, ICellRendererParams, CellClassParams, ColDef } from 'ag-grid-community';
 import { AgGridVue } from 'ag-grid-vue3';
 // Types ------------------------------------------------------------------------------
 
@@ -104,7 +104,7 @@ const gridOptions: GridOptions<OrdersRecord> = {
     });
   }
 };
-const columnDefs: ColumnDef<OrdersRecord>[] = [
+const columnDefs: ColDef<OrdersRecord>[] = [
   { field: 'id', headerName: 'Order Number' },
   { field: 'firstName', headerName: 'First Name' },
   { field: 'lastName', headerName: 'Last Name' },
@@ -125,14 +125,14 @@ const columnDefs: ColumnDef<OrdersRecord>[] = [
     field: 'shippingCost',
     headerName: 'Shipping',
     cellRenderer: (
-      params
+      params: ICellRendererParams
     ) => `<span class="rounded-sm px-2 py-0.5 text-xs font-bold ${params.data.shippingCost === orderService.TRACKING.cost ? 'bg-blue-200 text-blue-600' : 'bg-pink-200 text-pink-600'}">
                 ${orderService.getShippingMethod(params.data.shippingCost)?.name}
               </span>`
   },
   {
     field: 'profit',
-    cellClass: (params) => (params.data.profit > 0 ? 'text-green-600' : 'text-red-600'),
+    cellClass: (params: CellClassParams) => (params.data.profit > 0 ? 'text-green-600' : 'text-red-600'),
     valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data.profit) ?? ''
   }
 ];

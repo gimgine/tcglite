@@ -17,7 +17,7 @@ import { type ChartData, type ChartOptions } from 'chart.js';
 import Chart from 'primevue/chart';
 import { computed, ref } from 'vue';
 import { DatePicker, Button, Message } from 'primevue';
-import dayjs from 'dayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 // Types ------------------------------------------------------------------------------
 
 // Component Info (props/emits) -------------------------------------------------------
@@ -38,7 +38,7 @@ const chartOptions = computed<ChartOptions>(() => ({
     x: {
       title: {
         display: true,
-        text: props.xLabel
+        text: 'Date'
       }
     }
   },
