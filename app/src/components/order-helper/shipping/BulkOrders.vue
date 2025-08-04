@@ -155,7 +155,7 @@ const bulkOrders = computed<BulkOrder[]>(() => {
 
 const groupName = computed(
   () =>
-    `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()} ${bulkOrders.value[shippingIndex.value]?.type === 'Tracking' ? 'Tracking' : `${bulkOrders.value[shippingIndex.value]?.ounces}oz`}`
+    `${new Date().toLocaleDateString().slice(0, -5)} ${new Date().toLocaleTimeString().slice(0, -6)} ${bulkOrders.value[shippingIndex.value]?.type === 'Tracking' ? 'Tracking' : `${bulkOrders.value[shippingIndex.value]?.ounces}oz`}`
 );
 
 // Provided ---------------------------------------------------------------------------
