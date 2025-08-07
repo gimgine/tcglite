@@ -14,7 +14,10 @@ export enum Collections {
   Cards = 'cards',
   Expenses = 'expenses',
   Orders = 'orders',
+  PricingRules = 'pricingRules',
+  PricingStrategies = 'pricingStrategies',
   Sets = 'sets',
+  StrategyRules = 'strategyRules',
   Users = 'users'
 }
 
@@ -149,11 +152,44 @@ export type OrdersRecord = {
   vendorFee?: number;
 };
 
+export enum PricingRulesFilterOptions {
+  'all' = 'all',
+  'set' = 'set',
+  'quantity' = 'quantity',
+  'market' = 'market',
+  'low' = 'low'
+}
+export type PricingRulesRecord = {
+  created?: IsoDateString;
+  filter?: PricingRulesFilterOptions;
+  filterValue?: string;
+  id: string;
+  pricing: string;
+  updated?: IsoDateString;
+};
+
+export type PricingStrategiesRecord = {
+  created?: IsoDateString;
+  id: string;
+  lastUsed?: IsoDateString;
+  name?: string;
+  updated?: IsoDateString;
+};
+
 export type SetsRecord = {
   code?: string;
   created?: IsoDateString;
   id: string;
   tcgplayer: string;
+  updated?: IsoDateString;
+};
+
+export type StrategyRulesRecord = {
+  created?: IsoDateString;
+  id: string;
+  order?: number;
+  rule?: RecordIdString;
+  strategy?: RecordIdString;
   updated?: IsoDateString;
 };
 
@@ -179,7 +215,10 @@ export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> &
 export type CardsResponse<Texpand = unknown> = Required<CardsRecord> & BaseSystemFields<Texpand>;
 export type ExpensesResponse<Texpand = unknown> = Required<ExpensesRecord> & BaseSystemFields<Texpand>;
 export type OrdersResponse<Texpand = unknown> = Required<OrdersRecord> & BaseSystemFields<Texpand>;
+export type PricingRulesResponse<Texpand = unknown> = Required<PricingRulesRecord> & BaseSystemFields<Texpand>;
+export type PricingStrategiesResponse<Texpand = unknown> = Required<PricingStrategiesRecord> & BaseSystemFields<Texpand>;
 export type SetsResponse<Texpand = unknown> = Required<SetsRecord> & BaseSystemFields<Texpand>;
+export type StrategyRulesResponse<Texpand = unknown> = Required<StrategyRulesRecord> & BaseSystemFields<Texpand>;
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>;
 
 // Types containing all Records and Responses, useful for creating typing helper functions
@@ -193,7 +232,10 @@ export type CollectionRecords = {
   cards: CardsRecord;
   expenses: ExpensesRecord;
   orders: OrdersRecord;
+  pricingRules: PricingRulesRecord;
+  pricingStrategies: PricingStrategiesRecord;
   sets: SetsRecord;
+  strategyRules: StrategyRulesRecord;
   users: UsersRecord;
 };
 
@@ -206,7 +248,10 @@ export type CollectionResponses = {
   cards: CardsResponse;
   expenses: ExpensesResponse;
   orders: OrdersResponse;
+  pricingRules: PricingRulesResponse;
+  pricingStrategies: PricingStrategiesResponse;
   sets: SetsResponse;
+  strategyRules: StrategyRulesResponse;
   users: UsersResponse;
 };
 
@@ -222,6 +267,9 @@ export type TypedPocketBase = PocketBase & {
   collection(idOrName: 'cards'): RecordService<CardsResponse>;
   collection(idOrName: 'expenses'): RecordService<ExpensesResponse>;
   collection(idOrName: 'orders'): RecordService<OrdersResponse>;
+  collection(idOrName: 'pricingRules'): RecordService<PricingRulesResponse>;
+  collection(idOrName: 'pricingStrategies'): RecordService<PricingStrategiesResponse>;
   collection(idOrName: 'sets'): RecordService<SetsResponse>;
+  collection(idOrName: 'strategyRules'): RecordService<StrategyRulesResponse>;
   collection(idOrName: 'users'): RecordService<UsersResponse>;
 };

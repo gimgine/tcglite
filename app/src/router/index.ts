@@ -1,7 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import HomeView from '../views/HomeView.vue';
 import OrderHelperView from '../views/OrderHelperView.vue';
-import PricingView from '@/views/PricingView.vue';
+import PricingView from '@/views/NewPricingView.vue';
 import ExpensesView from '@/views/ExpensesView.vue';
 import StatsView from '@/views/StatsView.vue';
 import OrderHelperUpload from '@/components/order-helper/OrderHelperUpload.vue';
