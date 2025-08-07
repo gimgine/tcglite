@@ -37,7 +37,7 @@
         <RouterLink
           :class="[
             'flex h-full items-center gap-2 transition-colors',
-            route.name === 'orderHelper' ? 'font-semibold text-purple-500' : 'text-gray-500 hover:text-gray-900'
+            route.path.startsWith('/order-helper') ? 'font-semibold text-purple-500' : 'text-gray-500 hover:text-gray-900'
           ]"
           :to="{ name: 'orderHelper' }"
         >
