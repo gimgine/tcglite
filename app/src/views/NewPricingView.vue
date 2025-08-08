@@ -457,9 +457,9 @@ const handleStrategySubmit = async (event: FormSubmitEvent) => {
 const runStrategy = async (id: string) => {
   const strategyRules = await pb.collection(Collections.StrategyRules).getFullList({ filter: `strategy="${id}"`, sort: 'order' });
 
-  strategyRules.forEach(async (sr) => {
+  for (const sr of strategyRules) {
     await runPricingRule(sr.rule);
-  });
+  }
 };
 
 const runPricingRule = async (id: string) => {
