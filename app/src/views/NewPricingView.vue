@@ -593,7 +593,7 @@ const updatePricing = (rows: PricingCsv[], formula: string) => {
   rows.forEach((product) => {
     try {
       const value = eval(formula.replace('l', `${product['TCG Low Price']}`).replace('m', `${product['TCG Market Price']}`));
-      product['TCG Marketplace Price'] = value.toFixed(2); // maybe want to add in logic here similar to how it was before
+      product['TCG Marketplace Price'] = +Math.max(product['TCG Low Price'], value).toFixed(2);
     } catch {
       errorRows.push(product);
     }
