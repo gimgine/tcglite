@@ -2,12 +2,12 @@
   <Toast />
   <div class="sticky top-0 left-0 z-10 flex h-16 w-full items-center justify-between bg-white px-4">
     <div class="flex items-center">
-      <span class="text-xl">Gimgine Trading Post</span>
+      <span class="font-fredoka text-3xl text-sky-600">TCGlite</span>
       <div class="ml-8 flex h-full items-center gap-8">
         <RouterLink
           :class="[
             'flex h-full items-center gap-2 transition-colors',
-            route.name === 'home' ? 'font-semibold text-purple-500' : 'text-gray-500 hover:text-gray-900'
+            route.name === 'home' ? 'font-semibold text-[var(--p-primary-500)]' : 'text-gray-500 hover:text-gray-900'
           ]"
           :to="{ name: 'home' }"
         >
@@ -17,7 +17,7 @@
         <RouterLink
           :class="[
             'flex h-full items-center gap-2 transition-colors',
-            route.name === 'expenses' ? 'font-semibold text-purple-500' : 'text-gray-500 hover:text-gray-900'
+            route.name === 'expenses' ? 'font-semibold text-[var(--p-primary-500)]' : 'text-gray-500 hover:text-gray-900'
           ]"
           :to="{ name: 'expenses' }"
         >
@@ -27,7 +27,7 @@
         <RouterLink
           :class="[
             'flex h-full items-center gap-2 transition-colors',
-            route.name === 'stats' ? 'font-semibold text-purple-500' : 'text-gray-500 hover:text-gray-900'
+            route.name === 'stats' ? 'font-semibold text-[var(--p-primary-500)]' : 'text-gray-500 hover:text-gray-900'
           ]"
           :to="{ name: 'stats' }"
         >
@@ -37,7 +37,7 @@
         <RouterLink
           :class="[
             'flex h-full items-center gap-2 transition-colors',
-            route.path.startsWith('/order-helper') ? 'font-semibold text-purple-500' : 'text-gray-500 hover:text-gray-900'
+            route.path.startsWith('/order-helper') ? 'font-semibold text-[var(--p-primary-500)]' : 'text-gray-500 hover:text-gray-900'
           ]"
           :to="{ name: 'orderHelper' }"
         >
@@ -47,7 +47,7 @@
         <RouterLink
           :class="[
             'flex h-full items-center gap-2 transition-colors',
-            route.name === 'pricing' ? 'font-semibold text-purple-500' : 'text-gray-500 hover:text-gray-900'
+            route.name === 'pricing' ? 'font-semibold text-[var(--p-primary-500)]' : 'text-gray-500 hover:text-gray-900'
           ]"
           :to="{ name: 'pricing' }"
         >

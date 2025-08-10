@@ -119,7 +119,7 @@ const columnDefs: ColDef<ExpensesRecord>[] = [
   {
     field: 'type',
     cellRenderer: (params: ICellRendererParams) =>
-      `<span class="${getTypeClass(params.data.type)} border p-1 rounded text-xs text-gray-600">${params.data.type}</span>`
+      `<span class="${getTypeClass(params.data.type)} rounded-sm px-2 py-0.5 text-xs font-bold">${params.data.type}</span>`
   },
   { field: 'name' },
   { field: 'price', valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data.price) ?? '-' },
@@ -219,11 +219,11 @@ const averageCogs = () => {
 const getTypeClass = (type: ExpensesTypeOptions): string => {
   switch (type) {
     case ExpensesTypeOptions.cards:
-      return 'bg-green-200 border-green-300';
+      return 'bg-green-200 text-green-600';
     case ExpensesTypeOptions.supplies:
-      return 'bg-blue-200 border-blue-300';
+      return 'bg-blue-200 text-blue-600';
     case ExpensesTypeOptions.other:
-      return 'bg-gray-200 border-gray-300';
+      return 'bg-gray-200 text-gray-600';
   }
 };
 
