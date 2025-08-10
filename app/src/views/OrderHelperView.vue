@@ -6,7 +6,7 @@
       </div>
 
       <div class="rounded-md bg-white p-8 shadow">
-        <span class="text-3xl font-semibold">Order Helper</span>
+        <span class="text-2xl font-semibold">Order Helper</span>
 
         <router-view v-slot="{ Component }">
           <component

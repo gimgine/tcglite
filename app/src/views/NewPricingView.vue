@@ -3,26 +3,21 @@
     <div class="col-span-3 rounded-md bg-white p-6 shadow">
       <div class="flex h-full flex-col justify-between">
         <div class="flex h-full flex-col gap-4">
-          <FileUpload mode="basic" choose-label="Pricing CSV" choose-icon="pi pi-upload" accept=".csv" auto @select="handlePricingUpload" />
+          <span class="text-2xl font-semibold">Pricing</span>
+          <div class="flex items-center justify-between">
+            <FileUpload mode="basic" choose-label="Pricing CSV" choose-icon="pi pi-upload" accept=".csv" auto @select="handlePricingUpload" />
+            <div class="flex flex-col items-end">
+              <span class="text-sm text-gray-600">Last Strategy Used</span>
+              <div class="flex items-baseline gap-2">
+                <span>{{ lastUsedStrategy?.name }}</span>
+                <span class="text-sm text-gray-400 italic">{{ lastUsedTime }}</span>
+              </div>
+            </div>
+          </div>
 
           <PanelMenu v-model:expanded-keys="expandedKeys" :model="items">
             <template #item="{ item }">
-              <a v-if="item.isRule" class="flex items-center bg-white! px-4 py-2">
-                <span>{{ item.label }}</span>
-                <Button
-                  v-tooltip="'Delete'"
-                  class="ml-auto"
-                  size="small"
-                  icon="pi pi-trash"
-                  variant="text"
-                  severity="danger"
-                  rounded
-                  @click="deleteRule(item.id)"
-                />
-                <Button v-tooltip="'Edit'" size="small" icon="pi pi-pencil" variant="text" severity="warn" rounded @click="openEditRule(item.id)" />
-                <Button v-tooltip="'Apply Pricing'" size="small" icon="pi pi-play" variant="text" rounded @click="runPricingRule(item.id)" />
-              </a>
-              <a v-else-if="item.isStrategy" class="flex items-center bg-white! px-4 py-2">
+              <a v-if="item.isStrategy" class="flex items-center bg-white! px-4 py-2">
                 <span>{{ item.label }}</span>
                 <Button
                   v-tooltip="'Delete'"
@@ -43,8 +38,40 @@
                   rounded
                   @click="openEditStrategy(item.id)"
                 />
-                <Button v-tooltip="'Apply Pricing'" size="small" icon="pi pi-play" variant="text" rounded @click="runStrategy(item.id)" />
+                <Button
+                  v-tooltip="'Run Strategy'"
+                  size="small"
+                  icon="pi pi-play"
+                  variant="text"
+                  rounded
+                  :disabled="!pricing.length"
+                  @click="runStrategy(item.id)"
+                />
               </a>
+              <a v-else-if="item.isRule" class="flex items-center bg-white! px-4 py-2">
+                <span>{{ item.label }}</span>
+                <Button
+                  v-tooltip="'Delete'"
+                  class="ml-auto"
+                  size="small"
+                  icon="pi pi-trash"
+                  variant="text"
+                  severity="danger"
+                  rounded
+                  @click="deleteRule(item.id)"
+                />
+                <Button v-tooltip="'Edit'" size="small" icon="pi pi-pencil" variant="text" severity="warn" rounded @click="openEditRule(item.id)" />
+                <Button
+                  v-tooltip="'Apply Pricing Rule'"
+                  size="small"
+                  icon="pi pi-play"
+                  variant="text"
+                  rounded
+                  :disabled="!pricing.length"
+                  @click="runPricingRule(item.id)"
+                />
+              </a>
+
               <a v-else class="flex cursor-pointer items-center gap-2 px-4 py-2">
                 <span v-if="item.items" :class="['pi', expandedKeys[item.key ?? ''] === true ? 'pi-angle-down' : 'pi-angle-right']"></span>
                 <span :class="item.icon"></span>
@@ -63,7 +90,7 @@
           </PanelMenu>
         </div>
 
-        <Button label="Export Pricing" icon="pi pi-file-export" @click="exportPricing" />
+        <Button label="Export Pricing" icon="pi pi-file-export" :disabled="!pricing.length" @click="exportPricing" />
       </div>
     </div>
 
@@ -159,13 +186,15 @@
 </template>
 
 <script setup lang="ts">
-import { Collections, PricingRulesFilterOptions } from '@/types/pocketbase-types';
+import { Collections, PricingRulesFilterOptions, type PricingStrategiesRecord } from '@/types/pocketbase-types';
 import { parsePricingCsv, type PricingCsv } from '@/util/csv-parse';
 import { formatCurrency } from '@/util/functions';
 import pb from '@/util/pocketbase';
 import { Form, type FormSubmitEvent } from '@primevue/forms';
 import { themeQuartz, type ColDef, type GridOptions, type ValueFormatterParams } from 'ag-grid-community';
 import { AgGridVue } from 'ag-grid-vue3';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime.js';
 import Papa from 'papaparse';
 import { Button, Dialog, FileUpload, InputText, Message, OrderList, PanelMenu, Select, useToast, type FileUploadSelectEvent } from 'primevue';
 import { computed, nextTick, onMounted, reactive, ref } from 'vue';
@@ -281,6 +310,12 @@ const isEditStrategy = computed(() => editingStrategyId.value);
 const editingStrategyRules = ref<Array<{ label: string; ruleId: string; strategyRuleId?: string }>>([]); // cache original strategy rules for deletion
 const strategyRules = ref<Array<{ label: string; ruleId: string; strategyRuleId?: string }>>([]);
 const rulesOptions = ref<Array<{ label: string; ruleId: string }>>([]);
+
+const lastUsedStrategy = ref<PricingStrategiesRecord>();
+const lastUsedTime = computed(() => {
+  dayjs.extend(relativeTime);
+  return dayjs(lastUsedStrategy.value?.lastUsed).fromNow();
+});
 
 const items = ref<{ key: string; label: string; icon: string; items?: { isStrategy?: boolean; isRule?: boolean; label: string; id: string }[] }[]>([
   {
@@ -460,9 +495,13 @@ const handleStrategySubmit = async (event: FormSubmitEvent) => {
 const runStrategy = async (id: string) => {
   const strategyRules = await pb.collection(Collections.StrategyRules).getFullList({ filter: `strategy="${id}"`, sort: 'order' });
 
+  await pb.collection(Collections.PricingStrategies).update(id, { lastUsed: new Date() });
+
   for (const sr of strategyRules) {
     await runPricingRule(sr.rule);
   }
+
+  await refreshLastUsed();
 };
 
 const runPricingRule = async (id: string) => {
@@ -640,9 +679,21 @@ const refreshStrategies = async () => {
   items.value[0].items = strategies.map((s) => ({ isStrategy: true, label: s.name, id: s.id }));
 };
 
+const refreshLastUsed = async () => {
+  const strategies = await pb.collection(Collections.PricingStrategies).getFullList();
+  const mostRecentStrategy = strategies.reduce((latest: (typeof strategies)[number] | null, current) => {
+    if (!current.lastUsed) return latest;
+    if (!latest) return current;
+    return dayjs(current.lastUsed).isAfter(dayjs(latest.lastUsed)) ? current : latest;
+  }, null);
+
+  lastUsedStrategy.value = mostRecentStrategy as PricingStrategiesRecord;
+};
+
 // Lifecycle Hooks --------------------------------------------------------------------
 onMounted(async () => {
   await refreshStrategies();
   await refreshRules();
+  await refreshLastUsed();
 });
 </script>
