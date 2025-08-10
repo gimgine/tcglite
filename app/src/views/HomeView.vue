@@ -111,7 +111,8 @@ const columnDefs: ColDef<OrdersRecord>[] = [
   {
     field: 'orderDate',
     headerName: 'Order Date',
-    valueFormatter: (params: ValueFormatterParams) => new Date(params.data.orderDate).toLocaleDateString()
+    valueFormatter: (params: ValueFormatterParams) => new Date(params.data.orderDate).toLocaleDateString(),
+    sort: 'desc'
   },
   { field: 'itemCount' },
   { field: 'totalPrice', valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data.totalPrice) ?? '' },
