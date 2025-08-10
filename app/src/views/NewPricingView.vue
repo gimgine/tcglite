@@ -278,6 +278,7 @@ const editingRuleId = ref();
 const isEditRule = computed(() => editingRuleId.value);
 const isEditStrategy = computed(() => editingStrategyId.value);
 
+const editingStrategyRules = ref<Array<{ label: string; ruleId: string; strategyRuleId?: string }>>([]); // cache original strategy rules for deletion
 const strategyRules = ref<Array<{ label: string; ruleId: string; strategyRuleId?: string }>>([]);
 const rulesOptions = ref<Array<{ label: string; ruleId: string }>>([]);
 
@@ -318,6 +319,7 @@ const handlePricingUpload = async (event: FileUploadSelectEvent) => {
 const openAddStrategy = async () => {
   const rules = await pb.collection(Collections.PricingRules).getFullList();
 
+  strategyFormInitialValues.name = defaultStrategyFormValues.name;
   rulesOptions.value = rules.map((r) => ({ label: `${r.pricing} for ${r.filter} ${r.filterValue}`, ruleId: r.id }));
   strategyRules.value = [];
 
@@ -336,6 +338,7 @@ const openEditStrategy = async (id: string) => {
     const rule = rulesRes.find((r) => r.id === srr.rule);
     return { label: `${rule?.pricing} for ${rule?.filter} ${rule?.filterValue}`, ruleId: srr.rule, strategyRuleId: srr.id };
   });
+  editingStrategyRules.value = [...strategyRules.value];
 
   rulesOptions.value = rulesRes.map((r) => ({ label: `${r.pricing} for ${r.filter} ${r.filterValue}`, ruleId: r.id }));
 
@@ -427,7 +430,7 @@ const handleStrategySubmit = async (event: FormSubmitEvent) => {
     if (isEditStrategy.value) {
       await pb.collection(Collections.PricingStrategies).update(editingStrategyId.value, event.values);
 
-      strategyRules.value.forEach(async (sr) => {
+      editingStrategyRules.value.forEach(async (sr) => {
         if (sr.strategyRuleId) await pb.collection(Collections.StrategyRules).delete(sr.strategyRuleId);
       });
 
