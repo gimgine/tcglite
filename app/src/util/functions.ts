@@ -2,6 +2,7 @@ import { Collections } from '@/types/pocketbase-types';
 import { parsePricingCsv, type PricingCsv } from './csv-parse';
 import pb from './pocketbase';
 import axios from 'axios';
+import { useToast, type ToastServiceMethods } from 'primevue';
 
 export const formatCurrency = (value?: number) => {
   return value?.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -67,5 +68,15 @@ export const syncSetsTable = async (fromPricingCsv: boolean) => {
     console.log(`Sets table synced from ${fromPricingCsv ? 'PricingCsv' : 'Cards'}`);
   } catch (error) {
     console.error('Error syncing Sets table:', error);
+  }
+};
+
+export const copyToClipboard = async (value: string, toast: ToastServiceMethods, label?: string) => {
+  try {
+    await navigator.clipboard.writeText(value);
+    toast.add({ severity: 'success', summary: 'Copied', detail: `Copied ${label ?? 'text'} to clipboard.`, life: 3000 });
+  } catch (err) {
+    console.error('Failed to copy:', err);
+    toast.add({ severity: 'error', summary: 'Error', detail: `Failed to copy ${label ?? 'text'} to clipboard.`, life: 3000 });
   }
 };

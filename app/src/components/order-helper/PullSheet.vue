@@ -2,7 +2,7 @@
   <div class="flex flex-col justify-between">
     <span class="my-4 text-xl">Pull Sheet</span>
 
-    <div class="grid max-h-[60vh] grid-cols-12 gap-8 overflow-y-auto">
+    <div class="grid max-h-[55vh] grid-cols-12 gap-8 overflow-y-auto">
       <div v-if="hoveredImage" class="absolute top-4 right-4 z-10">
         <img :src="hoveredImage" alt="Card Image" class="w-64 rounded shadow-lg" />
       </div>

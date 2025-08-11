@@ -58,7 +58,14 @@
 
   <div class="mt-4 flex items-center justify-between">
     <Button severity="secondary" label="Back" icon="pi pi-arrow-left" icon-pos="left" @click="$emit('back')" />
-    <Button ref="copyButton" class="w-fit" icon="pi pi-copy" label="Copy" severity="info" @click="copyToClipboard" />
+    <Button
+      ref="copyButton"
+      class="w-fit"
+      icon="pi pi-copy"
+      label="Copy"
+      severity="info"
+      @click="copyToClipboard(formattedShipping ?? '', toast, 'shipping address')"
+    />
     <Button class="w-fit" icon="pi pi-check" label="Done" :disabled="shippingIndex !== shippingExport.length - 1" @click="$emit('done')" />
   </div>
 </template>
@@ -68,6 +75,8 @@ import { OrderService } from '@/service/order-service';
 import { type ShippingCsv } from '@/util/csv-parse';
 import { Button, useToast } from 'primevue';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { copyToClipboard } from '@/util/functions';
+
 // Types ------------------------------------------------------------------------------
 
 // Component Info (props/emits) -------------------------------------------------------
@@ -84,7 +93,6 @@ const THREE_OUNCE_LIMIT = 35;
 
 // Reactive Variables -----------------------------------------------------------------
 const toast = useToast();
-
 const isBigOrder = computed(() => {
   if (selectedShipping.value) {
     return selectedShipping.value['Item Count'] > ONE_OUNCE_LIMIT;
@@ -172,18 +180,6 @@ const handleGoLeft = async () => {
 const handleGoRight = async () => {
   if (shippingIndex.value + 1 <= props.shippingExport.length - 1) {
     shippingIndex.value += 1;
-  }
-};
-
-const copyToClipboard = async () => {
-  try {
-    if (formattedShipping.value) {
-      await navigator.clipboard.writeText(formattedShipping.value);
-      toast.add({ severity: 'success', summary: 'Copied', detail: 'Shipping address copied to clipboard.', life: 3000 });
-    }
-  } catch (err) {
-    console.error('Failed to copy:', err);
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to copy shipping address to clipboard.', life: 3000 });
   }
 };
 

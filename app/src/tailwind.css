@@ -3,7 +3,7 @@
 @import 'tailwindcss';
 
 @theme {
-  --font-fredoka: "Fredoka", sans-serif;
+  --font-fredoka: 'Fredoka', sans-serif;
 }
 
 @layer utilities {
@@ -19,4 +19,8 @@
       /* indigo-400 */ #a78bfa /* purple-400 */
     );
   }
+}
+
+.p-tooltip {
+  max-width: 20rem !important;
 }

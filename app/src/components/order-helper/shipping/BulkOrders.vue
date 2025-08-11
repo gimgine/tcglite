@@ -34,7 +34,13 @@
           <span class="float-right">{{ `(${bulkOrders[shippingIndex]?.orders.length})` }}</span>
         </div>
         <ul class="h-24 overflow-y-scroll">
-          <li v-for="order in bulkOrders[shippingIndex]?.orders" :key="order['Order #']">
+          <li
+            v-for="order in bulkOrders[shippingIndex]?.orders"
+            :key="order['Order #']"
+            v-tooltip="formatShipping(order)"
+            class="w-fit cursor-pointer pr-2"
+            @click="copyToClipboard(formatShipping(order), toast, 'shipping address')"
+          >
             {{ order.FirstName + ' ' + order.LastName }}
           </li>
         </ul>
@@ -44,7 +50,7 @@
         <span class="border-b border-gray-300 text-sm text-gray-500">Group Name</span>
         <div class="flex items-center justify-between">
           <span class="font-mono"> {{ groupName }}</span>
-          <Button icon="pi pi-copy" variant="text" size="small" severity="info" rounded @click="copyToClipboard" />
+          <Button icon="pi pi-copy" variant="text" size="small" severity="info" rounded @click="copyToClipboard(groupName, toast, 'group name')" />
         </div>
       </div>
     </div>
@@ -73,6 +79,7 @@
 import { OrderService } from '@/service/order-service';
 import { type ShippingCsv } from '@/util/csv-parse';
 import { Button, useToast } from 'primevue';
+import { copyToClipboard } from '@/util/functions';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import Papa from 'papaparse';
 
@@ -184,16 +191,6 @@ const handleGoRight = async () => {
   }
 };
 
-const copyToClipboard = async () => {
-  try {
-    await navigator.clipboard.writeText(groupName.value);
-    toast.add({ severity: 'success', summary: 'Copied', detail: 'Group name copied to clipboard.', life: 3000 });
-  } catch (err) {
-    console.error('Failed to copy:', err);
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to copy group name to clipboard.', life: 3000 });
-  }
-};
-
 const handleCsvDownload = () => {
   const stampsCsv = bulkOrders.value[shippingIndex.value].orders.map((order) => {
     return {
@@ -223,6 +220,11 @@ const handleCsvDownload = () => {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 };
+
+const formatShipping = (order: ShippingCsv) =>
+  [`${order.FirstName} ${order.LastName}`, order.Address1, order.Address2 ?? null, `${order.City}, ${order.State} ${order.PostalCode}`]
+    .filter(Boolean)
+    .join('\n');
 
 // Lifecycle Hooks --------------------------------------------------------------------
 onMounted(() => {
