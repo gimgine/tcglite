@@ -354,6 +354,7 @@ const handlePricingUpload = async (event: FileUploadSelectEvent) => {
 const openAddStrategy = async () => {
   const rules = await pb.collection(Collections.PricingRules).getFullList();
 
+  editingStrategyId.value = null;
   strategyFormInitialValues.name = defaultStrategyFormValues.name;
   rulesOptions.value = rules.map((r) => ({ label: `${r.pricing} for ${r.filter} ${r.filterValue}`, ruleId: r.id }));
   strategyRules.value = [];
