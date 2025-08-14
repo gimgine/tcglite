@@ -3,7 +3,7 @@ import time
 
 def fetch_sets_records():
     local_url = "http://localhost:8090/api/collections/sets/records?page=1&perPage=500&skipTotal=1"
-    prod_url = "https://gimgine-tcg.pockethost.io/api/collections/sets/records"
+    prod_url = "https://tcglite.pockethost.io/api/collections/sets/records"
 
     try:
         response = requests.get(local_url)
