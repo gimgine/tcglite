@@ -7,7 +7,7 @@ export const useOrderStore = defineStore('orderStore', () => {
   const orders = ref<OrdersRecord[]>([]);
 
   const refresh = async () => {
-    orders.value = await pb.collection(Collections.Orders).getFullList();
+    orders.value = await pb.collection(Collections.Orders).getFullList({ sort: '-orderDate' });
   };
 
   return { orders, refresh };

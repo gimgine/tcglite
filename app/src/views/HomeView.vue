@@ -75,7 +75,7 @@ import { parseShippingCsv, type ShippingCsv } from '@/util/csv-parse';
 import { formatCurrency, isToday } from '@/util/functions';
 import { Dialog, FileUpload, type FileUploadSelectEvent, useToast } from 'primevue';
 import { ref, nextTick } from 'vue';
-import type { GridOptions, ValueFormatterParams, ICellRendererParams, CellClassParams, ColDef } from 'ag-grid-community';
+import type { GridOptions, ValueFormatterParams, ICellRendererParams, CellClassParams, ColDef, ValueGetterParams } from 'ag-grid-community';
 import { AgGridVue } from 'ag-grid-vue3';
 // Types ------------------------------------------------------------------------------
 
@@ -114,17 +114,20 @@ const columnDefs: ColDef<OrdersRecord>[] = [
     valueFormatter: (params: ValueFormatterParams) => new Date(params.data.orderDate).toLocaleDateString(),
     sort: 'desc'
   },
-  { field: 'itemCount' },
-  { field: 'totalPrice', valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data.totalPrice) ?? '' },
+  { field: 'itemCount', maxWidth: 150 },
+  { field: 'totalPrice', maxWidth: 150, valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data.totalPrice) ?? '' },
   {
     headerName: 'Fees',
     cellClass: 'text-orange-600',
+    maxWidth: 120,
+    valueGetter: (params: ValueGetterParams) => (params.data.processingFee ?? 0) + (params.data.vendorFee ?? 0),
     valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data.processingFee + params.data.vendorFee) ?? ''
   },
-  { field: 'cogs', headerName: 'COGS', valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data.cogs) ?? '' },
+  { field: 'cogs', headerName: 'COGS', maxWidth: 120, valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data.cogs) ?? '' },
   {
     field: 'shippingCost',
     headerName: 'Shipping',
+    maxWidth: 150,
     cellRenderer: (
       params: ICellRendererParams
     ) => `<span class="rounded-sm px-2 py-0.5 text-xs font-bold ${params.data.shippingCost === orderService.TRACKING.cost ? 'bg-blue-200 text-blue-600' : 'bg-pink-200 text-pink-600'}">
@@ -133,6 +136,7 @@ const columnDefs: ColDef<OrdersRecord>[] = [
   },
   {
     field: 'profit',
+    maxWidth: 150,
     cellClass: (params: CellClassParams) => (params.data.profit > 0 ? 'text-green-600' : 'text-red-600'),
     valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data.profit) ?? ''
   }

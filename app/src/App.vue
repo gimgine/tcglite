@@ -60,7 +60,7 @@
       <img :src="pbLogo" />
     </a>
   </div>
-  <div class="flex min-h-[calc(100vh-4rem)] flex-col px-4 lg:px-20 lg:py-10">
+  <div class="flex min-h-[calc(100vh-4rem)] flex-col px-4 lg:px-10 lg:py-10">
     <router-view />
   </div>
 </template>
