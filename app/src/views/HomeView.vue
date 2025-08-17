@@ -48,18 +48,30 @@
   </div>
 
   <Dialog v-model:visible="isCheckModalVisible" header="Orders Stats" position="topright">
-    <div class="grid grid-cols-3 gap-10">
-      <div class="col-span-1 flex flex-col">
-        <span class="text-sm text-gray-600">Orders</span>
+    <div class="grid grid-cols-6 grid-rows-2 gap-x-10 gap-y-5">
+      <div class="col-span-2 flex flex-col">
+        <span class="text-sm text-gray-500">Orders</span>
         <span>{{ checkingOrders.length }}</span>
       </div>
-      <div class="col-span-1 flex flex-col">
-        <span class="text-sm text-gray-600">Gross Sales</span>
+      <div class="col-span-2 flex flex-col">
+        <span class="text-sm text-gray-500">Gross Sales</span>
         <span>{{ formatCurrency(csvGrossSales(checkingOrders)) }}</span>
       </div>
-      <div class="col-span-1 flex flex-col">
-        <span class="text-sm text-gray-600">Cards Sold</span>
+      <div class="col-span-2 flex flex-col">
+        <span class="text-sm text-gray-500">Cards Sold</span>
         <span>{{ checkingOrders.reduce((sum, order) => sum + order['Item Count'], 0) }}</span>
+      </div>
+      <div class="col-span-3 flex flex-col">
+        <span class="text-sm text-gray-500">Highest Value</span>
+        <span>
+          <i>{{ highestValueOrder?.FirstName }} {{ highestValueOrder?.LastName }}</i> {{ formatCurrency(highestValueOrder?.['Value Of Products']) }}
+        </span>
+      </div>
+      <div class="col-span-3 flex flex-col">
+        <span class="text-sm text-gray-500">Largest Order</span>
+        <span>
+          <i>{{ largestOrder?.FirstName }} {{ largestOrder?.LastName }}</i> {{ largestOrder?.['Item Count'] }}
+        </span>
       </div>
     </div>
   </Dialog>
@@ -74,7 +86,7 @@ import { type OrdersRecord } from '@/types/pocketbase-types';
 import { parseShippingCsv, type ShippingCsv } from '@/util/csv-parse';
 import { formatCurrency, isToday } from '@/util/functions';
 import { Dialog, FileUpload, type FileUploadSelectEvent, useToast } from 'primevue';
-import { ref, nextTick } from 'vue';
+import { ref, nextTick, computed } from 'vue';
 import type { GridOptions, ValueFormatterParams, ICellRendererParams, CellClassParams, ColDef, ValueGetterParams } from 'ag-grid-community';
 import { AgGridVue } from 'ag-grid-vue3';
 // Types ------------------------------------------------------------------------------
@@ -147,6 +159,16 @@ const toast = useToast();
 
 const isCheckModalVisible = ref(false);
 const checkingOrders = ref<ShippingCsv[]>([]);
+
+const highestValueOrder = computed(() => {
+  if (checkingOrders.value.length === 0) return null;
+  return checkingOrders.value.reduce((max, order) => (order['Value Of Products'] > max['Value Of Products'] ? order : max));
+});
+
+const largestOrder = computed(() => {
+  if (checkingOrders.value.length === 0) return null;
+  return checkingOrders.value.reduce((max, order) => (order['Item Count'] > max['Item Count'] ? order : max));
+});
 
 // Provided ---------------------------------------------------------------------------
 
