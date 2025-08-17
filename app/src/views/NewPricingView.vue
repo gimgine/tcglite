@@ -92,7 +92,7 @@
         </div>
 
         <div class="flex flex-col gap-4">
-          <Fieldset legend="Pricing Stats" toggleable :collapsed="!areInventoryStatsVisible">
+          <Fieldset legend="Pricing Stats" :collapsed="!areInventoryStatsVisible">
             <div class="grid grid-cols-6 grid-rows-2 gap-x-10 gap-y-5">
               <div class="col-span-2 flex flex-col">
                 <span class="text-sm text-gray-500">Inventory Value</span>
