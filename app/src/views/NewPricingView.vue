@@ -1,9 +1,10 @@
 <template>
   <div class="grid grid-cols-12 gap-4">
     <div class="col-span-3 rounded-md bg-white p-6 shadow">
-      <div class="flex h-full flex-col justify-between">
+      <div class="flex h-full flex-col justify-between gap-4">
         <div class="flex h-full flex-col gap-4">
           <span class="text-2xl font-semibold">Pricing</span>
+
           <div class="flex items-center justify-between">
             <FileUpload mode="basic" choose-label="Pricing CSV" choose-icon="pi pi-upload" accept=".csv" auto @select="handlePricingUpload" />
             <div class="flex flex-col items-end">
@@ -90,11 +91,41 @@
           </PanelMenu>
         </div>
 
-        <Button label="Export Pricing" icon="pi pi-file-export" :disabled="!pricing.length" @click="exportPricing" />
+        <div class="flex flex-col gap-4">
+          <Fieldset legend="Pricing Stats" toggleable :collapsed="!areInventoryStatsVisible">
+            <div class="grid grid-cols-6 grid-rows-2 gap-x-10 gap-y-5">
+              <div class="col-span-2 flex flex-col">
+                <span class="text-sm text-gray-500">Inventory Value</span>
+                <span>{{ formatCurrency(totalInventoryValue) }}</span>
+              </div>
+              <div class="col-span-2 flex flex-col">
+                <span class="text-sm text-gray-500">Average Card Value</span>
+                <span>{{ formatCurrency(averageCardValue) }}</span>
+              </div>
+              <div class="col-span-2 flex flex-col">
+                <span class="text-sm text-gray-500">Median Card Value</span>
+                <span>{{ formatCurrency(medianCardValue) }}</span>
+              </div>
+              <div class="col-span-2 flex flex-col">
+                <span class="text-sm text-gray-500">Cards Listed</span>
+                <span>{{ totalCardsListed }}</span>
+              </div>
+              <div class="col-span-2 flex flex-col">
+                <span class="text-sm text-gray-500">Cards Below $1</span>
+                <span>{{ cardsBelowOneDollar }}</span>
+              </div>
+              <div class="col-span-2 flex flex-col">
+                <span class="text-sm text-gray-500">Cards Above $5</span>
+                <span>{{ cardsAboveFiveDollars }}</span>
+              </div>
+            </div>
+          </Fieldset>
+          <Button label="Export Pricing" icon="pi pi-file-export" :disabled="!pricing.length" @click="exportPricing" />
+        </div>
       </div>
     </div>
 
-    <div class="col-span-9 h-full rounded-md bg-white p-6">
+    <div class="col-span-9 h-full rounded-md bg-white p-6 shadow">
       <ag-grid-vue ref="grid" class="h-[calc(100vh-12rem)]" :grid-options :column-defs :row-data="pricing" />
     </div>
 
@@ -122,7 +153,7 @@
               $form.addRule.value = null;
             }
           "
-          >r
+        >
           <template #option="slotProps">
             <div :class="[strategyRules.some((sr) => sr.ruleId === slotProps.option.ruleId) ? 'text-gray-300' : '']">
               {{ slotProps.option.label }}
@@ -196,7 +227,19 @@ import { AgGridVue } from 'ag-grid-vue3';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
 import Papa from 'papaparse';
-import { Button, Dialog, FileUpload, InputText, Message, OrderList, PanelMenu, Select, useToast, type FileUploadSelectEvent } from 'primevue';
+import {
+  Button,
+  Dialog,
+  FileUpload,
+  InputText,
+  Message,
+  OrderList,
+  PanelMenu,
+  Select,
+  useToast,
+  Fieldset,
+  type FileUploadSelectEvent
+} from 'primevue';
 import { computed, nextTick, onMounted, reactive, ref } from 'vue';
 
 // Types ------------------------------------------------------------------------------
@@ -337,6 +380,50 @@ const expandedKeys = ref<Record<string, boolean>>({ strats: true });
 const initialValues = reactive({ ...defaultRuleFormValues });
 const strategyFormInitialValues = reactive({ ...defaultStrategyFormValues });
 
+const areInventoryStatsVisible = ref(false);
+
+const totalCardsListed = computed(() => {
+  return pricing.value.reduce((sum, card) => sum + card['Total Quantity'], 0);
+});
+
+const totalInventoryValue = computed(() => {
+  return pricing.value.reduce((sum, card) => sum + card['TCG Marketplace Price'] * card['Total Quantity'], 0);
+});
+
+const averageCardValue = computed(() => {
+  const totalCards = totalCardsListed.value;
+  return totalCards > 0 ? totalInventoryValue.value / totalCards : 0;
+});
+
+const medianCardValue = computed(() => {
+  const values: number[] = [];
+
+  pricing.value.forEach((card) => {
+    for (let i = 0; i < card['Total Quantity']; i++) {
+      values.push(card['TCG Marketplace Price']);
+    }
+  });
+
+  if (values.length === 0) return 0;
+
+  values.sort((a, b) => a - b);
+  const mid = Math.floor(values.length / 2);
+
+  if (values.length % 2 === 0) {
+    return (values[mid - 1] + values[mid]) / 2;
+  } else {
+    return values[mid];
+  }
+});
+
+const cardsBelowOneDollar = computed(() => {
+  return pricing.value.reduce((count, card) => (card['TCG Marketplace Price'] < 1 ? count + card['Total Quantity'] : count), 0);
+});
+
+const cardsAboveFiveDollars = computed(() => {
+  return pricing.value.reduce((count, card) => (card['TCG Marketplace Price'] > 5 ? count + card['Total Quantity'] : count), 0);
+});
+
 // Provided ---------------------------------------------------------------------------
 
 // Exposed ----------------------------------------------------------------------------
@@ -349,6 +436,7 @@ const strategyFormInitialValues = reactive({ ...defaultStrategyFormValues });
 const handlePricingUpload = async (event: FileUploadSelectEvent) => {
   const parsedPricing = await parsePricingCsv(event.files[0]);
   pricing.value = parsedPricing;
+  areInventoryStatsVisible.value = true;
 };
 
 const openAddStrategy = async () => {
