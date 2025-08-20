@@ -237,7 +237,7 @@ const grossSales = (orders: OrdersRecord[], today?: boolean) => {
   const filtered = orders.filter((order) => !today || isToday(new Date(order.created ?? '')));
 
   const sales = filtered.reduce((sum, order) => sum + (order.totalPrice ?? 0), 0);
-  const fees = filtered.reduce((sum, order) => sum + (order.vendorFee ?? 0) + (order.processingFee ?? 0) + (order.shippingCost ?? 0), 0);
+  const fees = filtered.reduce((sum, order) => sum + (order.vendorFee ?? 0) + (order.processingFee ?? 0), 0);
 
   return sales - fees;
 };
