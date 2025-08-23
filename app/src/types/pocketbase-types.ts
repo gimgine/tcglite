@@ -160,9 +160,23 @@ export enum PricingRulesFilterOptions {
   'low' = 'low',
   'our' = 'our'
 }
+
+export enum PricingRulesFilterTypeOptions {
+  'equals' = 'equals',
+  'does not equal' = 'does not equal',
+  'contains' = 'contains',
+  'does not contain' = 'does not contain',
+  'begins with' = 'begins with',
+  'ends with' = 'ends with',
+  'greater than' = 'greater than',
+  'greater than or equal' = 'greater than or equal',
+  'less than' = 'less than',
+  'less than or equal' = 'less than or equal'
+}
 export type PricingRulesRecord = {
   created?: IsoDateString;
   filter?: PricingRulesFilterOptions;
+  filterType?: PricingRulesFilterTypeOptions;
   filterValue?: string;
   id: string;
   pricing: string;

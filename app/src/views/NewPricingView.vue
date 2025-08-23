@@ -18,58 +18,28 @@
 
           <PanelMenu v-model:expanded-keys="expandedKeys" :model="items">
             <template #item="{ item }">
-              <a v-if="item.isStrategy" class="flex items-center bg-white! px-4 py-2">
+              <a v-if="item.isStrategy" class="relative flex items-center bg-white! px-4 py-2">
                 <span>{{ item.label }}</span>
-                <Button
-                  v-tooltip="'Delete'"
-                  class="ml-auto"
-                  size="small"
-                  icon="pi pi-trash"
-                  variant="text"
-                  severity="danger"
-                  rounded
-                  @click="deleteStrategy(item.id)"
-                />
-                <Button
-                  v-tooltip="'Edit'"
-                  size="small"
-                  icon="pi pi-pencil"
-                  variant="text"
-                  severity="warn"
-                  rounded
-                  @click="openEditStrategy(item.id)"
-                />
-                <Button
-                  v-tooltip="'Run Strategy'"
-                  size="small"
-                  icon="pi pi-play"
-                  variant="text"
-                  rounded
-                  :disabled="!pricing.length"
-                  @click="runStrategy(item.id)"
+                <SpeedDial
+                  :model="getStrategyOptions(item)"
+                  show-icon="pi pi-ellipsis-h"
+                  :button-props="{ size: 'small', rounded: true, variant: 'text' }"
+                  class="!absolute right-2"
+                  direction="left"
+                  type="semi-circle"
+                  :radius="50"
                 />
               </a>
-              <a v-else-if="item.isRule" class="flex items-center bg-white! px-4 py-2">
+              <a v-else-if="item.isRule" class="relative flex items-center bg-white! px-4 py-2">
                 <span>{{ item.label }}</span>
-                <Button
-                  v-tooltip="'Delete'"
-                  class="ml-auto"
-                  size="small"
-                  icon="pi pi-trash"
-                  variant="text"
-                  severity="danger"
-                  rounded
-                  @click="deleteRule(item.id)"
-                />
-                <Button v-tooltip="'Edit'" size="small" icon="pi pi-pencil" variant="text" severity="warn" rounded @click="openEditRule(item.id)" />
-                <Button
-                  v-tooltip="'Apply Pricing Rule'"
-                  size="small"
-                  icon="pi pi-play"
-                  variant="text"
-                  rounded
-                  :disabled="!pricing.length"
-                  @click="runPricingRule(item.id)"
+                <SpeedDial
+                  :model="getRuleOptions(item)"
+                  show-icon="pi pi-ellipsis-h"
+                  :button-props="{ size: 'small', rounded: true, variant: 'text' }"
+                  class="!absolute right-2"
+                  direction="left"
+                  type="semi-circle"
+                  :radius="50"
                 />
               </a>
 
@@ -200,9 +170,24 @@
             <Message v-if="$form.filter?.invalid" severity="error" size="small" variant="simple">{{ $form.filter.error?.message }}</Message>
           </div>
           <div class="flex flex-col gap-1">
-            <InputText name="filterValue" placeholder="Filter Value" :disabled="$form.filter?.value === PricingRulesFilterOptions.all" />
-            <Message v-if="$form.filterValue?.invalid" severity="error" size="small" variant="simple">{{ $form.filterValue.error?.message }}</Message>
+            <Select
+              name="filterType"
+              :options="getFilterTypeOptions($form.filter?.value)"
+              option-value="value"
+              option-label="label"
+              placeholder="Filter Type"
+              :disabled="$form.filter?.value === PricingRulesFilterOptions.all"
+            />
+            <Message v-if="$form.filterType?.invalid" severity="error" size="small" variant="simple">{{ $form.filterType.error?.message }}</Message>
           </div>
+        </div>
+        <div class="flex flex-col gap-1">
+          <InputText
+            name="filterValue"
+            placeholder="Filter Value"
+            :disabled="$form.filter?.value === PricingRulesFilterOptions.all || !$form.filterType?.value"
+          />
+          <Message v-if="$form.filterValue?.invalid" severity="error" size="small" variant="simple">{{ $form.filterValue.error?.message }}</Message>
         </div>
 
         <div class="flex flex-col gap-1">
@@ -217,7 +202,7 @@
 </template>
 
 <script setup lang="ts">
-import { Collections, PricingRulesFilterOptions, type PricingStrategiesRecord } from '@/types/pocketbase-types';
+import { Collections, PricingRulesFilterOptions, type PricingRulesRecord, type PricingStrategiesRecord } from '@/types/pocketbase-types';
 import { parsePricingCsv, type PricingCsv } from '@/util/csv-parse';
 import { formatCurrency } from '@/util/functions';
 import pb from '@/util/pocketbase';
@@ -238,13 +223,29 @@ import {
   Select,
   useToast,
   Fieldset,
+  SpeedDial,
   type FileUploadSelectEvent
 } from 'primevue';
+import type { MenuItem } from 'primevue/menuitem';
 import { computed, nextTick, onMounted, reactive, ref } from 'vue';
 
 // Types ------------------------------------------------------------------------------
+enum PricingRulesFilterTypes {
+  'equals' = 'equals',
+  'not_equal' = 'does not equal',
+  'contains' = 'contains',
+  'not_contain' = 'does not contain',
+  'begins' = 'begins with',
+  'ends' = 'ends with',
+  'greater' = 'greater than',
+  'greater_equal' = 'greater than or equal',
+  'less' = 'less than',
+  'less_equal' = 'less than or equal'
+}
+
 interface RuleFormValues {
   filter?: PricingRulesFilterOptions;
+  filterType?: PricingRulesFilterTypes;
   filterValue?: string;
   pricing?: string;
 }
@@ -253,7 +254,10 @@ interface StrategyFormValues {
   name?: string;
 }
 
-type FilterOperator = '>' | '<' | '>=' | '<=' | '==';
+interface Option<T> {
+  label: string;
+  value: T;
+}
 
 // Component Info (props/emits) -------------------------------------------------------
 
@@ -315,7 +319,7 @@ const columnDefs: ColDef<PricingCsv>[] = [
   { field: 'Total Quantity', headerName: 'Quantity' }
 ];
 
-const filterOptions: Array<{ label: string; value: PricingRulesFilterOptions }> = [
+const filterOptions: Array<Option<PricingRulesFilterOptions>> = [
   { label: 'All', value: PricingRulesFilterOptions.all },
   { label: 'Set', value: PricingRulesFilterOptions.set },
   { label: 'Quantity', value: PricingRulesFilterOptions.quantity },
@@ -324,8 +328,48 @@ const filterOptions: Array<{ label: string; value: PricingRulesFilterOptions }> 
   { label: 'Our Price', value: PricingRulesFilterOptions.our }
 ];
 
+const stringFilterTypes: Array<Option<PricingRulesFilterTypes>> = [
+  { label: 'Equals', value: PricingRulesFilterTypes.equals },
+  { label: 'Does Not Equal', value: PricingRulesFilterTypes.not_equal },
+  { label: 'Contains', value: PricingRulesFilterTypes.contains },
+  { label: 'Does Not Contain', value: PricingRulesFilterTypes.not_contain },
+  { label: 'Begins With', value: PricingRulesFilterTypes.begins },
+  { label: 'Ends With', value: PricingRulesFilterTypes.ends }
+];
+
+const numberFilterTypes: Array<Option<PricingRulesFilterTypes>> = [
+  { label: 'Equals', value: PricingRulesFilterTypes.equals },
+  { label: 'Does Not Equal', value: PricingRulesFilterTypes.not_equal },
+  { label: 'Greater Than', value: PricingRulesFilterTypes.greater },
+  { label: 'Greater Than or Equal', value: PricingRulesFilterTypes.greater_equal },
+  { label: 'Less Than', value: PricingRulesFilterTypes.less },
+  { label: 'Less Than or Equal', value: PricingRulesFilterTypes.less_equal }
+];
+
+const filterOptionsToProperty: Partial<Record<PricingRulesFilterOptions, keyof PricingCsv>> = {
+  set: 'Set Name',
+  quantity: 'Total Quantity',
+  market: 'TCG Market Price',
+  low: 'TCG Low Price',
+  our: 'TCG Marketplace Price'
+};
+
+const filters: Record<PricingRulesFilterTypes, (value: string, filterValue: string) => boolean> = {
+  equals: (value, filterValue) => value === filterValue,
+  'does not equal': (value, filterValue) => value !== filterValue,
+  contains: (value, filterValue) => value.includes(filterValue),
+  'does not contain': (value, filterValue) => !value.includes(filterValue),
+  'begins with': (value, filterValue) => value.startsWith(filterValue),
+  'ends with': (value, filterValue) => value.endsWith(filterValue),
+  'greater than': (value, filterValue) => Number(value) > Number(filterValue),
+  'greater than or equal': (value, filterValue) => Number(value) >= Number(filterValue),
+  'less than': (value, filterValue) => Number(value) < Number(filterValue),
+  'less than or equal': (value, filterValue) => Number(value) <= Number(filterValue)
+};
+
 const defaultRuleFormValues = {
-  filter: 'all',
+  filter: PricingRulesFilterOptions.all,
+  filterType: undefined,
   filterValue: '',
   pricing: ''
 };
@@ -333,7 +377,6 @@ const defaultRuleFormValues = {
 const defaultStrategyFormValues = {
   name: ''
 };
-
 // Reactive Variables -----------------------------------------------------------------
 const toast = useToast();
 
@@ -378,7 +421,7 @@ const items = ref<{ key: string; label: string; icon: string; items?: { isStrate
 
 const expandedKeys = ref<Record<string, boolean>>({ strats: true });
 
-const initialValues = reactive({ ...defaultRuleFormValues });
+const initialValues = reactive<Partial<PricingRulesRecord>>({ ...defaultRuleFormValues });
 const strategyFormInitialValues = reactive({ ...defaultStrategyFormValues });
 
 const areInventoryStatsVisible = ref(false);
@@ -484,12 +527,18 @@ const openEditRule = async (id: string) => {
   const ruleRes = await pb.collection(Collections.PricingRules).getOne(id);
 
   initialValues.filter = ruleRes.filter;
+  initialValues.filterType = ruleRes.filterType;
   initialValues.filterValue = ruleRes.filterValue;
   initialValues.pricing = ruleRes.pricing;
 
   editingRuleId.value = id;
 
   isRuleModalOpen.value = true;
+};
+
+const getFilterTypeOptions = (filter?: PricingRulesFilterOptions) => {
+  if (filter === 'set') return stringFilterTypes;
+  return numberFilterTypes;
 };
 
 const strategyFormResolver = ({ values }: { values: StrategyFormValues }) => {
@@ -597,27 +646,14 @@ const runStrategy = async (id: string) => {
 const runPricingRule = async (id: string) => {
   const rule = await pb.collection(Collections.PricingRules).getOne(id);
 
-  let filtered = null;
+  let filtered;
 
-  switch (rule.filter) {
-    case PricingRulesFilterOptions.all:
-      filtered = pricing.value;
-      break;
-    case PricingRulesFilterOptions.set:
-      filtered = pricing.value.filter((p) => p['Set Name'] === rule.filterValue);
-      break;
-    case PricingRulesFilterOptions.market:
-      filtered = filterByNumericCondition(pricing.value, 'TCG Market Price', rule.filterValue!);
-      break;
-    case PricingRulesFilterOptions.low:
-      filtered = filterByNumericCondition(pricing.value, 'TCG Low Price', rule.filterValue!);
-      break;
-    case PricingRulesFilterOptions.quantity:
-      filtered = filterByNumericCondition(pricing.value, 'Total Quantity', rule.filterValue!);
-      break;
-    case PricingRulesFilterOptions.our:
-      filtered = filterByNumericCondition(pricing.value, 'TCG Marketplace Price', rule.filterValue!);
-      break;
+  if (rule.filter === PricingRulesFilterOptions.all) {
+    filtered = pricing.value;
+  } else {
+    const filter = filters[rule.filterType] as (...args: unknown[]) => boolean;
+    const property = filterOptionsToProperty[rule.filter]!;
+    filtered = pricing.value.filter((p) => filter(p[property], rule.filterValue));
   }
 
   if (!filtered) {
@@ -706,35 +742,6 @@ const updatePricing = (rows: PricingCsv[], formula: string) => {
     });
 };
 
-function filterByNumericCondition<T extends Record<string, string | number>>(items: T[], propertyKey: keyof T, filterString: string): T[] {
-  const match = filterString.match(/(>=|<=|>|<|==|!=)\s*(\d+(\.\d+)?)/);
-  if (!match) return [];
-
-  const operator = match[1] as FilterOperator;
-  const threshold = parseFloat(match[2]);
-
-  return items.filter((item) => {
-    const rawValue = item[propertyKey];
-    const numericValue = typeof rawValue === 'number' ? rawValue : parseFloat(rawValue);
-    if (isNaN(numericValue)) return false;
-
-    switch (operator) {
-      case '>':
-        return numericValue > threshold;
-      case '<':
-        return numericValue < threshold;
-      case '>=':
-        return numericValue >= threshold;
-      case '<=':
-        return numericValue <= threshold;
-      case '==':
-        return numericValue === threshold;
-      default:
-        return false;
-    }
-  });
-}
-
 const exportPricing = () => {
   pricing.value.forEach((p) => (p['Add to Quantity'] = 0));
 
@@ -764,7 +771,7 @@ const exportPricing = () => {
 
 const refreshRules = async () => {
   const rules = await pb.collection(Collections.PricingRules).getFullList();
-  items.value[1].items = rules.map((r) => ({ isRule: true, label: `${r.pricing} for ${r.filter} ${r.filterValue}`, id: r.id }));
+  items.value[1].items = rules.map((r) => ({ isRule: true, label: `${r.pricing} for ${r.filter} ${r.filterType} ${r.filterValue}`, id: r.id }));
 };
 
 const refreshStrategies = async () => {
@@ -782,6 +789,46 @@ const refreshLastUsed = async () => {
 
   lastUsedStrategy.value = mostRecentStrategy as PricingStrategiesRecord;
 };
+
+const getStrategyOptions = (item: MenuItem) => [
+  { visible: false },
+  {
+    label: 'Delete',
+    icon: 'pi pi-trash text-red-500',
+    command: () => deleteStrategy(item.id)
+  },
+  {
+    label: 'Edit',
+    icon: 'pi pi-pencil text-yellow-500',
+    command: () => openEditStrategy(item.id)
+  },
+  {
+    label: 'Run',
+    icon: 'pi pi-play text-green-500 pl-1',
+    command: () => runStrategy(item.id)
+  },
+  { visible: false }
+];
+
+const getRuleOptions = (item: MenuItem) => [
+  { visible: false },
+  {
+    label: 'Delete',
+    icon: 'pi pi-trash text-red-500',
+    command: () => deleteRule(item.id)
+  },
+  {
+    label: 'Edit',
+    icon: 'pi pi-pencil text-yellow-500',
+    command: () => openEditRule(item.id)
+  },
+  {
+    label: 'Run',
+    icon: 'pi pi-play text-green-500 pl-1',
+    command: () => runPricingRule(item.id)
+  },
+  { visible: false }
+];
 
 // Lifecycle Hooks --------------------------------------------------------------------
 onMounted(async () => {
