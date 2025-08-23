@@ -7,7 +7,7 @@
       <StatIndicator label="Average COGS" :details="averageCogs()" is-currency />
     </div>
 
-    <div class="col-span-12 w-full rounded-md bg-white p-8 shadow">
+    <div class="col-span-12 w-full rounded-md border border-gray-200 bg-white p-8 shadow">
       <div class="mb-2 flex items-center justify-between">
         <div class="flex gap-4 md:flex-row md:items-center">
           <span class="text-lg">Expenses</span>
@@ -17,7 +17,7 @@
           <Button label="Add" icon="pi pi-plus" @click="isAddModalVisible = true" />
         </div>
       </div>
-      <ag-grid-vue ref="grid" class="h-[calc(100vh-24rem)]" :grid-options :column-defs :row-data="expenses" />
+      <ag-grid-vue ref="grid" class="h-[calc(100vh-270px)]" :grid-options :column-defs :row-data="expenses" />
     </div>
   </div>
 

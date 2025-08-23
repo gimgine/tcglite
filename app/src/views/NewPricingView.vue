@@ -1,6 +1,6 @@
 <template>
   <div class="grid grid-cols-12 gap-4">
-    <div class="col-span-3 rounded-md bg-white p-6 shadow">
+    <div class="col-span-3 rounded-md border border-gray-200 bg-white p-6 shadow">
       <div class="flex h-full flex-col justify-between gap-4">
         <div class="flex h-full flex-col gap-4">
           <span class="text-2xl font-semibold">Pricing</span>
@@ -125,8 +125,8 @@
       </div>
     </div>
 
-    <div class="col-span-9 h-full rounded-md bg-white p-6 shadow">
-      <ag-grid-vue ref="grid" class="h-[calc(100vh-12rem)]" :grid-options :column-defs :row-data="pricing" />
+    <div class="col-span-9 h-full rounded-md border border-gray-200 bg-white p-6 shadow">
+      <ag-grid-vue ref="grid" class="h-[calc(100vh-82px)]" :grid-options :column-defs :row-data="pricing" />
     </div>
 
     <Dialog v-model:visible="isStrategyModalOpen" header="Strategy" modal class="w-96">
