@@ -157,7 +157,8 @@ export enum PricingRulesFilterOptions {
   'set' = 'set',
   'quantity' = 'quantity',
   'market' = 'market',
-  'low' = 'low'
+  'low' = 'low',
+  'our' = 'our'
 }
 export type PricingRulesRecord = {
   created?: IsoDateString;

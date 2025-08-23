@@ -277,7 +277,8 @@ const filterOptions: Array<{ label: string; value: PricingRulesFilterOptions }> 
   { label: 'Set', value: PricingRulesFilterOptions.set },
   { label: 'Quantity', value: PricingRulesFilterOptions.quantity },
   { label: 'Market Price', value: PricingRulesFilterOptions.market },
-  { label: 'Low Price', value: PricingRulesFilterOptions.low }
+  { label: 'Low Price', value: PricingRulesFilterOptions.low },
+  { label: 'Our Price', value: PricingRulesFilterOptions.our }
 ];
 
 const defaultRuleFormValues = {
@@ -525,6 +526,9 @@ const runPricingRule = async (id: string) => {
       break;
     case PricingRulesFilterOptions.quantity:
       filtered = filterByNumericCondition(pricing.value, 'Total Quantity', rule.filterValue!);
+      break;
+    case PricingRulesFilterOptions.our:
+      filtered = filterByNumericCondition(pricing.value, 'TCG Marketplace Price', rule.filterValue!);
       break;
   }
 
