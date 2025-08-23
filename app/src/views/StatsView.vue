@@ -1,9 +1,9 @@
 <template>
   <div class="grid grid-cols-12 gap-4">
-    <div class="col-span-12 rounded-md bg-white p-4 shadow md:col-span-6">
+    <div class="col-span-12 rounded-md border border-gray-200 bg-white p-4 shadow md:col-span-6">
       <stat-chart header="Order History" y-label="# of Orders" :data-getter="orderDataGetter" />
     </div>
-    <div class="col-span-12 rounded-md bg-white p-4 shadow md:col-span-6">
+    <div class="col-span-12 rounded-md border border-gray-200 bg-white p-4 shadow md:col-span-6">
       <stat-chart header="Profit" y-label="Profit ($)" :data-getter="profitDataGetter" />
     </div>
   </div>

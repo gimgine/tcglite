@@ -5,7 +5,7 @@
         <Button icon="pi pi-undo" variant="text" rounded size="small" severity="secondary" @click="handleReset" />
       </div>
 
-      <div class="rounded-md bg-white p-8 shadow">
+      <div class="rounded-md border border-gray-200 bg-white p-8 shadow">
         <span class="text-2xl font-semibold">Order Helper</span>
 
         <router-view v-slot="{ Component }">

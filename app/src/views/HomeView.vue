@@ -24,7 +24,7 @@
     </div>
 
     <div class="col-span-12">
-      <div class="rounded-md bg-white p-8 shadow">
+      <div class="rounded-md border border-gray-200 bg-white p-8 shadow">
         <div class="mb-2 flex items-center justify-between">
           <div class="flex flex-col gap-4 md:flex-row md:items-center">
             <span class="text-lg">Order Profits</span>
@@ -42,7 +42,7 @@
             <FileUpload mode="basic" choose-label="Shipping Export" choose-icon="pi pi-file-arrow-up" accept=".csv" auto @select="handleCsvClick" />
           </div>
         </div>
-        <ag-grid-vue ref="grid" class="h-[calc(100vh-24rem)]" :grid-options :column-defs :row-data="orderStore.orders" />
+        <ag-grid-vue ref="grid" class="h-[calc(100vh-270px)]" :grid-options :column-defs :row-data="orderStore.orders" />
       </div>
     </div>
   </div>
