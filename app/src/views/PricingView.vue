@@ -18,30 +18,39 @@
 
           <PanelMenu v-model:expanded-keys="expandedKeys" :model="items">
             <template #item="{ item }">
-              <a v-if="item.isStrategy" class="dark:bg-surface-900! relative flex items-center bg-white! px-4 py-2">
-                <span>{{ item.label }}</span>
+              <div v-if="item.isStrategy" :class="['relative', pricing.length ? 'cursor-pointer' : 'dark:bg-surface-900! bg-white!']">
+                <a :class="['flex items-center gap-2 px-4 py-2', pricing.length ? '' : 'opacity-25']">
+                  <i class="pi pi-play text-primary" />
+                  <span>{{ item.label }}</span>
+                </a>
                 <SpeedDial
                   :model="getStrategyOptions(item)"
                   show-icon="pi pi-ellipsis-h"
                   :button-props="{ size: 'small', rounded: true, variant: 'text' }"
-                  class="!absolute right-2"
+                  class="!absolute top-1 right-2"
                   direction="left"
                   type="semi-circle"
                   :radius="50"
+                  @click.stop
                 />
-              </a>
-              <a v-else-if="item.isRule" class="dark:bg-surface-900! relative flex items-center bg-white! px-4 py-2">
-                <span>{{ item.label }}</span>
+              </div>
+
+              <div v-else-if="item.isRule" :class="['relative', pricing.length ? 'cursor-pointer' : 'dark:bg-surface-900! bg-white!']">
+                <a :class="['flex items-center gap-2 px-4 py-2', pricing.length ? '' : 'opacity-25']">
+                  <i class="pi pi-play text-primary" />
+                  <span>{{ item.label }}</span>
+                </a>
                 <SpeedDial
                   :model="getRuleOptions(item)"
                   show-icon="pi pi-ellipsis-h"
                   :button-props="{ size: 'small', rounded: true, variant: 'text' }"
-                  class="!absolute right-2"
+                  class="!absolute top-1 right-2"
                   direction="left"
                   type="semi-circle"
                   :radius="50"
+                  @click.stop
                 />
-              </a>
+              </div>
 
               <a v-else class="flex cursor-pointer items-center gap-2 px-4 py-2">
                 <span v-if="item.items" :class="['pi', expandedKeys[item.key ?? ''] === true ? 'pi-angle-down' : 'pi-angle-right']"></span>
@@ -227,7 +236,7 @@ import {
   useToast,
   type FileUploadSelectEvent
 } from 'primevue';
-import type { MenuItem } from 'primevue/menuitem';
+import type { MenuItem, MenuItemCommandEvent } from 'primevue/menuitem';
 import { computed, nextTick, onMounted, reactive, ref } from 'vue';
 
 // Types ------------------------------------------------------------------------------
@@ -635,6 +644,8 @@ const handleStrategySubmit = async (event: FormSubmitEvent) => {
 };
 
 const runStrategy = async (id: string) => {
+  if (!pricing.value.length) return;
+
   const strategyRules = await pb.collection(Collections.StrategyRules).getFullList({ filter: `strategy="${id}"`, sort: 'order' });
 
   await pb.collection(Collections.PricingStrategies).update(id, { lastUsed: new Date() });
@@ -647,6 +658,8 @@ const runStrategy = async (id: string) => {
 };
 
 const runPricingRule = async (id: string) => {
+  if (!pricing.value.length) return;
+
   const rule = await pb.collection(Collections.PricingRules).getOne(id);
 
   let filtered;
@@ -774,12 +787,17 @@ const exportPricing = () => {
 
 const refreshRules = async () => {
   const rules = await pb.collection(Collections.PricingRules).getFullList();
-  items.value[1].items = rules.map((r) => ({ isRule: true, label: `${r.pricing} for ${r.filter} ${r.filterType} ${r.filterValue}`, id: r.id }));
+  items.value[1].items = rules.map((r) => ({
+    isRule: true,
+    label: `${r.pricing} for ${r.filter} ${r.filterType} ${r.filterValue}`,
+    id: r.id,
+    command: () => runPricingRule(r.id)
+  }));
 };
 
 const refreshStrategies = async () => {
   const strategies = await pb.collection(Collections.PricingStrategies).getFullList();
-  items.value[0].items = strategies.map((s) => ({ isStrategy: true, label: s.name, id: s.id }));
+  items.value[0].items = strategies.map((s) => ({ isStrategy: true, label: s.name, id: s.id, command: () => runStrategy(s.id) }));
 };
 
 const refreshLastUsed = async () => {
@@ -798,17 +816,18 @@ const getStrategyOptions = (item: MenuItem) => [
   {
     label: 'Delete',
     icon: 'pi pi-trash text-red-500',
-    command: () => deleteStrategy(item.id)
+    command: (event: MenuItemCommandEvent) => {
+      event.originalEvent.stopPropagation();
+      deleteStrategy(item.id);
+    }
   },
   {
     label: 'Edit',
     icon: 'pi pi-pencil text-yellow-500',
-    command: () => openEditStrategy(item.id)
-  },
-  {
-    label: 'Run',
-    icon: 'pi pi-play text-green-500 pl-1',
-    command: () => runStrategy(item.id)
+    command: (event: MenuItemCommandEvent) => {
+      event.originalEvent.stopPropagation();
+      openEditStrategy(item.id);
+    }
   },
   { visible: false }
 ];
@@ -818,17 +837,18 @@ const getRuleOptions = (item: MenuItem) => [
   {
     label: 'Delete',
     icon: 'pi pi-trash text-red-500',
-    command: () => deleteRule(item.id)
+    command: (event: MenuItemCommandEvent) => {
+      event.originalEvent.stopPropagation();
+      deleteRule(item.id);
+    }
   },
   {
     label: 'Edit',
     icon: 'pi pi-pencil text-yellow-500',
-    command: () => openEditRule(item.id)
-  },
-  {
-    label: 'Run',
-    icon: 'pi pi-play text-green-500 pl-1',
-    command: () => runPricingRule(item.id)
+    command: (event: MenuItemCommandEvent) => {
+      event.originalEvent.stopPropagation();
+      openEditRule(item.id);
+    }
   },
   { visible: false }
 ];
