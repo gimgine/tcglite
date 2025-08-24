@@ -24,7 +24,7 @@
     </div>
 
     <div class="col-span-12">
-      <div class="rounded-md border border-gray-200 bg-white p-8 shadow">
+      <div class="dark:bg-surface-900 dark:border-surface-700 rounded-md border border-gray-200 bg-white p-8 shadow">
         <div class="mb-2 flex items-center justify-between">
           <div class="flex flex-col gap-4 md:flex-row md:items-center">
             <span class="text-lg">Order Profits</span>
@@ -79,16 +79,24 @@
 
 <script setup lang="ts">
 import StatIndicator from '@/components/StatIndicator.vue';
+import { useAgGridTheme } from '@/composables/useAgGridTheme';
 import { CardService } from '@/service/card-service';
 import { OrderService } from '@/service/order-service';
 import { useOrderStore } from '@/store/order-store';
 import { type OrdersRecord } from '@/types/pocketbase-types';
 import { parseShippingCsv, type ShippingCsv } from '@/util/csv-parse';
 import { formatCurrency, isToday } from '@/util/functions';
-import { Dialog, FileUpload, type FileUploadSelectEvent, useToast } from 'primevue';
-import { ref, nextTick, computed } from 'vue';
-import type { GridOptions, ValueFormatterParams, ICellRendererParams, CellClassParams, ColDef, ValueGetterParams } from 'ag-grid-community';
+import {
+  type CellClassParams,
+  type ColDef,
+  type GridOptions,
+  type ICellRendererParams,
+  type ValueFormatterParams,
+  type ValueGetterParams
+} from 'ag-grid-community';
 import { AgGridVue } from 'ag-grid-vue3';
+import { Dialog, FileUpload, type FileUploadSelectEvent, useToast } from 'primevue';
+import { computed, nextTick, ref } from 'vue';
 // Types ------------------------------------------------------------------------------
 
 // Component Info (props/emits) -------------------------------------------------------
@@ -99,10 +107,12 @@ const grid = ref();
 // Variables --------------------------------------------------------------------------
 const orderService = new OrderService();
 const orderStore = useOrderStore();
+const theme = useAgGridTheme();
 
 const cardService = new CardService();
 
 const gridOptions: GridOptions<OrdersRecord> = {
+  theme: theme.value,
   defaultColDef: { filter: true },
   pagination: true,
   paginationPageSize: 20,

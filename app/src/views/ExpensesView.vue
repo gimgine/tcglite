@@ -7,7 +7,7 @@
       <StatIndicator label="Average COGS" :details="averageCogs()" is-currency />
     </div>
 
-    <div class="col-span-12 w-full rounded-md border border-gray-200 bg-white p-8 shadow">
+    <div class="dark:border-surface-700 dark:bg-surface-900 col-span-12 w-full rounded-md border border-gray-200 bg-white p-8 shadow">
       <div class="mb-2 flex items-center justify-between">
         <div class="flex gap-4 md:flex-row md:items-center">
           <span class="text-lg">Expenses</span>
@@ -84,6 +84,7 @@ import { Button, Dialog, IconField, InputIcon, Select, InputNumber, InputText, M
 import { onMounted, reactive, ref, nextTick } from 'vue';
 import type { GridOptions, ColDef, ValueFormatterParams, ValueGetterParams, ICellRendererParams } from 'ag-grid-community';
 import { AgGridVue } from 'ag-grid-vue3';
+import { useAgGridTheme } from '@/composables/useAgGridTheme';
 // Types ------------------------------------------------------------------------------
 interface FormValues {
   type?: string;
@@ -101,7 +102,10 @@ const grid = ref();
 
 // Variables --------------------------------------------------------------------------
 const toast = useToast();
+const theme = useAgGridTheme();
+
 const gridOptions: GridOptions<ExpensesRecord> = {
+  theme: theme.value,
   defaultColDef: { filter: true },
   pagination: true,
   paginationPageSize: 20,

@@ -7,9 +7,9 @@
   <div class="my-2 flex items-center gap-2">
     <Button size="small" @click="setMonth">Month</Button>
     <Button size="small" class="mr-auto" @click="setWeek"> Week </Button>
-    <date-picker v-model="dateRange" size="small" selection-mode="range" :manual-input="false" :max-date="new Date()" class="w-48" />
+    <DatePicker v-model="dateRange" size="small" selection-mode="range" :manual-input="false" :max-date="new Date()" class="w-48" />
   </div>
-  <chart type="line" :data="chartData" :options="chartOptions" />
+  <Chart type="line" :data="chartData" :options="chartOptions" />
 </template>
 
 <script setup lang="ts">
@@ -26,28 +26,46 @@ const props = defineProps<{ dataGetter: (start: Dayjs, end: Dayjs, diff: number)
 // Template Refs ----------------------------------------------------------------------
 
 // Variables --------------------------------------------------------------------------
-const chartOptions = computed<ChartOptions>(() => ({
-  scales: {
-    y: {
-      title: {
-        display: true,
-        text: props.yLabel
+const chartOptions = computed<ChartOptions>(() => {
+  const documentStyle = getComputedStyle(document.documentElement);
+  const textColorSecondary = documentStyle.getPropertyValue('--p-text-muted-color');
+  const surfaceBorder = documentStyle.getPropertyValue('--p-content-border-color');
+
+  return {
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'Date'
+        },
+        ticks: {
+          color: textColorSecondary
+        },
+        grid: {
+          color: surfaceBorder
+        }
       },
-      beginAtZero: true
+      y: {
+        title: {
+          display: true,
+          text: props.yLabel
+        },
+        ticks: {
+          color: textColorSecondary
+        },
+        grid: {
+          color: surfaceBorder
+        },
+        beginAtZero: true
+      }
     },
-    x: {
-      title: {
-        display: true,
-        text: 'Date'
+    plugins: {
+      legend: {
+        display: false
       }
     }
-  },
-  plugins: {
-    legend: {
-      display: false
-    }
-  }
-}));
+  };
+});
 
 // Reactive Variables -----------------------------------------------------------------
 const chartData = computed<ChartData | undefined>(() => {

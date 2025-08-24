@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col gap-2 rounded-md border border-gray-200 bg-white p-6 shadow">
+  <div class="dark:bg-surface-900 dark:border-surface-700 flex flex-col gap-2 rounded-md border border-gray-200 bg-white p-6 shadow">
     <div class="text-sm text-gray-600">{{ label }}</div>
     <div class="flex gap-4 text-lg">
       <div>{{ formattedDetails }}</div>

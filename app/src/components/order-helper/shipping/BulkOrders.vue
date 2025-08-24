@@ -12,28 +12,28 @@
         @keyup="handleGoLeft"
       />
     </div>
-    <div class="mx-28 flex flex-col gap-4 rounded border border-gray-200 p-4 shadow">
+    <div class="dark:bg-surface-950 dark:border-surface-800 mx-28 flex flex-col gap-4 rounded border border-gray-200 p-4 shadow">
       <div>
         <span
           v-show="bulkOrders[shippingIndex]?.type !== 'Tracking'"
           v-tooltip.top="`1 oz: <= ${ONE_OUNCE_LIMIT} cards\n2 oz: <= ${TWO_OUNCE_LIMIT} cards\n3 oz: <= ${THREE_OUNCE_LIMIT} cards`"
-          class="mr-2 rounded-sm bg-gray-100 px-2 py-0.5 text-xs font-bold"
+          class="dark:bg-surface-600 mr-2 rounded-sm bg-gray-100 px-2 py-0.5 text-xs font-bold"
         >
           {{ bulkOrders[shippingIndex]?.ounces + ' oz' }}
         </span>
         <span
-          :class="`mr-2 rounded-sm px-2 py-0.5 text-xs font-bold ${bulkOrders[shippingIndex]?.type === 'Tracking' ? 'bg-blue-200 text-blue-600' : 'bg-pink-200 text-pink-600'}`"
+          :class="`mr-2 rounded-sm px-2 py-0.5 text-xs font-bold ${bulkOrders[shippingIndex]?.type === 'Tracking' ? 'bg-blue-200 text-blue-600' : 'bg-pink-200 text-pink-600 dark:bg-pink-600 dark:text-pink-200'}`"
         >
           {{ bulkOrders[shippingIndex]?.type }}
         </span>
       </div>
 
       <div class="flex flex-col">
-        <div class="border-b border-gray-300 text-sm text-gray-500">
+        <div class="dark:border-surface-700 border-b border-gray-300 text-sm text-gray-500">
           <span>Orders</span>
           <span class="float-right">{{ `(${bulkOrders[shippingIndex]?.orders.length})` }}</span>
         </div>
-        <ul class="h-24 overflow-y-scroll">
+        <ul class="h-32 overflow-y-scroll">
           <li
             v-for="order in bulkOrders[shippingIndex]?.orders"
             :key="order['Order #']"
@@ -47,7 +47,7 @@
       </div>
 
       <div class="flex flex-col">
-        <span class="border-b border-gray-300 text-sm text-gray-500">Group Name</span>
+        <span class="dark:border-surface-700 border-b border-gray-300 text-sm text-gray-500">Group Name</span>
         <div class="flex items-center justify-between">
           <span class="font-mono"> {{ groupName }}</span>
           <Button icon="pi pi-copy" variant="text" size="small" severity="info" rounded @click="copyToClipboard(groupName, toast, 'group name')" />

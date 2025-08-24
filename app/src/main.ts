@@ -19,7 +19,7 @@ const pinia = createPinia();
 
 app.use(router);
 app.use(pinia);
-app.use(PrimeVue, { theme: { preset: Aura, options: { darkModeSelector: false } } });
+app.use(PrimeVue, { theme: { preset: Aura } });
 app.directive('tooltip', Tooltip);
 app.use(ToastService);
 app.mount('#app');

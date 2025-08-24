@@ -1,7 +1,7 @@
 <template>
   <Toast />
 
-  <div class="flex h-svh gap-4 p-4">
+  <div class="bg-surface-100 dark:bg-surface-950 flex h-svh gap-4 p-4">
     <Menu :model="items" class="flex w-full flex-col justify-between shadow md:w-60" pt:list:class="flex-1 overflow-y-auto">
       <template #start>
         <div class="px-4 pt-3 pb-2">
@@ -68,9 +68,3 @@ onMounted(() => {
   if (import.meta.env.DEV) document.title = 'DEV - TCGlite';
 });
 </script>
-
-<style>
-body {
-  background-color: var(--p-surface-100);
-}
-</style>
