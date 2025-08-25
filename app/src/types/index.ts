@@ -16,6 +16,7 @@ export interface OrderRequest {
   shippingFee: number;
   trackingNumber?: string;
   carrier?: string;
+  store: string;
 
   totalPrice?: number;
   vendorFee?: number;
@@ -34,4 +35,5 @@ export interface CardRequest {
   rarity: string;
   order: string;
   quantity: number;
+  store: string;
 }

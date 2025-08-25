@@ -17,6 +17,7 @@ export enum Collections {
   PricingRules = 'pricingRules',
   PricingStrategies = 'pricingStrategies',
   Sets = 'sets',
+  Stores = 'stores',
   StrategyRules = 'strategyRules',
   Users = 'users'
 }
@@ -103,6 +104,7 @@ export type CardsRecord = {
   quantity: number;
   rarity?: string;
   set?: string;
+  store?: RecordIdString;
   updated?: IsoDateString;
 };
 
@@ -118,6 +120,7 @@ export type ExpensesRecord = {
   price?: number;
   purchaseDate?: IsoDateString;
   quantity?: number;
+  store?: RecordIdString;
   type?: ExpensesTypeOptions;
   updated?: IsoDateString;
   url?: string;
@@ -146,6 +149,7 @@ export type OrdersRecord = {
   shippingFee?: number;
   shippingMethod: string;
   state: string;
+  store?: RecordIdString;
   totalPrice?: number;
   trackingNumber?: string;
   updated?: IsoDateString;
@@ -180,6 +184,7 @@ export type PricingRulesRecord = {
   filterValue?: string;
   id: string;
   pricing: string;
+  store?: RecordIdString;
   updated?: IsoDateString;
 };
 
@@ -188,6 +193,7 @@ export type PricingStrategiesRecord = {
   id: string;
   lastUsed?: IsoDateString;
   name?: string;
+  store?: RecordIdString;
   updated?: IsoDateString;
 };
 
@@ -199,23 +205,31 @@ export type SetsRecord = {
   updated?: IsoDateString;
 };
 
+export type StoresRecord = {
+  created?: IsoDateString;
+  id: string;
+  name?: string;
+  updated?: IsoDateString;
+};
+
 export type StrategyRulesRecord = {
   created?: IsoDateString;
   id: string;
   order?: number;
   rule?: RecordIdString;
+  store?: RecordIdString;
   strategy?: RecordIdString;
   updated?: IsoDateString;
 };
 
 export type UsersRecord = {
-  avatar?: string;
   created?: IsoDateString;
   email: string;
   emailVisibility?: boolean;
   id: string;
   name?: string;
   password: string;
+  store?: RecordIdString;
   tokenKey: string;
   updated?: IsoDateString;
   verified?: boolean;
@@ -233,6 +247,7 @@ export type OrdersResponse<Texpand = unknown> = Required<OrdersRecord> & BaseSys
 export type PricingRulesResponse<Texpand = unknown> = Required<PricingRulesRecord> & BaseSystemFields<Texpand>;
 export type PricingStrategiesResponse<Texpand = unknown> = Required<PricingStrategiesRecord> & BaseSystemFields<Texpand>;
 export type SetsResponse<Texpand = unknown> = Required<SetsRecord> & BaseSystemFields<Texpand>;
+export type StoresResponse<Texpand = unknown> = Required<StoresRecord> & BaseSystemFields<Texpand>;
 export type StrategyRulesResponse<Texpand = unknown> = Required<StrategyRulesRecord> & BaseSystemFields<Texpand>;
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>;
 
@@ -250,6 +265,7 @@ export type CollectionRecords = {
   pricingRules: PricingRulesRecord;
   pricingStrategies: PricingStrategiesRecord;
   sets: SetsRecord;
+  stores: StoresRecord;
   strategyRules: StrategyRulesRecord;
   users: UsersRecord;
 };
@@ -266,6 +282,7 @@ export type CollectionResponses = {
   pricingRules: PricingRulesResponse;
   pricingStrategies: PricingStrategiesResponse;
   sets: SetsResponse;
+  stores: StoresResponse;
   strategyRules: StrategyRulesResponse;
   users: UsersResponse;
 };
@@ -285,6 +302,7 @@ export type TypedPocketBase = PocketBase & {
   collection(idOrName: 'pricingRules'): RecordService<PricingRulesResponse>;
   collection(idOrName: 'pricingStrategies'): RecordService<PricingStrategiesResponse>;
   collection(idOrName: 'sets'): RecordService<SetsResponse>;
+  collection(idOrName: 'stores'): RecordService<StoresResponse>;
   collection(idOrName: 'strategyRules'): RecordService<StrategyRulesResponse>;
   collection(idOrName: 'users'): RecordService<UsersResponse>;
 };

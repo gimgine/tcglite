@@ -85,7 +85,8 @@ export class OrderService {
         productValue: row['Value Of Products'],
         shippingFee: row['Shipping Fee Paid'],
         trackingNumber: row['Tracking #'],
-        carrier: row.Carrier
+        carrier: row.Carrier,
+        store: pb.authStore.record?.store
       };
 
       this.setOrderFinancial(newOrder);

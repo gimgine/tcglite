@@ -7,6 +7,7 @@ import StatsView from '@/views/StatsView.vue';
 import OrderHelperUpload from '@/components/order-helper/OrderHelperUpload.vue';
 import PullSheet from '@/components/order-helper/PullSheet.vue';
 import ShippingHelper from '@/components/order-helper/shipping/ShippingHelper.vue';
+import LoginView from '@/views/LoginView.vue';
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -15,6 +16,11 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: LoginView
     },
     {
       path: '/order-helper',

@@ -29,6 +29,10 @@
           <a class="transition-opacity hover:opacity-50" :href="pbUrl" target="_blank">
             <img :src="pbLogo" />
           </a>
+          <button class="mt-2 flex cursor-pointer items-center gap-2 transition-opacity hover:opacity-50" @click="pb.authStore.clear()">
+            <i class="pi pi-sign-out"></i>
+            <span>Log out</span>
+          </button>
         </div>
       </template>
     </Menu>
@@ -45,6 +49,8 @@ import { Toast, Menu } from 'primevue';
 import { onMounted, ref } from 'vue';
 import { RouterView, useRoute } from 'vue-router';
 import { useOrderStore } from './store/order-store';
+import pb from './util/pocketbase';
+import router from './router';
 
 const route = useRoute();
 
@@ -66,5 +72,9 @@ onMounted(() => {});
 onMounted(() => {
   orderStore.refresh();
   if (import.meta.env.DEV) document.title = 'DEV - TCGlite';
+
+  if (!pb.authStore.isValid) {
+    router.push({ name: 'login' });
+  }
 });
 </script>

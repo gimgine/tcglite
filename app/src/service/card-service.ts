@@ -6,6 +6,7 @@ import pb from '@/util/pocketbase';
 
 export class CardService {
   create = async (config: { file?: File; cards?: PullSheetCsv[] }) => {
+    if (!pb.authStore.isValid) return;
     const { file, cards } = config;
     if ((!file && !cards) || (file && cards)) return;
 
@@ -60,7 +61,8 @@ export class CardService {
           set: row.Set,
           rarity: row.Rarity,
           order: order.orderNumber,
-          quantity: Number(order.quantity)
+          quantity: Number(order.quantity),
+          store: pb.authStore.record?.store
         };
 
         cardRequests.push(request);
