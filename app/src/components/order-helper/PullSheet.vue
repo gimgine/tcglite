@@ -9,28 +9,35 @@
       <Message v-else-if="imageError" class="absolute top-4 right-4 z-10" severity="error">{{ imageErrorMessage }}</Message>
       <div v-for="setGroup in groupedBySet" :key="setGroup.set" class="col-span-6">
         <div
-          :class="['mb-2 border-b text-sm', !setStore.setsMap.get(setGroup.set) ? 'border-red-600 text-red-600' : 'border-gray-300 text-gray-600']"
+          :class="[
+            'mb-2 border-b text-sm',
+            !setStore.setsMap.get(setGroup.set) ? 'border-red-600 text-red-600' : 'text-muted-color dark:border-surface-700 border-gray-300'
+          ]"
         >
           <span
-            :class="['mr-2 rounded-t px-1 py-0.5 text-xs font-bold text-white', !setStore.setsMap.get(setGroup.set) ? 'bg-red-500' : 'bg-gray-400']"
+            :class="[
+              'mr-2 rounded-t px-1 py-0.5 text-xs font-bold text-white',
+              !setStore.setsMap.get(setGroup.set) ? 'bg-red-500' : 'dark:bg-surface-700 bg-gray-400'
+            ]"
           >
             {{ setStore.setsMap.get(setGroup.set)?.toUpperCase() ?? 'N/A' }}
           </span>
           <span>{{ setGroup.set }}</span>
           <span class="float-right">{{ ` (${setGroup.pulls.reduce((sum, v) => sum + v.Quantity, 0)})` }}</span>
         </div>
-        <ul>
+        <ul class="flex flex-col gap-2">
           <li
             v-for="pull in setGroup.pulls"
             :key="pull['Product Name']"
-            :class="['mb-1 transition-opacity hover:opacity-50', isImageLoading ? 'cursor-progress' : '']"
+            :class="['flex items-center gap-2 transition-opacity hover:opacity-50', isImageLoading ? 'cursor-progress' : '']"
             @mouseenter="handleHover(pull)"
             @mouseleave="handleLeave"
           >
-            <span v-if="pull.Condition.includes('Foil')" class="bg-foil mr-1 rounded-md px-2 text-white drop-shadow">F</span>
             <b>{{ `${pull.Quantity} ` }}</b>
-            <span class="italic">{{ `${abbrCondition(pull.Condition as Condition)} ` }}</span>
-            <span>{{ `${pull['Product Name']} #${pull.Number}` }}</span>
+            <Tag :severity="getConditionSeverity(pull.Condition as Condition)">{{ abbrCondition(pull.Condition as Condition) }}</Tag>
+            <span v-if="pull.Condition.includes('Foil')" class="bg-foil mr-1 rounded-md px-2 text-white drop-shadow">F</span>
+            <span>{{ pull['Product Name'] }}</span>
+            <Chip :label="`#${pull.Number}`" class="ml-auto !px-4 !py-1" />
           </li>
         </ul>
       </div>
@@ -46,7 +53,7 @@
 import { useSetStore } from '@/store/set-store';
 import { type PullSheetCsv } from '@/util/csv-parse';
 import axios from 'axios';
-import { Button, Message } from 'primevue';
+import { Button, Message, Tag, Chip, type TagProps } from 'primevue';
 import { computed, onMounted, ref } from 'vue';
 // Types ------------------------------------------------------------------------------
 type Condition = 'Near Mint' | 'Lightly Played' | 'Moderately Played' | 'Heavily Played';
@@ -115,6 +122,19 @@ const abbrCondition = (condition: Condition) => {
     if (condition.includes(key)) {
       return abbreviations[key as Condition];
     }
+  }
+};
+
+const getConditionSeverity = (condition: Condition): TagProps['severity'] => {
+  switch (condition) {
+    case 'Near Mint':
+      return 'success';
+    case 'Lightly Played':
+      return 'info';
+    case 'Moderately Played':
+      return 'warn';
+    case 'Heavily Played':
+      return 'danger';
   }
 };
 
