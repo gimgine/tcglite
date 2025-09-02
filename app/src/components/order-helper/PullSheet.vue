@@ -9,28 +9,39 @@
       <Message v-else-if="imageError" class="absolute top-4 right-4 z-10" severity="error">{{ imageErrorMessage }}</Message>
       <div v-for="setGroup in groupedBySet" :key="setGroup.set" class="col-span-6">
         <div
-          :class="['mb-2 border-b text-sm', !setStore.setsMap.get(setGroup.set) ? 'border-red-600 text-red-600' : 'border-gray-300 text-gray-600']"
+          :class="[
+            'mb-2 border-b text-sm',
+            !setStore.setsMap.get(setGroup.set) ? 'border-red-600 text-red-600' : 'text-muted-color dark:border-surface-700 border-gray-300'
+          ]"
         >
           <span
-            :class="['mr-2 rounded-t px-1 py-0.5 text-xs font-bold text-white', !setStore.setsMap.get(setGroup.set) ? 'bg-red-500' : 'bg-gray-400']"
+            :class="[
+              'mr-2 rounded-t px-1 py-0.5 text-xs font-bold text-white',
+              !setStore.setsMap.get(setGroup.set) ? 'bg-red-500' : 'dark:bg-surface-700 bg-gray-400'
+            ]"
           >
             {{ setStore.setsMap.get(setGroup.set)?.toUpperCase() ?? 'N/A' }}
           </span>
-          <span>{{ setGroup.set }}</span>
+          <span
+            class="cursor-pointer transition-opacity hover:opacity-50"
+            @click="openSetModal(setStore.sets.find((s) => s.tcgplayer === setGroup.set)?.id, setGroup.set)"
+            >{{ setGroup.set }}</span
+          >
           <span class="float-right">{{ ` (${setGroup.pulls.reduce((sum, v) => sum + v.Quantity, 0)})` }}</span>
         </div>
-        <ul>
+        <ul class="flex flex-col gap-2">
           <li
             v-for="pull in setGroup.pulls"
             :key="pull['Product Name']"
-            :class="['mb-1 transition-opacity hover:opacity-50', isImageLoading ? 'cursor-progress' : '']"
+            :class="['flex items-center gap-2 transition-opacity hover:opacity-50', isImageLoading ? 'cursor-progress' : '']"
             @mouseenter="handleHover(pull)"
             @mouseleave="handleLeave"
           >
+            <b v-if="pull.Quantity > 1">{{ `${pull.Quantity} ` }}</b>
+            <Tag :severity="getConditionSeverity(pull.Condition as Condition)">{{ abbrCondition(pull.Condition as Condition) }}</Tag>
             <span v-if="pull.Condition.includes('Foil')" class="bg-foil mr-1 rounded-md px-2 text-white drop-shadow">F</span>
-            <b>{{ `${pull.Quantity} ` }}</b>
-            <span class="italic">{{ `${abbrCondition(pull.Condition as Condition)} ` }}</span>
-            <span>{{ `${pull['Product Name']} #${pull.Number}` }}</span>
+            <span>{{ pull['Product Name'] }}</span>
+            <Chip :label="`#${pull.Number}`" class="ml-auto !px-4 !py-1" />
           </li>
         </ul>
       </div>
@@ -40,22 +51,51 @@
       <Button severity="secondary" label="Next" icon="pi pi-arrow-right" icon-pos="right" @click="$emit('next')" />
     </div>
   </div>
+
+  <Dialog v-model:visible="isModalVisible" class="w-[36rem]" modal header="Edit Set">
+    <Form ref="setForm" class="mt-1 flex flex-col gap-4" :initial-values @submit="handleSubmit">
+      <div class="flex gap-4">
+        <FloatLabel variant="in">
+          <InputText class="w-40" name="code" />
+          <label for="code">Abbreviated Code</label>
+        </FloatLabel>
+
+        <FloatLabel variant="in">
+          <InputText name="tcgplayer" disabled fluid />
+          <label for="tcgplayer">TCGplayer Name</label>
+        </FloatLabel>
+      </div>
+
+      <InputText name="id" class="hidden" />
+      <Button type="submit" label="Save" />
+    </Form>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { useSetStore } from '@/store/set-store';
+import { Collections } from '@/types/pocketbase-types';
 import { type PullSheetCsv } from '@/util/csv-parse';
+import pb from '@/util/pocketbase';
+import { type FormInstance, type FormSubmitEvent, Form } from '@primevue/forms';
 import axios from 'axios';
-import { Button, Message } from 'primevue';
-import { computed, onMounted, ref } from 'vue';
+import { Button, Message, Tag, Chip, type TagProps, Dialog, InputText, FloatLabel } from 'primevue';
+import { computed, nextTick, onMounted, reactive, ref, useTemplateRef } from 'vue';
 // Types ------------------------------------------------------------------------------
 type Condition = 'Near Mint' | 'Lightly Played' | 'Moderately Played' | 'Heavily Played';
+
+interface FormValues {
+  id?: '';
+  tcgplayer?: '';
+  code?: '';
+}
 
 // Component Info (props/emits) -------------------------------------------------------
 const props = defineProps<{ pullSheet: PullSheetCsv[] }>();
 defineEmits<{ next: []; back: [] }>();
 
 // Template Refs ----------------------------------------------------------------------
+const setForm = useTemplateRef<FormInstance>('setForm');
 
 // Variables --------------------------------------------------------------------------
 let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -66,6 +106,14 @@ const hoveredImage = ref<string | null>(null);
 const imageError = ref(false);
 const imageErrorMessage = ref('');
 const isImageLoading = ref(false);
+
+const initialValues = reactive<FormValues>({
+  id: '',
+  tcgplayer: '',
+  code: ''
+});
+const isSubmitLoading = ref(false);
+const isModalVisible = ref(false);
 
 const groupedBySet = computed(() => {
   const groups: Record<string, PullSheetCsv[]> = {};
@@ -118,6 +166,19 @@ const abbrCondition = (condition: Condition) => {
   }
 };
 
+const getConditionSeverity = (condition: Condition): TagProps['severity'] => {
+  switch (condition) {
+    case 'Near Mint':
+      return 'success';
+    case 'Lightly Played':
+      return 'info';
+    case 'Moderately Played':
+      return 'warn';
+    case 'Heavily Played':
+      return 'danger';
+  }
+};
+
 const handleHover = (pull: PullSheetCsv) => {
   isImageLoading.value = true;
   if (hoverTimeout) {
@@ -160,6 +221,42 @@ const handleLeave = () => {
   }
   hoveredImage.value = null;
   imageError.value = false;
+};
+
+// const resolver = ({ values }: { values: FormValues }) => {
+//   const errors: Record<string, { message: string }[]> = {};
+
+//   return { values, errors };
+// };
+
+const handleSubmit = async (event: FormSubmitEvent<FormValues>) => {
+  if (event.valid) {
+    isSubmitLoading.value = true;
+
+    if (event.values.id) {
+      await pb.collection(Collections.Sets).update(event.values.id, event.values);
+    } else {
+      await pb.collection(Collections.Sets).create(event.values);
+    }
+
+    event.reset();
+    await setStore.refresh();
+    isSubmitLoading.value = false;
+    isModalVisible.value = false;
+  }
+};
+
+const openSetModal = async (setId?: string, tcgplayer?: string) => {
+  isModalVisible.value = true;
+  await nextTick();
+  setForm.value?.reset();
+
+  if (setId) {
+    const res = await pb.collection(Collections.Sets).getOne(setId);
+    setForm.value?.setValues({ tcgplayer: res.tcgplayer, code: res.code, id: res.id });
+  } else {
+    setForm.value?.setValues({ tcgplayer });
+  }
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------
