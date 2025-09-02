@@ -24,15 +24,20 @@
 
       <template #end>
         <div
-          class="relative px-4 py-4 before:absolute before:top-0 before:right-0 before:left-0 before:mx-1 before:block before:h-px before:bg-[var(--p-menu-separator-border-color)] before:content-['']"
+          class="relative flex items-center justify-between px-4 py-4 before:absolute before:top-0 before:right-0 before:left-0 before:mx-1 before:block before:h-px before:bg-[var(--p-menu-separator-border-color)] before:content-['']"
         >
+          <Button
+            v-show="pb.authStore.isValid"
+            variant="text"
+            severity="secondary"
+            icon="pi pi-sign-out"
+            label="Log out"
+            @click="pb.authStore.clear()"
+          />
+          <Button v-show="!pb.authStore.isValid" variant="text" icon="pi pi-sign-in" label="Log in" @click="router.push({ name: 'login' })" />
           <a class="transition-opacity hover:opacity-50" :href="pbUrl" target="_blank">
             <img :src="pbLogo" />
           </a>
-          <button class="mt-2 flex cursor-pointer items-center gap-2 transition-opacity hover:opacity-50" @click="pb.authStore.clear()">
-            <i class="pi pi-sign-out"></i>
-            <span>Log out</span>
-          </button>
         </div>
       </template>
     </Menu>
@@ -45,7 +50,7 @@
 
 <script setup lang="ts">
 import pbLogo from '@/assets/pb_logo.svg';
-import { Toast, Menu } from 'primevue';
+import { Toast, Menu, Button } from 'primevue';
 import { onMounted, ref } from 'vue';
 import { RouterView, useRoute } from 'vue-router';
 import { useOrderStore } from './store/order-store';

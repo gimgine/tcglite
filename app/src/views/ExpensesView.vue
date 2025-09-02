@@ -201,7 +201,7 @@ const resolver = ({ values }: { values: FormValues }) => {
 const handleSubmit = async (event: FormSubmitEvent) => {
   if (event.valid) {
     isSubmitLoading.value = true;
-    await pb.collection(Collections.Expenses).create(event.values);
+    await pb.collection(Collections.Expenses).create({ store: pb.authStore.record?.store, ...event.values });
     expenses.value = await pb.collection(Collections.Expenses).getFullList();
     event.reset();
     isSubmitLoading.value = false;

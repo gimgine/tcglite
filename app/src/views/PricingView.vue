@@ -596,12 +596,12 @@ const ruleFormResolver = ({ values }: { values: RuleFormValues }) => {
 };
 
 const handleRuleSubmit = async (event: FormSubmitEvent) => {
-  if (event.valid) {
+  if (event.valid && pb.authStore.isValid) {
     isSubmitLoading.value = true;
     if (isEditRule.value) {
-      await pb.collection(Collections.PricingRules).update(editingRuleId.value, event.values);
+      await pb.collection(Collections.PricingRules).update(editingRuleId.value, { store: pb.authStore.record?.store, ...event.values });
     } else {
-      await pb.collection(Collections.PricingRules).create(event.values);
+      await pb.collection(Collections.PricingRules).create({ store: pb.authStore.record?.store, ...event.values });
     }
     await refreshRules();
     event.reset();
@@ -611,10 +611,10 @@ const handleRuleSubmit = async (event: FormSubmitEvent) => {
 };
 
 const handleStrategySubmit = async (event: FormSubmitEvent) => {
-  if (event.valid) {
+  if (event.valid && pb.authStore.isValid) {
     isSubmitLoading.value = true;
     if (isEditStrategy.value) {
-      await pb.collection(Collections.PricingStrategies).update(editingStrategyId.value, event.values);
+      await pb.collection(Collections.PricingStrategies).update(editingStrategyId.value, { store: pb.authStore.record?.store, ...event.values });
 
       editingStrategyRules.value.forEach(async (sr) => {
         if (sr.strategyRuleId) await pb.collection(Collections.StrategyRules).delete(sr.strategyRuleId);
@@ -627,7 +627,7 @@ const handleStrategySubmit = async (event: FormSubmitEvent) => {
       });
       await batch.send();
     } else {
-      const stratCreateRes = await pb.collection(Collections.PricingStrategies).create(event.values);
+      const stratCreateRes = await pb.collection(Collections.PricingStrategies).create({ store: pb.authStore.record?.store, ...event.values });
 
       const strategyRulesReqs = strategyRules.value.map((sr, i) => ({ strategy: stratCreateRes.id, rule: sr.ruleId, order: i }));
       const batch = pb.createBatch();

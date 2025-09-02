@@ -8,6 +8,7 @@ import OrderHelperUpload from '@/components/order-helper/OrderHelperUpload.vue';
 import PullSheet from '@/components/order-helper/PullSheet.vue';
 import ShippingHelper from '@/components/order-helper/shipping/ShippingHelper.vue';
 import LoginView from '@/views/LoginView.vue';
+import AdminView from '@/views/AdminView.vue';
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -59,6 +60,11 @@ const router = createRouter({
       path: '/stats',
       name: 'stats',
       component: StatsView
+    },
+    {
+      path: '/admin',
+      name: 'admin',
+      component: AdminView
     }
   ]
 });
