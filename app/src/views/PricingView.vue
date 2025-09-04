@@ -620,7 +620,12 @@ const handleStrategySubmit = async (event: FormSubmitEvent) => {
         if (sr.strategyRuleId) await pb.collection(Collections.StrategyRules).delete(sr.strategyRuleId);
       });
 
-      const strategyRulesReqs = strategyRules.value.map((sr, i) => ({ strategy: editingStrategyId.value, rule: sr.ruleId, order: i }));
+      const strategyRulesReqs = strategyRules.value.map((sr, i) => ({
+        strategy: editingStrategyId.value,
+        rule: sr.ruleId,
+        order: i,
+        store: pb.authStore.record?.store
+      }));
       const batch = pb.createBatch();
       strategyRulesReqs.forEach((req) => {
         batch.collection(Collections.StrategyRules).create(req);
@@ -629,7 +634,12 @@ const handleStrategySubmit = async (event: FormSubmitEvent) => {
     } else {
       const stratCreateRes = await pb.collection(Collections.PricingStrategies).create({ store: pb.authStore.record?.store, ...event.values });
 
-      const strategyRulesReqs = strategyRules.value.map((sr, i) => ({ strategy: stratCreateRes.id, rule: sr.ruleId, order: i }));
+      const strategyRulesReqs = strategyRules.value.map((sr, i) => ({
+        strategy: stratCreateRes.id,
+        rule: sr.ruleId,
+        order: i,
+        store: pb.authStore.record?.store
+      }));
       const batch = pb.createBatch();
       strategyRulesReqs.forEach((req) => {
         batch.collection(Collections.StrategyRules).create(req);
