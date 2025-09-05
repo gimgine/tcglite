@@ -98,9 +98,9 @@ defineEmits<{ back: []; done: [] }>();
 const copyButton = ref();
 
 // Variables --------------------------------------------------------------------------
-const ONE_OUNCE_LIMIT = 9;
-const TWO_OUNCE_LIMIT = 20;
-const THREE_OUNCE_LIMIT = 35;
+const ONE_OUNCE_LIMIT = 8;
+const TWO_OUNCE_LIMIT = 18;
+const THREE_OUNCE_LIMIT = 34;
 
 const orderService = new OrderService();
 
