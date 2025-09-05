@@ -1,5 +1,5 @@
 import type { OrderRequest } from '@/types';
-import { Collections } from '@/types/pocketbase-types';
+import { Collections, ExpensesTypeOptions } from '@/types/pocketbase-types';
 import { parseShippingCsv, type ShippingCsv } from '@/util/csv-parse';
 import pb from '@/util/pocketbase';
 
@@ -7,15 +7,14 @@ export class OrderService {
   readonly ENVELOPE = { cost: 1, name: 'Envelope' };
   readonly TRACKING = { cost: 5, name: 'Tracking' };
   readonly SHIPPING_METHODS = [this.ENVELOPE, this.TRACKING];
-  readonly TRACKING_THRESHOLD = 35;
-  readonly TEMP_COGS = 0.26;
+  readonly TRACKING_THRESHOLD = 32.5;
 
   create = async (config: { file?: File; orders?: ShippingCsv[] }) => {
     const { file, orders } = config;
     if ((!file && !orders) || (file && orders)) return;
 
     const csvData = config.file ? await parseShippingCsv(config.file) : config.orders!;
-    const orderRequests = this.createRequestsFromCsv(csvData);
+    const orderRequests = await this.createRequestsFromCsv(csvData);
 
     const existingOrderNumbers = new Set((await pb.collection(Collections.Orders).getFullList()).map((o) => o.id));
     const newOrderRequests = orderRequests.filter((order) => !existingOrderNumbers.has(order.id));
@@ -35,6 +34,13 @@ export class OrderService {
 
   getShippingMethod = (shippingCost: number) => {
     return this.SHIPPING_METHODS.find((sm) => sm.cost === shippingCost);
+  };
+
+  getAverageCogs = async () => {
+    const cardExpenses = (await pb.collection(Collections.Expenses).getFullList()).filter((e) => e.type === ExpensesTypeOptions.cards);
+    const totalSpentOnCards = cardExpenses.reduce((sum, expense) => sum + (expense.price ?? 0), 0);
+    const quantityCardsPurchased = cardExpenses.reduce((sum, expense) => sum + (expense.quantity ?? 0), 0);
+    return totalSpentOnCards / quantityCardsPurchased;
   };
 
   refreshProfit = async (historicalCogs: { date: string; averageCogs: number }[]) => {
@@ -63,8 +69,10 @@ export class OrderService {
     await batch.send();
   };
 
-  private createRequestsFromCsv = (csv: ShippingCsv[]) => {
+  private createRequestsFromCsv = async (csv: ShippingCsv[]) => {
     const orderRequests: OrderRequest[] = [];
+
+    const avgCogs = await this.getAverageCogs();
 
     for (const row of csv) {
       const [year, month, day] = (row['Order Date'] ?? '0000-00-00').split('-');
@@ -89,7 +97,7 @@ export class OrderService {
         store: pb.authStore.record?.store
       };
 
-      this.setOrderFinancial(newOrder);
+      this.setOrderFinancial(newOrder, avgCogs);
 
       orderRequests.push(newOrder);
     }
@@ -101,11 +109,11 @@ export class OrderService {
     return totalPrice >= this.TRACKING_THRESHOLD ? this.TRACKING.cost : this.ENVELOPE.cost;
   };
 
-  private setOrderFinancial = (order: OrderRequest) => {
+  private setOrderFinancial = (order: OrderRequest, avgCogs: number) => {
     const totalPrice = order.productValue + order.shippingFee;
     const vendorFee = totalPrice * 0.1025;
     const processingFee = totalPrice * 0.025 + 0.3;
-    const cogs = order.itemCount * this.TEMP_COGS;
+    const cogs = order.itemCount * avgCogs;
     const shippingCost = this.determineDefaultShippingCost(totalPrice);
     const profit = totalPrice - vendorFee - processingFee - cogs - shippingCost;
     const feePercentage = ((vendorFee + processingFee) / totalPrice) * 100;
