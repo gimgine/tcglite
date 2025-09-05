@@ -41,7 +41,7 @@
             <Tag :severity="getConditionSeverity(pull.Condition as Condition)">{{ abbrCondition(pull.Condition as Condition) }}</Tag>
             <span v-if="pull.Condition.includes('Foil')" class="bg-foil mr-1 rounded-md px-2 text-white drop-shadow">F</span>
             <span>{{ pull['Product Name'] }}</span>
-            <Chip :label="`#${pull.Number}`" class="ml-auto !px-4 !py-1" />
+            <Chip :label="pull.Number ? `#${pull.Number}` : ''" class="ml-auto !px-4 !py-1" />
           </li>
         </ul>
       </div>
@@ -134,7 +134,7 @@ const groupedBySet = computed(() => {
         const bNum = parseInt(b.Number, 10);
 
         if (isNaN(aNum) || isNaN(bNum)) {
-          return a.Number.localeCompare(b.Number);
+          return a.Number?.localeCompare(b.Number);
         }
 
         return aNum - bNum;
