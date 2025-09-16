@@ -9,6 +9,7 @@ import PullSheet from '@/components/order-helper/PullSheet.vue';
 import ShippingHelper from '@/components/order-helper/shipping/ShippingHelper.vue';
 import LoginView from '@/views/LoginView.vue';
 import AdminView from '@/views/AdminView.vue';
+import pb from '@/util/pocketbase';
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -67,6 +68,13 @@ const router = createRouter({
       component: AdminView
     }
   ]
+});
+
+router.beforeEach((to, _, next) => {
+  if (to.name !== 'login' && !pb.authStore.isValid) {
+    return router.push({ name: 'login' });
+  }
+  next();
 });
 
 export default router;
