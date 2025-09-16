@@ -5,9 +5,9 @@
         <div class="flex h-full flex-col gap-4">
           <span class="text-2xl font-semibold">Pricing</span>
 
-          <div class="flex items-center justify-between">
+          <div class="flex flex-col justify-between gap-3 2xl:flex-row">
             <FileUpload mode="basic" choose-label="Pricing CSV" choose-icon="pi pi-upload" accept=".csv" auto @select="handlePricingUpload" />
-            <div class="flex flex-col items-end">
+            <div class="flex flex-col 2xl:items-end">
               <span class="text-sm text-gray-600">Last Strategy Used</span>
               <div class="flex items-baseline gap-2">
                 <span>{{ lastUsedStrategy?.name }}</span>
