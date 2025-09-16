@@ -4,7 +4,7 @@
   <div class="bg-surface-100 dark:bg-surface-950 flex h-svh gap-4 p-4">
     <div class="dark:bg-surface-900 dark:border-surface-700 flex flex-col items-center gap-4 rounded-md border border-gray-200 bg-white p-1 shadow">
       <!-- <span class="font-fredoka px-1 pt-3 pb-1 text-xl text-sky-600">TCGlite</span> -->
-      <img :src="tcgliteLogo" class="mx-1 my-2 h-auto w-20" />
+      <img :src="tcgliteLogo" class="mx-1 mt-2 h-auto w-14" />
 
       <Button
         v-for="item in items"
