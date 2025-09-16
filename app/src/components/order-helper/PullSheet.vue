@@ -3,11 +3,14 @@
     <span class="my-4 text-xl">Pull Sheet</span>
 
     <div class="grid max-h-[55vh] grid-cols-12 gap-8 overflow-y-auto">
-      <div v-if="hoveredImage" class="absolute top-4 right-4 z-10">
-        <img :src="hoveredImage" alt="Card Image" class="w-64 rounded shadow-lg" />
+      <div v-if="hoveredImageLeft" class="absolute top-4 right-4 z-10">
+        <img :src="hoveredImageLeft" alt="Card Image" class="w-64 rounded shadow-lg" />
+      </div>
+      <div v-if="hoveredImageRight" class="absolute top-4 left-4 z-10">
+        <img :src="hoveredImageRight" alt="Card Image" class="w-64 rounded shadow-lg" />
       </div>
       <Message v-else-if="imageError" class="absolute top-4 right-4 z-10" severity="error">{{ imageErrorMessage }}</Message>
-      <div v-for="setGroup in groupedBySet" :key="setGroup.set" class="col-span-6">
+      <div v-for="(setGroup, index) in groupedBySet" :key="setGroup.set" class="col-span-6">
         <div
           :class="[
             'mb-2 border-b text-sm',
@@ -34,7 +37,7 @@
             v-for="pull in setGroup.pulls"
             :key="pull['Product Name']"
             :class="['flex items-center gap-2 transition-opacity hover:opacity-50', isImageLoading ? 'cursor-progress' : '']"
-            @mouseenter="handleHover(pull)"
+            @mouseenter="handleHover(pull, index % 2 === 0 ? 'left' : 'right')"
             @mouseleave="handleLeave"
           >
             <b v-if="pull.Quantity > 1">{{ `${pull.Quantity} ` }}</b>
@@ -102,10 +105,12 @@ let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // Reactive Variables -----------------------------------------------------------------
 const setStore = useSetStore();
-const hoveredImage = ref<string | null>(null);
 const imageError = ref(false);
 const imageErrorMessage = ref('');
 const isImageLoading = ref(false);
+
+const hoveredImageLeft = ref<string | null>(null);
+const hoveredImageRight = ref<string | null>(null);
 
 const initialValues = reactive<FormValues>({
   id: '',
@@ -179,7 +184,17 @@ const getConditionSeverity = (condition: Condition): TagProps['severity'] => {
   }
 };
 
-const handleHover = (pull: PullSheetCsv) => {
+const handleHover = (pull: PullSheetCsv, position: 'left' | 'right') => {
+  console.log(position);
+
+  const setImage = (img: string, position: 'left' | 'right') => {
+    if (position === 'left') {
+      hoveredImageLeft.value = img;
+    } else if (position === 'right') {
+      hoveredImageRight.value = img;
+    }
+  };
+
   isImageLoading.value = true;
   if (hoverTimeout) {
     clearTimeout(hoverTimeout);
@@ -199,11 +214,11 @@ const handleHover = (pull: PullSheetCsv) => {
       const scryfallRes = await axios.get(`https://api.scryfall.com/cards/${setCode}/${number}`);
 
       if (scryfallRes.data.card_faces) {
-        hoveredImage.value = scryfallRes.data.card_faces[0].image_uris.normal;
+        setImage(scryfallRes.data.card_faces[0].image_uris.normal, position);
         return;
       }
 
-      hoveredImage.value = scryfallRes.data.image_uris.normal;
+      setImage(scryfallRes.data.image_uris.normal, position);
     } catch (error) {
       console.error('Error loading Scryfall image:', error);
       imageError.value = true;
@@ -219,15 +234,10 @@ const handleLeave = () => {
     clearTimeout(hoverTimeout);
     hoverTimeout = null;
   }
-  hoveredImage.value = null;
+  hoveredImageLeft.value = null;
+  hoveredImageRight.value = null;
   imageError.value = false;
 };
-
-// const resolver = ({ values }: { values: FormValues }) => {
-//   const errors: Record<string, { message: string }[]> = {};
-
-//   return { values, errors };
-// };
 
 const handleSubmit = async (event: FormSubmitEvent<FormValues>) => {
   if (event.valid) {
