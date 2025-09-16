@@ -1,7 +1,13 @@
 <template>
-  <div class="grid grid-cols-12 gap-4">
+  <div class="grid grid-cols-12 gap-4 overflow-y-auto">
     <div class="dark:border-surface-700 dark:bg-surface-900 col-span-12 rounded-md border border-gray-200 bg-white p-4 shadow md:col-span-6">
-      <stat-chart header="Order History" y-label="# of Orders" :data-getter="orderDataGetter" />
+      <stat-chart header="Orders" y-label="# of Orders" :data-getter="orderDataGetter" />
+    </div>
+    <div class="dark:border-surface-700 dark:bg-surface-900 col-span-12 rounded-md border border-gray-200 bg-white p-4 shadow md:col-span-6">
+      <stat-chart header="Gross Sales" y-label="Gross Sales ($)" :data-getter="grossSalesDataGetter" />
+    </div>
+    <div class="dark:border-surface-700 dark:bg-surface-900 col-span-12 rounded-md border border-gray-200 bg-white p-4 shadow md:col-span-6">
+      <stat-chart header="Cards" y-label="# of Cards" :data-getter="cardsDataGetter" />
     </div>
     <div class="dark:border-surface-700 dark:bg-surface-900 col-span-12 rounded-md border border-gray-200 bg-white p-4 shadow md:col-span-6">
       <stat-chart header="Profit" y-label="Profit ($)" :data-getter="profitDataGetter" />
@@ -41,6 +47,28 @@ const orderDataGetter = (start: Dayjs, end: Dayjs, diff: number) => {
     .reduce((acc, d) => {
       const diffInDays = end.diff(d, 'day');
       acc[diff - diffInDays - 1] += 1;
+      return acc;
+    }, new Array(diff).fill(0));
+};
+
+const grossSalesDataGetter = (start: Dayjs, end: Dayjs, diff: number) => {
+  return orderStore.orders
+    .filter((o) => !dayjs(o.orderDate).isBefore(start) && !dayjs(o.orderDate).isAfter(end))
+    .reduce((acc, o) => {
+      const d = dayjs(o.orderDate);
+      const diffInDays = end.diff(d, 'day');
+      acc[diff - diffInDays - 1] += (o.totalPrice ?? 0) - (o.vendorFee ?? 0) + (o.processingFee ?? 0);
+      return acc;
+    }, new Array(diff).fill(0));
+};
+
+const cardsDataGetter = (start: Dayjs, end: Dayjs, diff: number) => {
+  return orderStore.orders
+    .filter((o) => !dayjs(o.orderDate).isBefore(start) && !dayjs(o.orderDate).isAfter(end))
+    .reduce((acc, o) => {
+      const d = dayjs(o.orderDate);
+      const diffInDays = end.diff(d, 'day');
+      acc[diff - diffInDays - 1] += o.itemCount;
       return acc;
     }, new Array(diff).fill(0));
 };
