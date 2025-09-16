@@ -14,59 +14,66 @@
         </div>
         <div class="flex items-center gap-2">
           <Button label="Profit" icon="pi pi-refresh" :loading="isRefreshProfitLoading" @click="handleRefreshProfitClick" />
-          <Button label="Add" icon="pi pi-plus" @click="isAddModalVisible = true" />
+          <Button label="Add" icon="pi pi-plus" @click="openExpenseModal()" />
         </div>
       </div>
-      <ag-grid-vue ref="grid" class="h-[calc(100vh-270px)]" :grid-options :column-defs :row-data="expenses" />
+      <ag-grid-vue ref="grid" class="h-[calc(100vh-270px)] [&_.ag-row]:!cursor-pointer" :grid-options :column-defs :row-data="expenses" />
     </div>
   </div>
 
-  <Dialog v-model:visible="isAddModalVisible" modal header="Add Expense">
-    <Form v-slot="$form" class="flex flex-col gap-4" :initial-values :resolver @submit="handleSubmit">
+  <Dialog v-model:visible="isModalVisible" modal header="Expense">
+    <Form v-slot="$form" ref="form" class="flex flex-col gap-4" :initial-values :resolver @submit="handleSubmit">
       <div class="flex items-center gap-2">
         <div class="flex flex-col gap-1">
-          <Select name="type" :options="typeOptions" option-value="value" option-label="label" placeholder="Type" />
+          <label for="type" class="ml-3 text-sm">Type</label>
+          <Select name="type" class="min-w-36" :options="typeOptions" option-value="value" option-label="label" />
           <Message v-if="$form.type?.invalid" severity="error" size="small" variant="simple">{{ $form.type.error?.message }}</Message>
         </div>
         <div class="flex w-full flex-col gap-1">
-          <InputText name="name" placeholder="Name" />
+          <label for="name" class="ml-3 text-sm">Name</label>
+          <InputText name="name" />
           <Message v-if="$form.name?.invalid" severity="error" size="small" variant="simple">{{ $form.name.error?.message }}</Message>
         </div>
       </div>
 
       <div class="flex w-full items-center gap-2">
         <div class="flex w-full flex-col gap-1">
+          <label for="price" class="ml-3 text-sm">Price</label>
           <IconField>
             <InputIcon class="pi pi-dollar" />
-            <InputNumber name="price" placeholder="Price" fluid currency="USD" mode="currency" />
+            <InputNumber name="price" fluid currency="USD" mode="currency" />
           </IconField>
           <Message v-if="$form.price?.invalid" severity="error" size="small" variant="simple">{{ $form.price.error?.message }}</Message>
         </div>
 
         <div class="flex w-full flex-col gap-1">
-          <InputNumber name="quantity" placeholder="Quantity" />
+          <label for="quantity" class="ml-3 text-sm">Quantity</label>
+          <InputNumber name="quantity" />
           <Message v-if="$form.quantity?.invalid" severity="error" size="small" variant="simple">{{ $form.quantity.error?.message }}</Message>
         </div>
       </div>
 
       <div class="flex items-center gap-2">
         <div class="flex flex-col gap-1">
+          <label for="purchaseDate" class="ml-3 text-sm">Purchase Date</label>
           <IconField>
             <InputIcon class="pi pi-calendar" />
-            <DatePicker name="purchaseDate" placeholder="Purchase Date" />
+            <DatePicker name="purchaseDate" />
           </IconField>
           <Message v-if="$form.purchaseDate?.invalid" severity="error" size="small" variant="simple">{{ $form.purchaseDate.error?.message }}</Message>
         </div>
 
         <div class="flex flex-col gap-1">
+          <label for="url" class="ml-3 text-sm">URL</label>
           <IconField>
             <InputIcon class="pi pi-link" />
-            <InputText name="url" placeholder="URL" fluid />
+            <InputText name="url" fluid />
           </IconField>
           <Message v-if="$form.url?.invalid" severity="error" size="small" variant="simple">{{ $form.url.error?.message }}</Message>
         </div>
       </div>
 
+      <InputText name="id" class="hidden" />
       <Button class="mt-2" type="submit" label="Submit" :loading="isSubmitLoading" />
     </Form>
   </Dialog>
@@ -79,9 +86,9 @@ import { useOrderStore } from '@/store/order-store';
 import { Collections, ExpensesTypeOptions, type ExpensesRecord } from '@/types/pocketbase-types';
 import { formatCurrency } from '@/util/functions';
 import pb from '@/util/pocketbase';
-import { Form, type FormSubmitEvent } from '@primevue/forms';
+import { Form, type FormInstance, type FormSubmitEvent } from '@primevue/forms';
 import { Button, Dialog, IconField, InputIcon, Select, InputNumber, InputText, Message, useToast, DatePicker } from 'primevue';
-import { onMounted, reactive, ref, nextTick } from 'vue';
+import { onMounted, reactive, ref, nextTick, useTemplateRef } from 'vue';
 import type { GridOptions, ColDef, ValueFormatterParams, ValueGetterParams, ICellRendererParams } from 'ag-grid-community';
 import { AgGridVue } from 'ag-grid-vue3';
 import { useAgGridTheme } from '@/composables/useAgGridTheme';
@@ -93,12 +100,14 @@ interface FormValues {
   price?: number;
   url?: string;
   purchaseDate?: Date;
+  id?: string;
 }
 
 // Component Info (props/emits) -------------------------------------------------------
 
 // Template Refs ----------------------------------------------------------------------
 const grid = ref();
+const form = useTemplateRef<FormInstance>('form');
 
 // Variables --------------------------------------------------------------------------
 const toast = useToast();
@@ -110,6 +119,9 @@ const gridOptions: GridOptions<ExpensesRecord> = {
   pagination: true,
   paginationPageSize: 20,
   suppressCellFocus: true,
+  onRowClicked: (e) => {
+    openExpenseModal(e.data?.id);
+  },
   onModelUpdated: (e) => {
     e.api.autoSizeAllColumns();
     nextTick(() => {
@@ -119,6 +131,7 @@ const gridOptions: GridOptions<ExpensesRecord> = {
     });
   }
 };
+
 const columnDefs: ColDef<ExpensesRecord>[] = [
   {
     field: 'type',
@@ -141,7 +154,7 @@ const columnDefs: ColDef<ExpensesRecord>[] = [
 // Reactive Variables -----------------------------------------------------------------
 const expenses = ref<ExpensesRecord[]>([]);
 
-const isAddModalVisible = ref(false);
+const isModalVisible = ref(false);
 const isSubmitLoading = ref(false);
 const isRefreshProfitLoading = ref(false);
 
@@ -151,7 +164,8 @@ const initialValues = reactive({
   name: '',
   price: '',
   url: '',
-  purchaseDate: ''
+  purchaseDate: '',
+  id: ''
 });
 
 const typeOptions = [
@@ -176,8 +190,8 @@ const resolver = ({ values }: { values: FormValues }) => {
     errors.type = [{ message: 'Type is required' }];
   }
 
-  if (!values.quantity) {
-    errors.quantity = [{ message: 'Quantity is required' }];
+  if (values.type === 'cards' && !values.quantity) {
+    errors.quantity = [{ message: 'Quantity is required for card expenses' }];
   }
 
   if (!values.name) {
@@ -201,11 +215,17 @@ const resolver = ({ values }: { values: FormValues }) => {
 const handleSubmit = async (event: FormSubmitEvent) => {
   if (event.valid) {
     isSubmitLoading.value = true;
-    await pb.collection(Collections.Expenses).create({ store: pb.authStore.record?.store, ...event.values });
-    expenses.value = await pb.collection(Collections.Expenses).getFullList();
+
+    if (event.values.id) {
+      await pb.collection(Collections.Expenses).update(event.values.id, event.values);
+    } else {
+      await pb.collection(Collections.Expenses).create({ store: pb.authStore.record?.store, ...event.values });
+    }
+
     event.reset();
+    expenses.value = await pb.collection(Collections.Expenses).getFullList();
     isSubmitLoading.value = false;
-    isAddModalVisible.value = false;
+    isModalVisible.value = false;
   }
 };
 
@@ -268,6 +288,25 @@ const handleRefreshProfitClick = async () => {
   toast.add({ summary: 'Profit Refresh', detail: 'Profit calculations were refreshed for all orders.', severity: 'success', life: 3000 });
 
   isRefreshProfitLoading.value = false;
+};
+
+const openExpenseModal = async (expenseId?: string) => {
+  isModalVisible.value = true;
+  await nextTick();
+  form.value?.reset();
+
+  if (expenseId) {
+    const res = await pb.collection(Collections.Expenses).getOne(expenseId);
+    form.value?.setValues({
+      type: res.type,
+      quantity: res.quantity,
+      name: res.name,
+      price: res.price,
+      url: res.url,
+      purchaseDate: new Date(res.purchaseDate),
+      id: res.id
+    });
+  }
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------
