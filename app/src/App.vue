@@ -10,7 +10,7 @@
         :key="item.label"
         v-tooltip="item.label"
         :icon="item.icon"
-        :variant="route.matched[0]?.name === item.routeName ? ' outlined' : 'text'"
+        :variant="route.matched[0]?.name === item.routeName ? 'outlined' : 'text'"
         @click="$router.push({ name: item.routeName })"
       />
 
@@ -29,12 +29,10 @@
 
 <script setup lang="ts">
 import pbLogo from '@/assets/pb_logo.svg';
-import { Toast, Button } from 'primevue';
+import { Button, Toast } from 'primevue';
 import { onMounted, ref } from 'vue';
 import { RouterView, useRoute } from 'vue-router';
 import { useOrderStore } from './store/order-store';
-import pb from './util/pocketbase';
-import router from './router';
 
 const route = useRoute();
 
