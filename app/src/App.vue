@@ -43,7 +43,8 @@ const items = ref([
   { label: 'Expenses', icon: 'pi pi-credit-card', routeName: 'expenses' },
   { label: 'Stats', icon: 'pi pi-chart-line', routeName: 'stats' },
   { label: 'Order Helper', icon: 'pi pi-box', routeName: 'orderHelper' },
-  { label: 'Pricing', icon: 'pi pi-dollar', routeName: 'pricing' }
+  { label: 'Pricing', icon: 'pi pi-dollar', routeName: 'pricing' },
+  { label: 'Store', icon: 'pi pi-shop', routeName: 'store' }
 ]);
 
 const pbUrl = import.meta.env.DEV ? 'http://localhost:8090/_/' : 'https://tcglite.pockethost.io/_/';

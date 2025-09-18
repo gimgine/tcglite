@@ -17,6 +17,7 @@ export enum Collections {
   PricingRules = 'pricingRules',
   PricingStrategies = 'pricingStrategies',
   Sets = 'sets',
+  StorePreferences = 'storePreferences',
   Stores = 'stores',
   StrategyRules = 'strategyRules',
   Users = 'users'
@@ -205,6 +206,27 @@ export type SetsRecord = {
   updated?: IsoDateString;
 };
 
+export enum StorePreferencesFieldOptions {
+  '1_oz_cards' = '1_oz_cards',
+  '2_oz_cards' = '2_oz_cards',
+  '3_oz_cards' = '3_oz_cards',
+  '1_oz_cost' = '1_oz_cost',
+  '2_oz_cost' = '2_oz_cost',
+  '3_oz_cost' = '3_oz_cost',
+  'more_oz_cost' = 'more_oz_cost',
+  'tracking_cost' = 'tracking_cost',
+  'tracking_threshold' = 'tracking_threshold',
+  'free_shipping_threshold' = 'free_shipping_threshold'
+}
+export type StorePreferencesRecord = {
+  created?: IsoDateString;
+  field?: StorePreferencesFieldOptions;
+  id: string;
+  store?: RecordIdString;
+  updated?: IsoDateString;
+  value?: string;
+};
+
 export type StoresRecord = {
   created?: IsoDateString;
   id: string;
@@ -247,6 +269,7 @@ export type OrdersResponse<Texpand = unknown> = Required<OrdersRecord> & BaseSys
 export type PricingRulesResponse<Texpand = unknown> = Required<PricingRulesRecord> & BaseSystemFields<Texpand>;
 export type PricingStrategiesResponse<Texpand = unknown> = Required<PricingStrategiesRecord> & BaseSystemFields<Texpand>;
 export type SetsResponse<Texpand = unknown> = Required<SetsRecord> & BaseSystemFields<Texpand>;
+export type StorePreferencesResponse<Texpand = unknown> = Required<StorePreferencesRecord> & BaseSystemFields<Texpand>;
 export type StoresResponse<Texpand = unknown> = Required<StoresRecord> & BaseSystemFields<Texpand>;
 export type StrategyRulesResponse<Texpand = unknown> = Required<StrategyRulesRecord> & BaseSystemFields<Texpand>;
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>;
@@ -265,6 +288,7 @@ export type CollectionRecords = {
   pricingRules: PricingRulesRecord;
   pricingStrategies: PricingStrategiesRecord;
   sets: SetsRecord;
+  storePreferences: StorePreferencesRecord;
   stores: StoresRecord;
   strategyRules: StrategyRulesRecord;
   users: UsersRecord;
@@ -282,6 +306,7 @@ export type CollectionResponses = {
   pricingRules: PricingRulesResponse;
   pricingStrategies: PricingStrategiesResponse;
   sets: SetsResponse;
+  storePreferences: StorePreferencesResponse;
   stores: StoresResponse;
   strategyRules: StrategyRulesResponse;
   users: UsersResponse;
@@ -302,6 +327,7 @@ export type TypedPocketBase = PocketBase & {
   collection(idOrName: 'pricingRules'): RecordService<PricingRulesResponse>;
   collection(idOrName: 'pricingStrategies'): RecordService<PricingStrategiesResponse>;
   collection(idOrName: 'sets'): RecordService<SetsResponse>;
+  collection(idOrName: 'storePreferences'): RecordService<StorePreferencesResponse>;
   collection(idOrName: 'stores'): RecordService<StoresResponse>;
   collection(idOrName: 'strategyRules'): RecordService<StrategyRulesResponse>;
   collection(idOrName: 'users'): RecordService<UsersResponse>;
