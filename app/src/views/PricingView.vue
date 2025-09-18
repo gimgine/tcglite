@@ -1,5 +1,5 @@
 <template>
-  <div class="grid grid-cols-12 gap-4">
+  <div class="grid h-screen grid-cols-12 gap-4">
     <div class="dark:border-surface-700 dark:bg-surface-900 col-span-3 rounded-md border border-gray-200 bg-white p-6 shadow">
       <div class="flex h-full flex-col justify-between gap-4">
         <div class="flex h-full flex-col gap-4">
@@ -16,62 +16,64 @@
             </div>
           </div>
 
-          <PanelMenu v-model:expanded-keys="expandedKeys" :model="items">
-            <template #item="{ item }">
-              <div v-if="item.isStrategy" :class="['relative', pricing.length ? 'cursor-pointer' : 'dark:bg-surface-900! bg-white!']">
-                <a :class="['flex items-center gap-2 px-4 py-2', pricing.length ? '' : 'opacity-25']">
-                  <i class="pi pi-play text-primary" />
-                  <span>{{ item.label }}</span>
-                </a>
-                <SpeedDial
-                  :model="getStrategyOptions(item)"
-                  show-icon="pi pi-ellipsis-h"
-                  :button-props="{ size: 'small', rounded: true, variant: 'text' }"
-                  class="!absolute top-1 right-2"
-                  direction="left"
-                  type="semi-circle"
-                  :radius="50"
-                  @click.stop
-                />
-              </div>
+          <div class="h-[calc(100vh-30rem)] overflow-y-auto">
+            <PanelMenu v-model:expanded-keys="expandedKeys" :model="items">
+              <template #item="{ item }">
+                <div v-if="item.isStrategy" :class="['relative', pricing.length ? 'cursor-pointer' : 'dark:bg-surface-900! bg-white!']">
+                  <a :class="['flex items-center gap-2 px-4 py-2', pricing.length ? '' : 'opacity-25']">
+                    <i class="pi pi-play text-primary" />
+                    <span>{{ item.label }}</span>
+                  </a>
+                  <SpeedDial
+                    :model="getStrategyOptions(item)"
+                    show-icon="pi pi-ellipsis-h"
+                    :button-props="{ size: 'small', rounded: true, variant: 'text', severity: 'info' }"
+                    class="!absolute top-1 right-2"
+                    direction="left"
+                    type="semi-circle"
+                    :radius="50"
+                    @click.stop
+                  />
+                </div>
 
-              <div v-else-if="item.isRule" :class="['relative', pricing.length ? 'cursor-pointer' : 'dark:bg-surface-900! bg-white!']">
-                <a :class="['flex items-center gap-2 px-4 py-2', pricing.length ? '' : 'opacity-25']">
-                  <i class="pi pi-play text-primary" />
-                  <span>{{ item.label }}</span>
-                </a>
-                <SpeedDial
-                  :model="getRuleOptions(item)"
-                  show-icon="pi pi-ellipsis-h"
-                  :button-props="{ size: 'small', rounded: true, variant: 'text' }"
-                  class="!absolute top-1 right-2"
-                  direction="left"
-                  type="semi-circle"
-                  :radius="50"
-                  @click.stop
-                />
-              </div>
+                <div v-else-if="item.isRule" :class="['relative', pricing.length ? 'cursor-pointer' : 'dark:bg-surface-900! bg-white!']">
+                  <a :class="['flex items-center gap-2 px-4 py-2', pricing.length ? '' : 'opacity-25']">
+                    <i class="pi pi-play text-primary" />
+                    <span>{{ item.label }}</span>
+                  </a>
+                  <SpeedDial
+                    :model="getRuleOptions(item)"
+                    show-icon="pi pi-ellipsis-h"
+                    :button-props="{ size: 'small', rounded: true, variant: 'text', severity: 'info' }"
+                    class="!absolute top-1 right-2"
+                    direction="left"
+                    type="semi-circle"
+                    :radius="50"
+                    @click.stop
+                  />
+                </div>
 
-              <a v-else class="flex cursor-pointer items-center gap-2 px-4 py-2">
-                <span v-if="item.items" :class="['pi', expandedKeys[item.key ?? ''] === true ? 'pi-angle-down' : 'pi-angle-right']"></span>
-                <span :class="item.icon"></span>
-                <span>{{ item.label }}</span>
-                <Button
-                  v-tooltip="'Add new'"
-                  class="ml-auto"
-                  size="small"
-                  variant="text"
-                  rounded
-                  icon="pi pi-plus"
-                  @click.stop="item.key === 'strats' ? openAddStrategy() : openAddRule()"
-                />
-              </a>
-            </template>
-          </PanelMenu>
+                <a v-else class="flex cursor-pointer items-center gap-2 px-4 py-2">
+                  <span v-if="item.items" :class="['pi', expandedKeys[item.key ?? ''] === true ? 'pi-angle-down' : 'pi-angle-right']"></span>
+                  <span :class="item.icon"></span>
+                  <span>{{ item.label }}</span>
+                  <Button
+                    v-tooltip="'Add new'"
+                    class="ml-auto"
+                    size="small"
+                    variant="text"
+                    rounded
+                    icon="pi pi-plus"
+                    @click.stop="item.key === 'strats' ? openAddStrategy() : openAddRule()"
+                  />
+                </a>
+              </template>
+            </PanelMenu>
+          </div>
         </div>
 
         <div class="flex flex-col gap-4">
-          <Fieldset legend="Pricing Stats" :collapsed="!areInventoryStatsVisible">
+          <Fieldset legend="Pricing Stats">
             <div class="grid grid-cols-6 grid-rows-2 gap-x-10 gap-y-5">
               <div class="col-span-2 flex flex-col">
                 <span class="text-sm text-gray-500">Inventory Value</span>
