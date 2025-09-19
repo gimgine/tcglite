@@ -39,10 +39,12 @@ import { Button, Toast } from 'primevue';
 import { onMounted, ref } from 'vue';
 import { RouterView, useRoute } from 'vue-router';
 import { useOrderStore } from './store/order-store';
+import { usePreferencesStore } from './store/store-preferences-store';
 
 const route = useRoute();
 
 const orderStore = useOrderStore();
+const preferencesStore = usePreferencesStore();
 
 const isDev = import.meta.env.DEV;
 
@@ -60,6 +62,7 @@ const openSupportPage = () => {
 
 onMounted(() => {
   orderStore.refresh();
+  preferencesStore.refresh();
   if (isDev) document.title = 'DEV - TCGlite';
 });
 </script>

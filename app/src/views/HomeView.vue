@@ -153,8 +153,8 @@ const columnDefs: ColDef<OrdersRecord>[] = [
     cellRenderer: (
       params: ICellRendererParams
     ) => `<span class="rounded-sm px-2 py-0.5 text-xs font-bold ${params.data.shippingCost === orderService.TRACKING.cost ? 'bg-blue-200 text-blue-600' : 'bg-pink-200 text-pink-600'}">
-                ${orderService.getShippingMethod(params.data.shippingCost)?.name}
-              </span>`
+            ${orderService.getShippingMethod(params.data.shippingCost)?.name}
+          </span>`
   },
   {
     field: 'profit',

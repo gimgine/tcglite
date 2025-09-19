@@ -207,16 +207,15 @@ export type SetsRecord = {
 };
 
 export enum StorePreferencesFieldOptions {
-  '1_oz_cards' = '1_oz_cards',
-  '2_oz_cards' = '2_oz_cards',
-  '3_oz_cards' = '3_oz_cards',
-  '1_oz_cost' = '1_oz_cost',
-  '2_oz_cost' = '2_oz_cost',
-  '3_oz_cost' = '3_oz_cost',
-  'more_oz_cost' = 'more_oz_cost',
-  'tracking_cost' = 'tracking_cost',
-  'tracking_threshold' = 'tracking_threshold',
-  'free_shipping_threshold' = 'free_shipping_threshold'
+  'twoOunceCards' = 'twoOunceCards',
+  'threeOunceCards' = 'threeOunceCards',
+  'oneOunceCost' = 'oneOunceCost',
+  'twoOunceCost' = 'twoOunceCost',
+  'threeOunceCost' = 'threeOunceCost',
+  'moreOunceCost' = 'moreOunceCost',
+  'trackingCost' = 'trackingCost',
+  'trackingThreshold' = 'trackingThreshold',
+  'oneOunceCards' = 'oneOunceCards'
 }
 export type StorePreferencesRecord = {
   created?: IsoDateString;
