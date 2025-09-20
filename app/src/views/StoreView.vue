@@ -124,7 +124,7 @@ import pb from '@/util/pocketbase';
 import { Form, type FormInstance, type FormSubmitEvent } from '@primevue/forms';
 import { zodResolver } from '@primevue/forms/resolvers/zod';
 import { Button, DataView, InputGroup, InputGroupAddon, InputNumber, InputText, Message, Panel, useToast } from 'primevue';
-import { onMounted, ref, useTemplateRef } from 'vue';
+import { computed, onMounted, ref, useTemplateRef } from 'vue';
 import z from 'zod';
 // Types ------------------------------------------------------------------------------
 
@@ -140,19 +140,21 @@ const storePreferencesService = new StorePreferencesService();
 
 const storePreferencesStore = useStorePreferencesStore();
 
-const resolver = zodResolver(
-  z.object({
-    name: z.string().min(0, { message: 'Name is required.' }),
-    '1_oz_cards': z.number().min(0, { message: 'Max number for 1 oz cards is required.' }),
-    '2_oz_cards': z.number().min(0, { message: 'Max number for 2 oz cards is required.' }),
-    '3_oz_cards': z.number().min(0, { message: 'Max number for 3 oz cards is required.' }),
-    '1_oz_cost': z.number().min(0, { message: 'Shipping cost of 1 oz cards is required.' }),
-    '2_oz_cost': z.number().min(0, { message: 'Shipping cost of 2 oz cards is required.' }),
-    '3_oz_cost': z.number().min(0, { message: 'Shipping cost of 3 oz cards is required.' }),
-    more_oz_cost: z.number().min(0, { message: 'Shipping cost of excess cards is required.' }),
-    tracking_cost: z.number().min(0, { message: 'Tracking cost is required.' }),
-    tracking_threshold: z.number()
-  })
+const resolver = computed(() =>
+  zodResolver(
+    z.object({
+      name: !store.value ? z.string().min(0, { message: 'Name is required.' }) : z.any(),
+      '1_oz_cards': z.number().min(0, { message: 'Max number for 1 oz cards is required.' }),
+      '2_oz_cards': z.number().min(0, { message: 'Max number for 2 oz cards is required.' }),
+      '3_oz_cards': z.number().min(0, { message: 'Max number for 3 oz cards is required.' }),
+      '1_oz_cost': z.number().min(0, { message: 'Shipping cost of 1 oz cards is required.' }),
+      '2_oz_cost': z.number().min(0, { message: 'Shipping cost of 2 oz cards is required.' }),
+      '3_oz_cost': z.number().min(0, { message: 'Shipping cost of 3 oz cards is required.' }),
+      more_oz_cost: z.number().min(0, { message: 'Shipping cost of excess cards is required.' }),
+      tracking_cost: z.number().min(0, { message: 'Tracking cost is required.' }),
+      tracking_threshold: z.number()
+    })
+  )
 );
 
 // Reactive Variables -----------------------------------------------------------------
@@ -210,6 +212,7 @@ const removeMember = async (id: string) => {
 };
 
 const handleSubmit = async ({ valid, values }: FormSubmitEvent) => {
+  console.log('submit: ', valid);
   if (!valid) return;
   storePreferenceSubmitLoading.value = true;
   if (!store.value) {
