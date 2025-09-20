@@ -212,7 +212,6 @@ const removeMember = async (id: string) => {
 };
 
 const handleSubmit = async ({ valid, values }: FormSubmitEvent) => {
-  console.log('submit: ', valid);
   if (!valid) return;
   storePreferenceSubmitLoading.value = true;
   if (!store.value) {
