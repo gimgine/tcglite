@@ -73,13 +73,6 @@
             }}</Message>
           </div>
         </div>
-        <div class="flex w-full flex-col gap-1">
-          <label for="free_shipping_threshold" class="ml-3 text-sm">Free Shipping Threshold</label>
-          <InputGroup>
-            <InputGroupAddon class="pi pi-dollar" />
-            <InputNumber name="free_shipping_threshold" currency="USD" mode="currency" />
-          </InputGroup>
-        </div>
         <div class="mt-2 flex justify-end">
           <Button type="submit" label="Submit" :loading="storePreferenceSubmitLoading" />
         </div>
@@ -104,7 +97,14 @@
         ></template>
         <template #list="slotProps">
           <div class="flex flex-col gap-2">
-            <Message v-for="item in slotProps.items" :key="item.name" closable size="small" severity="secondary" @close="removeMember(item.id)">
+            <Message
+              v-for="item in slotProps.items"
+              :key="item.name"
+              :closable="item.id !== pb.authStore.record?.id"
+              size="small"
+              severity="secondary"
+              @close="removeMember(item.id)"
+            >
               {{ item.name }}
             </Message>
           </div>
@@ -151,8 +151,7 @@ const resolver = zodResolver(
     '3_oz_cost': z.number().min(0, { message: 'Shipping cost of 3 oz cards is required.' }),
     more_oz_cost: z.number().min(0, { message: 'Shipping cost of excess cards is required.' }),
     tracking_cost: z.number().min(0, { message: 'Tracking cost is required.' }),
-    tracking_threshold: z.number(),
-    free_shipping_threshold: z.number().nullable()
+    tracking_threshold: z.number()
   })
 );
 
@@ -224,7 +223,6 @@ const handleSubmit = async ({ valid, values }: FormSubmitEvent) => {
         value: values[key]
       }));
     await storePreferencesService.batchCreate(preferences);
-    await storePreferencesStore.refresh();
   } else {
     const preferences = Object.keys(values)
       .filter((key) => key !== 'name')
@@ -235,13 +233,13 @@ const handleSubmit = async ({ valid, values }: FormSubmitEvent) => {
       }));
     await storePreferencesService.batchUpdate(preferences);
   }
+  await storePreferencesStore.refresh();
   storePreferenceSubmitLoading.value = false;
-  storePreferencesStore.refresh();
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------
 onMounted(async () => {
-  store.value = await storeService.getOne(pb.authStore.record?.store);
+  if (pb.authStore.record?.store) store.value = await storeService.getOne(pb.authStore.record?.store);
   await storePreferencesStore.refresh();
   if (!storePreferencesStore.preferences) return;
   form.value?.setValues(
