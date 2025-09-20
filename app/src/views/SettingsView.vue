@@ -118,14 +118,7 @@
         ></template>
         <template #list="slotProps">
           <div class="flex flex-col gap-2">
-            <Message
-              v-for="item in slotProps.items"
-              :key="item.name"
-              :closable="item.id !== pb.authStore.record?.id"
-              size="small"
-              severity="secondary"
-              @close="removeMember(item.id)"
-            >
+            <Message v-for="item in slotProps.items" :key="item.name" closable size="small" severity="secondary" @close="removeMember(item.id)">
               {{ item.name }}
             </Message>
           </div>
