@@ -13,4 +13,8 @@ export class UserService {
   update = async (id: string, values: { [key: string]: unknown }) => {
     await pb.collection(Collections.Users).update(id, values);
   };
+
+  authRefresh = async () => {
+    await pb.collection(Collections.Users).authRefresh();
+  };
 }

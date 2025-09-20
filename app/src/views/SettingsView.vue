@@ -1,8 +1,29 @@
 <template>
   <div class="flex flex-wrap gap-4">
-    <Panel v-if="store" class="basis-full pt-4 text-lg font-bold [&_.p-panel-header]:hidden!">{{ store.name }}</Panel>
-    <Panel :header="store ? 'Shipping Options' : 'Create Store'" class="flex-1">
-      <Form ref="form" v-slot="$form" :resolver class="flex flex-col gap-2" @submit="handleSubmit">
+    <Panel v-model:collapsed="topPanelCollapsed" class="basis-full [&_.p-panel-header]:my-2 [&_.p-panel-header]:items-start!" toggleable>
+      <template #header>
+        <Form ref="namesForm" class="flex flex-col gap-4" :resolver="namesResolver" @submit="handleNamesSubmit">
+          <div class="flex items-center">
+            <Avatar icon="pi pi-user" class="mr-2" shape="circle" size="large" />
+            <span v-show="topPanelCollapsed">{{ pb.authStore.record?.name }}</span>
+            <InputText v-show="!topPanelCollapsed" name="userName" />
+          </div>
+          <div v-if="store" class="flex items-center">
+            <Avatar icon="pi pi-shop" class="mr-2" size="large" />
+            <span v-show="topPanelCollapsed">{{ store?.name }}</span>
+            <InputText v-show="!topPanelCollapsed" name="storeName" />
+          </div>
+        </Form>
+      </template>
+      <template #icons><Button icon="pi pi-sign-out" variant="text" rounded @click="handleSignout" /></template>
+      <template #toggleicon><i class="pi pi-pencil" /></template>
+      <div class="flex justify-end gap-2">
+        <Button severity="secondary" label="Cancel" @click="topPanelCollapsed = true" />
+        <Button label="Submit" @click="namesForm?.submit()" />
+      </div>
+    </Panel>
+    <Panel :header="store ? 'Store Shipping Options' : 'Create Store'" class="flex-1">
+      <Form ref="shippingForm" v-slot="$form" :resolver="shipppingResolver" class="flex flex-col gap-2" @submit="handleShippingSubmit">
         <div v-if="!store" class="flex w-full flex-col gap-1">
           <label for="name" class="ml-3 text-sm">Name</label>
           <InputText name="name" />
@@ -115,6 +136,7 @@
 </template>
 
 <script setup lang="ts">
+import router from '@/router';
 import { StorePreferencesService } from '@/service/store-preferences-service';
 import { StoreService } from '@/service/store-service';
 import { UserService } from '@/service/user service';
@@ -123,15 +145,16 @@ import { Collections, StorePreferencesFieldOptions, type StoresRecord, type User
 import pb from '@/util/pocketbase';
 import { Form, type FormInstance, type FormSubmitEvent } from '@primevue/forms';
 import { zodResolver } from '@primevue/forms/resolvers/zod';
-import { Button, DataView, InputGroup, InputGroupAddon, InputNumber, InputText, Message, Panel, useToast } from 'primevue';
-import { computed, onMounted, ref, useTemplateRef } from 'vue';
+import { Avatar, Button, DataView, InputGroup, InputGroupAddon, InputNumber, InputText, Message, Panel, useToast } from 'primevue';
+import { computed, onMounted, ref, useTemplateRef, nextTick } from 'vue';
 import z from 'zod';
 // Types ------------------------------------------------------------------------------
 
 // Component Info (props/emits) -------------------------------------------------------
 
 // Template Refs ----------------------------------------------------------------------
-const form = useTemplateRef<FormInstance>('form');
+const shippingForm = useTemplateRef<FormInstance>('shippingForm');
+const namesForm = useTemplateRef<FormInstance>('namesForm');
 
 // Variables --------------------------------------------------------------------------
 const storeService = new StoreService();
@@ -140,10 +163,11 @@ const storePreferencesService = new StorePreferencesService();
 
 const storePreferencesStore = useStorePreferencesStore();
 
-const resolver = computed(() =>
+const namesResolver = computed(() => zodResolver(z.object({ userName: z.string().min(1), storeName: !store.value ? z.string().min(1) : z.any() })));
+const shipppingResolver = computed(() =>
   zodResolver(
     z.object({
-      name: !store.value ? z.string().min(0, { message: 'Name is required.' }) : z.any(),
+      name: !store.value ? z.string().min(1, { message: 'Name is required.' }) : z.any(),
       '1_oz_cards': z.number().min(0, { message: 'Max number for 1 oz cards is required.' }),
       '2_oz_cards': z.number().min(0, { message: 'Max number for 2 oz cards is required.' }),
       '3_oz_cards': z.number().min(0, { message: 'Max number for 3 oz cards is required.' }),
@@ -166,6 +190,8 @@ const storeMembers = ref<UsersRecord[]>();
 const storeMembersFilter = ref<string>('');
 
 const storePreferenceSubmitLoading = ref(false);
+
+const topPanelCollapsed = ref(true);
 
 // Provided ---------------------------------------------------------------------------
 
@@ -211,7 +237,18 @@ const removeMember = async (id: string) => {
   }
 };
 
-const handleSubmit = async ({ valid, values }: FormSubmitEvent) => {
+const handleNamesSubmit = async ({ valid, values }: FormSubmitEvent) => {
+  if (!valid) return;
+  await userService.update(pb.authStore.record!.id, { name: values.userName });
+  if (store.value) {
+    await storeService.update(store.value.id, { name: values.storeName });
+    store.value = await storeService.getOne(store.value.id);
+  }
+  await userService.authRefresh();
+  topPanelCollapsed.value = true;
+};
+
+const handleShippingSubmit = async ({ valid, values }: FormSubmitEvent) => {
   if (!valid) return;
   storePreferenceSubmitLoading.value = true;
   if (!store.value) {
@@ -239,12 +276,19 @@ const handleSubmit = async ({ valid, values }: FormSubmitEvent) => {
   storePreferenceSubmitLoading.value = false;
 };
 
+const handleSignout = async () => {
+  await pb.authStore.clear();
+  router.push({ name: 'login' });
+};
+
 // Lifecycle Hooks --------------------------------------------------------------------
 onMounted(async () => {
   if (pb.authStore.record?.store) store.value = await storeService.getOne(pb.authStore.record?.store);
+  await nextTick();
+  namesForm.value?.setValues({ userName: pb.authStore.record?.name, storeName: store.value?.name });
   await storePreferencesStore.refresh();
   if (!storePreferencesStore.preferences) return;
-  form.value?.setValues(
+  shippingForm.value?.setValues(
     Object.keys(storePreferencesStore.preferences!).reduce(
       (acc, key) => {
         acc[key] = +storePreferencesStore.preferences![key as StorePreferencesFieldOptions].value!;

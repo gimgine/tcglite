@@ -9,4 +9,8 @@ export class StoreService {
   create = async (name: string) => {
     return await pb.collection(Collections.Stores).create({ name });
   };
+
+  update = async (id: string, values: object) => {
+    await pb.collection(Collections.Stores).update(id, values);
+  };
 }

@@ -2,7 +2,9 @@
   <Toast />
 
   <div class="bg-surface-100 dark:bg-surface-950 flex h-svh gap-4 p-4">
-    <div class="dark:bg-surface-900 dark:border-surface-700 flex flex-col items-center gap-4 rounded-md border border-gray-200 bg-white p-1 shadow">
+    <div
+      class="dark:bg-surface-900 dark:border-surface-700 flex flex-col items-center gap-4 rounded-md border border-gray-200 bg-white p-1 pb-4 shadow"
+    >
       <img :src="tcgliteLogo" class="mx-1 mt-2 h-auto w-14" />
 
       <Button
@@ -14,9 +16,15 @@
         @click="$router.push({ name: item.routeName })"
       />
 
-      <div class="relative mt-auto pb-2">
-        <Button v-tooltip="'Support development'" icon="pi pi-heart" severity="danger" text rounded @click="openSupportPage" />
-      </div>
+      <Button
+        v-tooltip="'Settings'"
+        class="mt-auto"
+        icon="pi pi-cog"
+        :variant="route.matched[0]?.name === 'settings' ? 'outlined' : 'text'"
+        severity="secondary"
+        @click="$router.push({ name: 'settings' })"
+      />
+      <Button v-tooltip="'Support development'" icon="pi pi-heart" severity="danger" text rounded @click="openSupportPage" />
     </div>
 
     <div class="flex flex-1 flex-col">
@@ -43,8 +51,7 @@ const items = ref([
   { label: 'Expenses', icon: 'pi pi-credit-card', routeName: 'expenses' },
   { label: 'Stats', icon: 'pi pi-chart-line', routeName: 'stats' },
   { label: 'Order Helper', icon: 'pi pi-box', routeName: 'orderHelper' },
-  { label: 'Pricing', icon: 'pi pi-dollar', routeName: 'pricing' },
-  { label: 'Store', icon: 'pi pi-shop', routeName: 'store' }
+  { label: 'Pricing', icon: 'pi pi-dollar', routeName: 'pricing' }
 ]);
 
 const openSupportPage = () => {

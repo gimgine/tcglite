@@ -7,7 +7,7 @@ import ExpensesView from '@/views/ExpensesView.vue';
 import LoginView from '@/views/LoginView.vue';
 import PricingView from '@/views/PricingView.vue';
 import StatsView from '@/views/StatsView.vue';
-import StoreView from '@/views/StoreView.vue';
+import SettingsView from '@/views/SettingsView.vue';
 import { createRouter, createWebHashHistory } from 'vue-router';
 import HomeView from '../views/HomeView.vue';
 import OrderHelperView from '../views/OrderHelperView.vue';
@@ -64,9 +64,9 @@ const router = createRouter({
       component: StatsView
     },
     {
-      path: '/store',
-      name: 'store',
-      component: StoreView
+      path: '/settings',
+      name: 'settings',
+      component: SettingsView
     },
     {
       path: '/admin',

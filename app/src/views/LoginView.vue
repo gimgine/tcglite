@@ -1,13 +1,14 @@
 <template>
   <div class="flex h-full w-full flex-col items-center justify-center">
-    <Card class="w-96">
-      <template #title>
-        <div class="my-2">Welcome</div>
-      </template>
-      <template #content>
-        <Button label="Discord" icon="pi pi-discord" fluid @click="authenticate" />
-      </template>
-    </Card>
+    <Panel class="w-96">
+      <template #header
+        ><div class="font-fredoka flex w-full items-center justify-center gap-2 text-3xl">
+          <img :src="tcgliteLogo" class="h-auto w-12" />TCGlite
+        </div></template
+      >
+      <div class="mb-4 text-center text-lg">Login Using</div>
+      <Button label="Discord" icon="pi pi-discord" fluid @click="authenticate" />
+    </Panel>
   </div>
 </template>
 
@@ -15,14 +16,14 @@
 import router from '@/router';
 import { Collections } from '@/types/pocketbase-types';
 import pb from '@/util/pocketbase';
-import { Button, Card } from 'primevue';
+import { Button, Panel } from 'primevue';
+import tcgliteLogo from '@/assets/tcglitelogo-test-yellow-blue.svg';
 
 const authenticate = async () => {
   await pb.collection(Collections.Users).authWithOAuth2({ provider: 'discord' });
 
   if (pb.authStore.isValid) {
     router.push({ name: 'home' });
-    console.log(pb.authStore.record);
   }
 };
 </script>
