@@ -83,6 +83,7 @@ import { useAgGridTheme } from '@/composables/useAgGridTheme';
 import { CardService } from '@/service/card-service';
 import { OrderService } from '@/service/order-service';
 import { useOrderStore } from '@/store/order-store';
+import { usePreferencesStore } from '@/store/store-preferences-store';
 import { type OrdersRecord } from '@/types/pocketbase-types';
 import { parseShippingCsv, type ShippingCsv } from '@/util/csv-parse';
 import { formatCurrency, isToday } from '@/util/functions';
@@ -107,6 +108,7 @@ const grid = ref();
 // Variables --------------------------------------------------------------------------
 const orderService = new OrderService();
 const orderStore = useOrderStore();
+const preferencesStore = usePreferencesStore();
 const theme = useAgGridTheme();
 
 const cardService = new CardService();
@@ -152,8 +154,8 @@ const columnDefs: ColDef<OrdersRecord>[] = [
     maxWidth: 150,
     cellRenderer: (
       params: ICellRendererParams
-    ) => `<span class="rounded-sm px-2 py-0.5 text-xs font-bold ${params.data.shippingCost === orderService.TRACKING.cost ? 'bg-blue-200 text-blue-600' : 'bg-pink-200 text-pink-600'}">
-            ${orderService.getShippingMethod(params.data.shippingCost)?.name}
+    ) => `<span class="rounded-sm px-2 py-0.5 text-xs font-bold ${params.data.shippingCost > preferencesStore.moreOunceCost ? 'bg-blue-200 text-blue-600' : 'bg-pink-200 text-pink-600'}">
+            ${orderService.getShippingMethod(params.data.shippingCost)}
           </span>`
   },
   {

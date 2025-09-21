@@ -23,7 +23,7 @@
       </div>
     </Panel>
     <Panel :header="store ? 'Store Shipping Options' : 'Create Store'" class="flex-1">
-      <Form ref="shippingForm" v-slot="$form" :resolver="shippingResolver" class="flex flex-col gap-2" @submit="handleShippingSubmit">
+      <Form ref="shippingForm" v-slot="$form" :initial-values :resolver="shippingResolver" class="flex flex-col gap-2" @submit="handleShippingSubmit">
         <div v-if="!store" class="flex w-full flex-col gap-1">
           <label for="name" class="ml-3 text-sm">Name</label>
           <InputText name="name" />
@@ -31,6 +31,7 @@
             {{ $form.name.error?.message }}
           </Message>
         </div>
+
         <div class="grid grid-cols-1 gap-1 text-sm">
           <div class="grid grid-cols-11 gap-2 [&>*]:col-span-3">
             <div class="!col-span-2 font-semibold">Envelope</div>
@@ -38,12 +39,14 @@
             <div>2 Ounce</div>
             <div>3 Ounce</div>
           </div>
+
           <div class="grid grid-cols-11 gap-2 [&>*]:col-span-3">
             <div class="!col-span-2 flex items-center justify-end">Max Cards</div>
             <div><InputNumber name="oneOunceCards" fluid /></div>
             <div><InputNumber name="twoOunceCards" fluid /></div>
             <div><InputNumber name="threeOunceCards" fluid /></div>
           </div>
+
           <div class="grid grid-cols-11 gap-2 [&>*]:col-span-3">
             <div class="!col-span-2 flex items-center justify-end">Shipping Cost</div>
             <div>
@@ -52,12 +55,14 @@
                 <InputNumber name="oneOunceCost" currency="USD" mode="currency" />
               </InputGroup>
             </div>
+
             <div>
               <InputGroup>
                 <InputGroupAddon class="pi pi-dollar" />
                 <InputNumber name="twoOunceCost" currency="USD" mode="currency" />
               </InputGroup>
             </div>
+
             <div>
               <InputGroup>
                 <InputGroupAddon class="pi pi-dollar" />
@@ -66,6 +71,7 @@
             </div>
           </div>
         </div>
+
         <div class="flex w-full flex-col gap-1">
           <label for="moreOunceCost" class="ml-3 text-sm">More Ounces Cost</label>
           <InputGroup>
@@ -76,6 +82,7 @@
             {{ $form.moreOunceCost.error?.message }}
           </Message>
         </div>
+
         <div class="flex gap-2">
           <div class="flex w-full flex-col gap-1">
             <label for="trackingThreshold" class="ml-3 text-sm">Tracking Threshold</label>
@@ -87,6 +94,7 @@
               {{ $form.trackingThreshold.error?.message }}
             </Message>
           </div>
+
           <div class="flex w-full flex-col gap-1">
             <label for="trackingCost" class="ml-3 text-sm">Tracking Cost</label>
             <InputGroup>
@@ -98,8 +106,9 @@
             </Message>
           </div>
         </div>
+
         <div class="mt-2 flex justify-end">
-          <Button type="submit" label="Submit" :loading="storePreferenceSubmitLoading" />
+          <Button type="submit" label="Save" :loading="storePreferenceSubmitLoading" />
         </div>
       </Form>
     </Panel>
@@ -116,10 +125,11 @@
         </div>
       </template>
       <DataView :value="storeMembers?.filter((m) => m.name?.match(new RegExp(storeMembersFilter, 'i')))">
-        <template #empty
-          ><div class="flex w-full items-center justify-center gap-4 p-2">
-            No members found. <Button icon="pi pi-plus" variant="outlined" size="small" @click="addMember" /></div
-        ></template>
+        <template #empty>
+          <div class="flex w-full items-center justify-center gap-4 p-2">
+            No members found. <Button icon="pi pi-plus" variant="outlined" size="small" @click="addMember" />
+          </div>
+        </template>
         <template #list="slotProps">
           <div class="flex flex-col gap-2">
             <Message v-for="item in slotProps.items" :key="item.name" closable size="small" severity="secondary" @close="removeMember(item.id)">
@@ -143,9 +153,22 @@ import pb from '@/util/pocketbase';
 import { Form, type FormInstance, type FormSubmitEvent } from '@primevue/forms';
 import { zodResolver } from '@primevue/forms/resolvers/zod';
 import { Avatar, Button, DataView, InputGroup, InputGroupAddon, InputNumber, InputText, Message, Panel, useToast } from 'primevue';
-import { computed, onMounted, ref, useTemplateRef, nextTick } from 'vue';
+import { computed, onMounted, reactive, ref, useTemplateRef, nextTick } from 'vue';
 import z from 'zod';
+
 // Types ------------------------------------------------------------------------------
+interface FormValues {
+  name: string;
+  oneOunceCards?: number;
+  oneOunceCost?: number;
+  twoOunceCards?: number;
+  twoOunceCost?: number;
+  threeOunceCards?: number;
+  threeOunceCost?: number;
+  moreOunceCost?: number;
+  trackingThreshold?: number;
+  trackingCost?: number;
+}
 
 // Component Info (props/emits) -------------------------------------------------------
 
@@ -189,6 +212,19 @@ const storeMembersFilter = ref<string>('');
 const storePreferenceSubmitLoading = ref(false);
 
 const topPanelCollapsed = ref(true);
+
+const initialValues = reactive<FormValues>({
+  name: '',
+  oneOunceCards: undefined,
+  oneOunceCost: undefined,
+  twoOunceCards: undefined,
+  twoOunceCost: undefined,
+  threeOunceCards: undefined,
+  threeOunceCost: undefined,
+  moreOunceCost: undefined,
+  trackingThreshold: undefined,
+  trackingCost: undefined
+});
 
 // Provided ---------------------------------------------------------------------------
 
@@ -248,8 +284,10 @@ const handleNamesSubmit = async ({ valid, values }: FormSubmitEvent) => {
 const handleShippingSubmit = async ({ valid, values }: FormSubmitEvent) => {
   if (!valid) return;
   storePreferenceSubmitLoading.value = true;
+
   if (!store.value) {
     store.value = await storeService.create(values.name);
+
     await userService.update(pb.authStore.record!.id, { store: store.value.id });
     const preferences = Object.keys(values)
       .filter((key) => key !== 'name')
@@ -259,6 +297,7 @@ const handleShippingSubmit = async ({ valid, values }: FormSubmitEvent) => {
         value: values[key]
       }));
     await storePreferencesService.batchCreate(preferences);
+
     await preferencesStore.refresh();
   } else {
     const preferences = Object.keys(values)
@@ -268,8 +307,11 @@ const handleShippingSubmit = async ({ valid, values }: FormSubmitEvent) => {
         field: key as StorePreferencesFieldOptions,
         value: values[key]
       }));
+
     await storePreferencesService.batchUpdate(preferences);
+    toast.add({ severity: 'success', summary: 'Preferences Updated', detail: 'Store preferences successfully updated.', life: 3000 });
   }
+
   await preferencesStore.refresh();
   storePreferenceSubmitLoading.value = false;
   preferencesStore.refresh();
