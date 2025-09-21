@@ -1,13 +1,15 @@
+import { usePreferencesStore } from '@/store/store-preferences-store';
 import type { OrderRequest } from '@/types';
 import { Collections, ExpensesTypeOptions } from '@/types/pocketbase-types';
 import { parseShippingCsv, type ShippingCsv } from '@/util/csv-parse';
 import pb from '@/util/pocketbase';
 
 export class OrderService {
-  readonly ENVELOPE = { cost: 1, name: 'Envelope' };
-  readonly TRACKING = { cost: 5, name: 'Tracking' };
+  readonly ENVELOPE = 'Envelope';
+  readonly TRACKING = 'Tracking';
   readonly SHIPPING_METHODS = [this.ENVELOPE, this.TRACKING];
-  readonly TRACKING_THRESHOLD = 32.5;
+
+  preferencesStore = usePreferencesStore();
 
   create = async (config: { file?: File; orders?: ShippingCsv[] }) => {
     const { file, orders } = config;
@@ -33,7 +35,7 @@ export class OrderService {
   };
 
   getShippingMethod = (shippingCost: number) => {
-    return this.SHIPPING_METHODS.find((sm) => sm.cost === shippingCost);
+    return shippingCost < this.preferencesStore.trackingCost ? this.ENVELOPE : this.TRACKING;
   };
 
   getAverageCogs = async () => {
@@ -105,8 +107,20 @@ export class OrderService {
     return orderRequests;
   };
 
-  private determineDefaultShippingCost = (totalPrice: number) => {
-    return totalPrice >= this.TRACKING_THRESHOLD ? this.TRACKING.cost : this.ENVELOPE.cost;
+  private determineDefaultShippingCost = (totalPrice: number, itemCount: number) => {
+    if (totalPrice >= this.preferencesStore.trackingThreshold) {
+      return this.preferencesStore.trackingCost;
+    }
+
+    if (itemCount <= this.preferencesStore.oneOunceCards) {
+      return this.preferencesStore.oneOunceCost;
+    } else if (itemCount <= this.preferencesStore.twoOunceCards) {
+      return this.preferencesStore.twoOunceCost;
+    } else if (itemCount <= this.preferencesStore.threeOunceCards) {
+      return this.preferencesStore.threeOunceCost;
+    } else {
+      return this.preferencesStore.moreOunceCost;
+    }
   };
 
   private setOrderFinancial = (order: OrderRequest, avgCogs: number) => {
@@ -114,7 +128,7 @@ export class OrderService {
     const vendorFee = totalPrice * 0.1025;
     const processingFee = totalPrice * 0.025 + 0.3;
     const cogs = order.itemCount * avgCogs;
-    const shippingCost = this.determineDefaultShippingCost(totalPrice);
+    const shippingCost = this.determineDefaultShippingCost(totalPrice, order.itemCount);
     const profit = totalPrice - vendorFee - processingFee - cogs - shippingCost;
     const feePercentage = ((vendorFee + processingFee) / totalPrice) * 100;
 

@@ -16,7 +16,9 @@
       <div>
         <span
           v-show="bulkOrders[shippingIndex]?.type !== 'Tracking'"
-          v-tooltip.top="`1 oz: <= ${ONE_OUNCE_LIMIT} cards\n2 oz: <= ${TWO_OUNCE_LIMIT} cards\n3 oz: <= ${THREE_OUNCE_LIMIT} cards`"
+          v-tooltip.top="
+            `1 oz: <= ${preferencesStore.oneOunceCards} cards\n2 oz: <= ${preferencesStore.twoOunceCards} cards\n3 oz: <= ${preferencesStore.threeOunceCards} cards`
+          "
           class="dark:bg-surface-600 mr-2 rounded-sm bg-gray-100 px-2 py-0.5 text-xs font-bold"
         >
           {{ bulkOrders[shippingIndex]?.ounces + ' oz' }}
@@ -76,12 +78,12 @@
 </template>
 
 <script setup lang="ts">
-import { OrderService } from '@/service/order-service';
+import { usePreferencesStore } from '@/store/store-preferences-store';
 import { type ShippingCsv } from '@/util/csv-parse';
-import { Button, useToast } from 'primevue';
 import { copyToClipboard } from '@/util/functions';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
 import Papa from 'papaparse';
+import { Button, useToast } from 'primevue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 // Types ------------------------------------------------------------------------------
 interface BulkOrder {
@@ -98,11 +100,7 @@ defineEmits<{ back: []; done: [] }>();
 const copyButton = ref();
 
 // Variables --------------------------------------------------------------------------
-const ONE_OUNCE_LIMIT = 8;
-const TWO_OUNCE_LIMIT = 18;
-const THREE_OUNCE_LIMIT = 34;
-
-const orderService = new OrderService();
+const preferencesStore = usePreferencesStore();
 
 // Reactive Variables -----------------------------------------------------------------
 const toast = useToast();
@@ -124,14 +122,14 @@ const bulkOrders = computed<BulkOrder[]>(() => {
     const total = order['Shipping Fee Paid'] + order['Value Of Products'];
     const count = order['Item Count'];
 
-    if (total >= orderService.TRACKING_THRESHOLD) {
+    if (total >= preferencesStore.trackingThreshold) {
       trackingList.push(order);
     } else {
-      if (count <= ONE_OUNCE_LIMIT) {
+      if (count <= preferencesStore.oneOunceCards) {
         envelopeMap[1].push(order);
-      } else if (count <= TWO_OUNCE_LIMIT) {
+      } else if (count <= preferencesStore.twoOunceCards) {
         envelopeMap[2].push(order);
-      } else if (count <= THREE_OUNCE_LIMIT) {
+      } else if (count <= preferencesStore.threeOunceCards) {
         envelopeMap[3].push(order);
       } else {
         envelopeMap[0].push(order);
