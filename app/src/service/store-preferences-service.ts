@@ -2,27 +2,15 @@ import { Collections, type StorePreferencesRecord } from '@/types/pocketbase-typ
 import pb from '@/util/pocketbase';
 
 export class StorePreferencesService {
-  getAll = async () => {
-    return await pb.collection(Collections.StorePreferences).getFullList();
+  get = async () => {
+    return (await pb.collection(Collections.StorePreferences).getFullList())[0];
   };
 
-  batchUpdate = async (preferences: Partial<StorePreferencesRecord>[]) => {
-    const batch = pb.createBatch();
-
-    preferences.forEach((p) => {
-      batch.collection(Collections.StorePreferences).update(p.id!, p);
-    });
-
-    await batch.send();
+  create = async (preferences: Omit<StorePreferencesRecord, 'id'>) => {
+    await pb.collection(Collections.StorePreferences).create(preferences);
   };
 
-  batchCreate = async (preferences: Partial<StorePreferencesRecord>[]) => {
-    const batch = pb.createBatch();
-
-    preferences.forEach((p) => {
-      batch.collection(Collections.StorePreferences).create(p);
-    });
-
-    await batch.send();
+  update = async (preferences: StorePreferencesRecord) => {
+    await pb.collection(Collections.StorePreferences).update(preferences.id, preferences);
   };
 }

@@ -39,7 +39,7 @@ import { Button, Toast } from 'primevue';
 import { onMounted, ref } from 'vue';
 import { RouterView, useRoute } from 'vue-router';
 import { useOrderStore } from './store/order-store';
-import { usePreferencesStore } from './store/store-preferences-store';
+import { usePreferencesStore } from './store/preferences-store';
 
 const route = useRoute();
 

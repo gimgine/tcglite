@@ -138,9 +138,11 @@ export type OrdersRecord = {
   feePercentage?: number;
   firstName: string;
   id: string;
+  isTracking?: boolean;
   itemCount: number;
   lastName: string;
   orderDate: IsoDateString;
+  packageOunces?: number;
   postalCode: string;
   processingFee?: number;
   productValue: number;
@@ -206,24 +208,20 @@ export type SetsRecord = {
   updated?: IsoDateString;
 };
 
-export enum StorePreferencesFieldOptions {
-  'twoOunceCards' = 'twoOunceCards',
-  'threeOunceCards' = 'threeOunceCards',
-  'oneOunceCost' = 'oneOunceCost',
-  'twoOunceCost' = 'twoOunceCost',
-  'threeOunceCost' = 'threeOunceCost',
-  'moreOunceCost' = 'moreOunceCost',
-  'trackingCost' = 'trackingCost',
-  'trackingThreshold' = 'trackingThreshold',
-  'oneOunceCards' = 'oneOunceCards'
-}
 export type StorePreferencesRecord = {
   created?: IsoDateString;
-  field?: StorePreferencesFieldOptions;
   id: string;
+  moreOunceCost?: number;
+  oneOunceCards?: number;
+  oneOunceCost?: number;
   store?: RecordIdString;
+  threeOunceCards?: number;
+  threeOunceCost?: number;
+  trackingCost?: number;
+  trackingThreshold?: number;
+  twoOunceCards?: number;
+  twoOunceCost?: number;
   updated?: IsoDateString;
-  value?: string;
 };
 
 export type StoresRecord = {

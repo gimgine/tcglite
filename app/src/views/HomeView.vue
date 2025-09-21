@@ -83,7 +83,6 @@ import { useAgGridTheme } from '@/composables/useAgGridTheme';
 import { CardService } from '@/service/card-service';
 import { OrderService } from '@/service/order-service';
 import { useOrderStore } from '@/store/order-store';
-import { usePreferencesStore } from '@/store/store-preferences-store';
 import { type OrdersRecord } from '@/types/pocketbase-types';
 import { parseShippingCsv, type ShippingCsv } from '@/util/csv-parse';
 import { formatCurrency, isToday } from '@/util/functions';
@@ -108,7 +107,6 @@ const grid = ref();
 // Variables --------------------------------------------------------------------------
 const orderService = new OrderService();
 const orderStore = useOrderStore();
-const preferencesStore = usePreferencesStore();
 const theme = useAgGridTheme();
 
 const cardService = new CardService();
@@ -154,8 +152,8 @@ const columnDefs: ColDef<OrdersRecord>[] = [
     maxWidth: 150,
     cellRenderer: (
       params: ICellRendererParams
-    ) => `<span class="rounded-sm px-2 py-0.5 text-xs font-bold ${params.data.shippingCost > preferencesStore.moreOunceCost ? 'bg-blue-200 text-blue-600' : 'bg-pink-200 text-pink-600'}">
-            ${orderService.getShippingMethod(params.data.shippingCost)}
+    ) => `<span title="${formatCurrency(params.data.shippingCost)}" class="rounded-sm px-2 py-0.5 text-xs font-bold ${params.data.isTracking ? 'bg-blue-200 text-blue-600' : 'bg-pink-200 text-pink-600'}">
+            ${getShippingMethodDescription(params.data.packageOunces, params.data.isTracking)}
           </span>`
   },
   {
@@ -263,6 +261,10 @@ const csvGrossSales = (orders: ShippingCsv[]) => {
   const fees = orders.reduce((sum, order) => sum + vendorFee(order) + processingFee(order), 0);
 
   return sales - fees;
+};
+
+const getShippingMethodDescription = (packageOunces: number, isTracking: boolean) => {
+  return `${isTracking ? '' : `${packageOunces === -1 ? '>3' : packageOunces}oz `}${isTracking ? 'Tracking' : 'Envelope'}`;
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------

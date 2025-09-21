@@ -6,10 +6,11 @@
       </template>
       <template #content>
         <div v-show="pb.authStore.isSuperuser">
-          <Panel header="Claim Records for Store">
+          <Panel header="Store Actions">
             <div class="flex flex-col gap-2">
               <Select v-model="selectedStore" :options="stores" option-label="name" placeholder="Store" />
-              <Button label="Claim" fluid :loading="isClaimLoading" @click="claimRecords" />
+              <Button label="Claim All Records" fluid :loading="isClaimLoading" @click="claimRecords" />
+              <Button label="Update Shipping" fluid :loading="isUpdateShippingLoading" @click="updateShippingInformation" />
             </div>
           </Panel>
         </div>
@@ -31,6 +32,7 @@ import pb from '@/util/pocketbase';
 import { Card, Button, useToast, InputText, Password, Select, Panel } from 'primevue';
 import { Form, type FormInstance, type FormSubmitEvent } from '@primevue/forms';
 import { onMounted, ref, useTemplateRef } from 'vue';
+import { OrderService } from '@/service/order-service';
 
 const toast = useToast();
 
@@ -39,6 +41,47 @@ const loginForm = useTemplateRef<FormInstance>('loginForm');
 const stores = ref<StoresRecord[]>();
 const selectedStore = ref<StoresRecord>();
 const isClaimLoading = ref(false);
+const isUpdateShippingLoading = ref(false);
+
+const updateShippingInformation = async () => {
+  isUpdateShippingLoading.value = true;
+
+  const storeId = selectedStore.value?.id;
+
+  if (!storeId) {
+    toast.add({ summary: 'Error', detail: 'No store selected.', life: 3000, severity: 'error' });
+    return;
+  }
+
+  const orderService = new OrderService();
+  const orders = await pb.collection(Collections.Orders).getFullList();
+  const preferences = await pb.collection(Collections.StorePreferences).getFirstListItem(`store="${storeId}"`);
+
+  const batch = pb.createBatch();
+
+  orders.forEach((order) => {
+    order.shippingCost = orderService.determineShippingCost(order.totalPrice, order.itemCount, preferences);
+    order.packageOunces = orderService.determineWeight(order.itemCount, preferences);
+    order.isTracking = orderService.determineTracking(order.totalPrice, preferences);
+    order.profit = orderService.determineProfit(order.totalPrice, order.vendorFee, order.processingFee, order.cogs, order.shippingCost);
+
+    batch.collection(Collections.Orders).update(order.id, order);
+  });
+
+  try {
+    await batch.send();
+    toast.add({
+      summary: 'Shipping Information Updated',
+      detail: 'Shipping and profit data was updated using current store preferences.',
+      life: 3000,
+      severity: 'success'
+    });
+  } catch {
+    toast.add({ summary: 'Error', detail: 'Something went wrong updating records.', life: 3000, severity: 'error' });
+  } finally {
+    isUpdateShippingLoading.value = false;
+  }
+};
 
 const claimRecords = async () => {
   isClaimLoading.value = true;

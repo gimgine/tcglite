@@ -23,6 +23,8 @@ export interface OrderRequest {
   processingFee?: number;
   cogs?: number;
   shippingCost?: number;
+  packageOunces?: number;
+  isTracking?: boolean;
   profit?: number;
   feePercentage?: number;
 }

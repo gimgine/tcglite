@@ -17,7 +17,7 @@
         <span
           v-show="bulkOrders[shippingIndex]?.type !== 'Tracking'"
           v-tooltip.top="
-            `1 oz: <= ${preferencesStore.oneOunceCards} cards\n2 oz: <= ${preferencesStore.twoOunceCards} cards\n3 oz: <= ${preferencesStore.threeOunceCards} cards`
+            `1 oz: <= ${preferencesStore.preferences?.oneOunceCards} cards\n2 oz: <= ${preferencesStore.preferences?.twoOunceCards} cards\n3 oz: <= ${preferencesStore.preferences?.threeOunceCards} cards`
           "
           class="dark:bg-surface-600 mr-2 rounded-sm bg-gray-100 px-2 py-0.5 text-xs font-bold"
         >
@@ -78,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { usePreferencesStore } from '@/store/store-preferences-store';
+import { usePreferencesStore } from '@/store/preferences-store';
 import { type ShippingCsv } from '@/util/csv-parse';
 import { copyToClipboard } from '@/util/functions';
 import Papa from 'papaparse';
@@ -122,14 +122,14 @@ const bulkOrders = computed<BulkOrder[]>(() => {
     const total = order['Shipping Fee Paid'] + order['Value Of Products'];
     const count = order['Item Count'];
 
-    if (total >= preferencesStore.trackingThreshold) {
+    if (total >= (preferencesStore.preferences?.trackingThreshold ?? 0)) {
       trackingList.push(order);
     } else {
-      if (count <= preferencesStore.oneOunceCards) {
+      if (count <= (preferencesStore.preferences?.oneOunceCards ?? 0)) {
         envelopeMap[1].push(order);
-      } else if (count <= preferencesStore.twoOunceCards) {
+      } else if (count <= (preferencesStore.preferences?.twoOunceCards ?? 0)) {
         envelopeMap[2].push(order);
-      } else if (count <= preferencesStore.threeOunceCards) {
+      } else if (count <= (preferencesStore.preferences?.threeOunceCards ?? 0)) {
         envelopeMap[3].push(order);
       } else {
         envelopeMap[0].push(order);

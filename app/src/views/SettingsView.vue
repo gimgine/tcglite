@@ -24,6 +24,8 @@
     </Panel>
     <Panel :header="store ? 'Store Shipping Options' : 'Create Store'" class="flex-1">
       <Form ref="shippingForm" v-slot="$form" :initial-values :resolver="shippingResolver" class="flex flex-col gap-2" @submit="handleShippingSubmit">
+        <InputText name="id" class="hidden" />
+
         <div v-if="!store" class="flex w-full flex-col gap-1">
           <label for="name" class="ml-3 text-sm">Name</label>
           <InputText name="name" />
@@ -112,6 +114,7 @@
         </div>
       </Form>
     </Panel>
+
     <Panel v-if="store" class="flex-1">
       <template #header>
         <div class="flex w-full justify-between">
@@ -147,17 +150,18 @@ import router from '@/router';
 import { StorePreferencesService } from '@/service/store-preferences-service';
 import { StoreService } from '@/service/store-service';
 import { UserService } from '@/service/user service';
-import { usePreferencesStore } from '@/store/store-preferences-store';
-import { Collections, StorePreferencesFieldOptions, type StoresRecord, type UsersRecord } from '@/types/pocketbase-types';
+import { usePreferencesStore } from '@/store/preferences-store';
+import { Collections, type StorePreferencesRecord, type StoresRecord, type UsersRecord } from '@/types/pocketbase-types';
 import pb from '@/util/pocketbase';
 import { Form, type FormInstance, type FormSubmitEvent } from '@primevue/forms';
 import { zodResolver } from '@primevue/forms/resolvers/zod';
 import { Avatar, Button, DataView, InputGroup, InputGroupAddon, InputNumber, InputText, Message, Panel, useToast } from 'primevue';
-import { computed, onMounted, reactive, ref, useTemplateRef, nextTick } from 'vue';
+import { computed, nextTick, onMounted, reactive, ref, useTemplateRef } from 'vue';
 import z from 'zod';
 
 // Types ------------------------------------------------------------------------------
 interface FormValues {
+  id?: string;
   name: string;
   oneOunceCards?: number;
   oneOunceCost?: number;
@@ -187,6 +191,7 @@ const namesResolver = computed(() => zodResolver(z.object({ userName: z.string()
 const shippingResolver = computed(() =>
   zodResolver(
     z.object({
+      id: z.string(),
       name: !store.value ? z.string().min(1, { message: 'Name is required.' }) : z.any(),
       oneOunceCards: z.number().min(0, { message: 'Max number for 1 oz cards is required.' }),
       twoOunceCards: z.number().min(0, { message: 'Max number for 2 oz cards is required.' }),
@@ -214,6 +219,7 @@ const storePreferenceSubmitLoading = ref(false);
 const topPanelCollapsed = ref(true);
 
 const initialValues = reactive<FormValues>({
+  id: '',
   name: '',
   oneOunceCards: undefined,
   oneOunceCost: undefined,
@@ -289,26 +295,11 @@ const handleShippingSubmit = async ({ valid, values }: FormSubmitEvent) => {
     store.value = await storeService.create(values.name);
 
     await userService.update(pb.authStore.record!.id, { store: store.value.id });
-    const preferences = Object.keys(values)
-      .filter((key) => key !== 'name')
-      .map((key) => ({
-        store: store.value!.id,
-        field: key as StorePreferencesFieldOptions,
-        value: values[key]
-      }));
-    await storePreferencesService.batchCreate(preferences);
+    await storePreferencesService.create(values);
 
     await preferencesStore.refresh();
   } else {
-    const preferences = Object.keys(values)
-      .filter((key) => key !== 'name')
-      .map((key) => ({
-        id: preferencesStore.preferences![key as StorePreferencesFieldOptions].id,
-        field: key as StorePreferencesFieldOptions,
-        value: values[key]
-      }));
-
-    await storePreferencesService.batchUpdate(preferences);
+    await storePreferencesService.update(values as StorePreferencesRecord);
     toast.add({ severity: 'success', summary: 'Preferences Updated', detail: 'Store preferences successfully updated.', life: 3000 });
   }
 
@@ -317,8 +308,8 @@ const handleShippingSubmit = async ({ valid, values }: FormSubmitEvent) => {
   preferencesStore.refresh();
 };
 
-const handleSignout = async () => {
-  await pb.authStore.clear();
+const handleSignout = () => {
+  pb.authStore.clear();
   router.push({ name: 'login' });
 };
 
@@ -326,18 +317,14 @@ const handleSignout = async () => {
 onMounted(async () => {
   if (pb.authStore.record?.store) store.value = await storeService.getOne(pb.authStore.record?.store);
   await nextTick();
+
   namesForm.value?.setValues({ userName: pb.authStore.record?.name, storeName: store.value?.name });
+
   await preferencesStore.refresh();
   if (!preferencesStore.preferences) return;
-  shippingForm.value?.setValues(
-    Object.keys(preferencesStore.preferences!).reduce(
-      (acc, key) => {
-        acc[key] = +preferencesStore.preferences![key as StorePreferencesFieldOptions].value!;
-        return acc;
-      },
-      {} as Record<string, number | undefined>
-    )
-  );
+
+  shippingForm.value?.setValues(preferencesStore.preferences);
+
   fetchMembers();
 });
 </script>

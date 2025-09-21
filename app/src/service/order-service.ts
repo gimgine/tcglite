@@ -1,14 +1,10 @@
-import { usePreferencesStore } from '@/store/store-preferences-store';
+import { usePreferencesStore } from '@/store/preferences-store';
 import type { OrderRequest } from '@/types';
-import { Collections, ExpensesTypeOptions } from '@/types/pocketbase-types';
+import { Collections, ExpensesTypeOptions, type StorePreferencesRecord } from '@/types/pocketbase-types';
 import { parseShippingCsv, type ShippingCsv } from '@/util/csv-parse';
 import pb from '@/util/pocketbase';
 
 export class OrderService {
-  readonly ENVELOPE = 'Envelope';
-  readonly TRACKING = 'Tracking';
-  readonly SHIPPING_METHODS = [this.ENVELOPE, this.TRACKING];
-
   preferencesStore = usePreferencesStore();
 
   create = async (config: { file?: File; orders?: ShippingCsv[] }) => {
@@ -32,10 +28,6 @@ export class OrderService {
     });
 
     await batch.send();
-  };
-
-  getShippingMethod = (shippingCost: number) => {
-    return shippingCost < this.preferencesStore.trackingCost ? this.ENVELOPE : this.TRACKING;
   };
 
   getAverageCogs = async () => {
@@ -107,20 +99,40 @@ export class OrderService {
     return orderRequests;
   };
 
-  private determineDefaultShippingCost = (totalPrice: number, itemCount: number) => {
-    if (totalPrice >= this.preferencesStore.trackingThreshold) {
-      return this.preferencesStore.trackingCost;
+  public determineWeight = (itemCount: number, preferences: StorePreferencesRecord) => {
+    if (itemCount <= preferences.oneOunceCards!) {
+      return 1;
+    } else if (itemCount <= preferences.twoOunceCards!) {
+      return 2;
+    } else if (itemCount <= preferences.threeOunceCards!) {
+      return 3;
+    } else {
+      return -1; // used to signify "more ounces"
+    }
+  };
+
+  public determineTracking = (totalPrice: number, preferences: StorePreferencesRecord) => {
+    return totalPrice >= preferences.trackingThreshold!;
+  };
+
+  public determineShippingCost = (totalPrice: number, itemCount: number, preferences: StorePreferencesRecord) => {
+    if (totalPrice >= this.preferencesStore.preferences!.trackingThreshold) {
+      return this.preferencesStore.preferences!.trackingCost;
     }
 
-    if (itemCount <= this.preferencesStore.oneOunceCards) {
-      return this.preferencesStore.oneOunceCost;
-    } else if (itemCount <= this.preferencesStore.twoOunceCards) {
-      return this.preferencesStore.twoOunceCost;
-    } else if (itemCount <= this.preferencesStore.threeOunceCards) {
-      return this.preferencesStore.threeOunceCost;
+    if (itemCount <= preferences.oneOunceCards!) {
+      return preferences.oneOunceCost!;
+    } else if (itemCount <= preferences.twoOunceCards!) {
+      return preferences.twoOunceCost!;
+    } else if (itemCount <= preferences.threeOunceCards!) {
+      return preferences.threeOunceCost!;
     } else {
-      return this.preferencesStore.moreOunceCost;
+      return preferences.moreOunceCost!;
     }
+  };
+
+  public determineProfit = (totalPrice: number, vendorFee: number, processingFee: number, cogs: number, shippingCost: number) => {
+    return totalPrice - vendorFee - processingFee - cogs - shippingCost;
   };
 
   private setOrderFinancial = (order: OrderRequest, avgCogs: number) => {
@@ -128,8 +140,10 @@ export class OrderService {
     const vendorFee = totalPrice * 0.1025;
     const processingFee = totalPrice * 0.025 + 0.3;
     const cogs = order.itemCount * avgCogs;
-    const shippingCost = this.determineDefaultShippingCost(totalPrice, order.itemCount);
-    const profit = totalPrice - vendorFee - processingFee - cogs - shippingCost;
+    const shippingCost = this.determineShippingCost(totalPrice, order.itemCount, this.preferencesStore.preferences!);
+    const packageOunces = this.determineWeight(order.itemCount, this.preferencesStore.preferences!);
+    const isTracking = this.determineTracking(totalPrice, this.preferencesStore.preferences!);
+    const profit = this.determineProfit(totalPrice, vendorFee, processingFee, cogs, shippingCost);
     const feePercentage = ((vendorFee + processingFee) / totalPrice) * 100;
 
     order.totalPrice = totalPrice;
@@ -137,6 +151,8 @@ export class OrderService {
     order.processingFee = processingFee;
     order.cogs = cogs;
     order.shippingCost = shippingCost;
+    order.packageOunces = packageOunces;
+    order.isTracking = isTracking;
     order.profit = profit;
     order.feePercentage = feePercentage;
   };
