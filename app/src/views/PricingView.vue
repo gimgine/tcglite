@@ -502,7 +502,7 @@ const openAddStrategy = async () => {
 
   editingStrategyId.value = null;
   strategyFormInitialValues.name = defaultStrategyFormValues.name;
-  rulesOptions.value = rules.map((r) => ({ label: `${r.pricing} for ${r.filter} ${r.filterValue}`, ruleId: r.id }));
+  rulesOptions.value = rules.map((r) => ({ label: getRuleLabel(r), ruleId: r.id }));
   strategyRules.value = [];
 
   isStrategyModalOpen.value = true;
@@ -518,11 +518,11 @@ const openEditStrategy = async (id: string) => {
   strategyFormInitialValues.name = strategyRes.name;
   strategyRules.value = strategyRulesRes.map((srr) => {
     const rule = rulesRes.find((r) => r.id === srr.rule);
-    return { label: `${rule?.pricing} for ${rule?.filter} ${rule?.filterValue}`, ruleId: srr.rule, strategyRuleId: srr.id };
+    return { label: getRuleLabel(rule), ruleId: srr.rule, strategyRuleId: srr.id };
   });
   editingStrategyRules.value = [...strategyRules.value];
 
-  rulesOptions.value = rulesRes.map((r) => ({ label: `${r.pricing} for ${r.filter} ${r.filterValue}`, ruleId: r.id }));
+  rulesOptions.value = rulesRes.map((r) => ({ label: getRuleLabel(r), ruleId: r.id }));
 
   isStrategyModalOpen.value = true;
 };
@@ -801,7 +801,7 @@ const refreshRules = async () => {
   const rules = await pb.collection(Collections.PricingRules).getFullList();
   items.value[1].items = rules.map((r) => ({
     isRule: true,
-    label: `${r.pricing} for ${r.filter} ${r.filterType} ${r.filterValue}`,
+    label: getRuleLabel(r),
     id: r.id,
     command: () => runPricingRule(r.id)
   }));
@@ -864,6 +864,8 @@ const getRuleOptions = (item: MenuItem) => [
   },
   { visible: false }
 ];
+
+const getRuleLabel = (rule?: PricingRulesRecord) => (rule ? `${rule?.pricing} for ${rule?.filter} ${rule.filterType} ${rule?.filterValue}` : '');
 
 // Lifecycle Hooks --------------------------------------------------------------------
 onMounted(async () => {
