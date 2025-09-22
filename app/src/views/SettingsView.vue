@@ -295,7 +295,7 @@ const handleShippingSubmit = async ({ valid, values }: FormSubmitEvent) => {
     store.value = await storeService.create(values.name);
 
     await userService.update(pb.authStore.record!.id, { store: store.value.id });
-    await storePreferencesService.create(values);
+    await storePreferencesService.create({ store: store.value.id, ...values });
 
     await preferencesStore.refresh();
   } else {
