@@ -21,7 +21,7 @@
           "
           class="dark:bg-surface-600 mr-2 rounded-sm bg-gray-100 px-2 py-0.5 text-xs font-bold"
         >
-          {{ bulkOrders[shippingIndex]?.ounces + ' oz' }}
+          {{ bulkOrders[shippingIndex]?.ounces === 0 ? '>3 oz' : bulkOrders[shippingIndex]?.ounces + ' oz' }}
         </span>
         <span
           :class="`mr-2 rounded-sm px-2 py-0.5 text-xs font-bold ${bulkOrders[shippingIndex]?.type === 'Tracking' ? 'bg-blue-200 text-blue-600' : 'bg-pink-200 text-pink-600 dark:bg-pink-600 dark:text-pink-200'}`"

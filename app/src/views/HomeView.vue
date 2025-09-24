@@ -30,22 +30,40 @@
             <span class="text-lg">Order Profits</span>
           </div>
           <div class="flex gap-2">
-            <FileUpload mode="basic" choose-label="Check Orders" choose-icon="pi pi-search" accept=".csv" auto @select="handleCheckOrdersCsvClick" />
             <FileUpload
+              v-tooltip.left="'Upload a shipping export to see an overview of the selected orders'"
               mode="basic"
-              choose-label="Pull Sheet"
-              choose-icon="pi pi-file-arrow-up"
+              choose-label="Check Orders"
+              choose-icon="pi pi-search"
               accept=".csv"
               auto
-              @select="handlePullSheetCsvClick"
+              @select="handleCheckOrdersCsvClick"
             />
-            <FileUpload mode="basic" choose-label="Shipping Export" choose-icon="pi pi-file-arrow-up" accept=".csv" auto @select="handleCsvClick" />
+            <Button icon="pi pi-file-arrow-up" label="Upload Orders" :loading="isUploadLoading" @click="isUploadModalVisible = true" />
           </div>
         </div>
         <ag-grid-vue ref="grid" class="h-[calc(100vh-270px)]" :grid-options :column-defs :row-data="orderStore.orders" />
       </div>
     </div>
   </div>
+
+  <Dialog v-model:visible="isUploadModalVisible" header="Upload Orders" modal>
+    <div class="flex h-full w-lg flex-col justify-between">
+      <div class="mb-4 flex flex-col items-start gap-8">
+        <div>
+          <div class="mb-2">Pull Sheet</div>
+          <FileUpload accept=".csv" mode="basic" @select="handlePullSheetUpload" />
+        </div>
+        <div>
+          <div class="mb-2">Shipping Export</div>
+          <FileUpload ref="fileUpload" accept=".csv" mode="basic" @select="handleShippingExportUpload" />
+        </div>
+      </div>
+      <div class="flex w-full flex-col items-end">
+        <Button label="Upload" icon="pi pi-file-arrow-up" :disabled="!pullSheet || !shippingExport" @click="handleOrdersUpload" />
+      </div>
+    </div>
+  </Dialog>
 
   <Dialog v-model:visible="isCheckModalVisible" header="Orders Stats" position="topright">
     <div class="grid grid-cols-6 grid-rows-2 gap-x-10 gap-y-5">
@@ -95,7 +113,7 @@ import {
   type ValueGetterParams
 } from 'ag-grid-community';
 import { AgGridVue } from 'ag-grid-vue3';
-import { Dialog, FileUpload, type FileUploadSelectEvent, useToast } from 'primevue';
+import { Button, Dialog, FileUpload, type FileUploadSelectEvent, useToast } from 'primevue';
 import { computed, nextTick, ref } from 'vue';
 // Types ------------------------------------------------------------------------------
 
@@ -170,6 +188,11 @@ const toast = useToast();
 const isCheckModalVisible = ref(false);
 const checkingOrders = ref<ShippingCsv[]>([]);
 
+const isUploadModalVisible = ref(false);
+const isUploadLoading = ref(false);
+const pullSheet = ref();
+const shippingExport = ref();
+
 const highestValueOrder = computed(() => {
   if (checkingOrders.value.length === 0) return null;
   return checkingOrders.value.reduce((max, order) => (order['Value Of Products'] > max['Value Of Products'] ? order : max));
@@ -189,48 +212,32 @@ const largestOrder = computed(() => {
 // Watchers ---------------------------------------------------------------------------
 
 // Methods ----------------------------------------------------------------------------
-const handleCsvClick = async (event: FileUploadSelectEvent) => {
-  // TODO check batch response and see if we can return the amount of records added
-  orderService
-    .create({ file: event.files[0] })
-    .then(() => {
-      orderStore.refresh();
-      toast.add({
-        severity: 'success',
-        summary: 'Orders Added',
-        detail: `New orders were added.`,
-        life: 3000
-      });
-    })
-    .catch((error: Error) => {
-      toast.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: error.message,
-        life: 3000
-      });
-    });
-};
+const handleOrdersUpload = async () => {
+  isUploadLoading.value = true;
 
-const handlePullSheetCsvClick = async (event: FileUploadSelectEvent) => {
-  cardService
-    .create({ file: event.files[0] })
-    .then(() => {
-      toast.add({
-        severity: 'success',
-        summary: 'Cards Added',
-        detail: `New cards were added.`,
-        life: 3000
-      });
-    })
-    .catch((error: Error) => {
-      toast.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: error.message,
-        life: 3000
-      });
+  try {
+    await orderService.create({ file: shippingExport.value });
+    await cardService.create({ file: pullSheet.value });
+
+    toast.add({
+      severity: 'success',
+      summary: 'Orders Uploaded',
+      detail: 'Orders and order contents were successfully uploaded to the server.',
+      life: 3000
     });
+
+    isUploadModalVisible.value = false;
+    orderStore.refresh();
+  } catch (error: unknown) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: (error as Error).message,
+      life: 3000
+    });
+  } finally {
+    isUploadLoading.value = false;
+  }
 };
 
 const handleCheckOrdersCsvClick = async (event: FileUploadSelectEvent) => {
@@ -265,6 +272,14 @@ const csvGrossSales = (orders: ShippingCsv[]) => {
 
 const getShippingMethodDescription = (packageOunces: number, isTracking: boolean) => {
   return `${isTracking ? '' : `${packageOunces === -1 ? '>3' : packageOunces}oz `}${isTracking ? 'Tracking' : 'Envelope'}`;
+};
+
+const handlePullSheetUpload = (event: FileUploadSelectEvent) => {
+  pullSheet.value = event.files[0];
+};
+
+const handleShippingExportUpload = (event: FileUploadSelectEvent) => {
+  shippingExport.value = event.files[0];
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------
