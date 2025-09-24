@@ -2,8 +2,14 @@
   <div class="flex h-full flex-col">
     <div class="mt-4 mb-2 flex justify-between">
       <span class="text-xl">Shipping</span>
+      <SelectButton v-model="shippingToolOption" :options="shippingToolOptions" :allow-empty="false" size="small" />
     </div>
-    <BulkOrders :shipping-export @done="isUploadModalOpen = true" @back="$emit('back')" />
+    <component
+      :is="shippingToolOption === 'Single' ? SingleOrder : BulkOrders"
+      :shipping-export
+      @done="isUploadModalOpen = true"
+      @back="$emit('back')"
+    />
   </div>
 
   <Dialog v-model:visible="isUploadModalOpen" header="Upload Exports" modal>
@@ -22,9 +28,10 @@ import { CardService } from '@/service/card-service';
 import { OrderService } from '@/service/order-service';
 import { useOrderStore } from '@/store/order-store';
 import { type PullSheetCsv, type ShippingCsv } from '@/util/csv-parse';
-import { Button, Dialog, useToast } from 'primevue';
-import { ref } from 'vue';
+import { Button, Dialog, SelectButton, useToast } from 'primevue';
+import { onMounted, ref, watch } from 'vue';
 import BulkOrders from './BulkOrders.vue';
+import SingleOrder from './SingleOrder.vue';
 // Types ------------------------------------------------------------------------------
 
 // Component Info (props/emits) -------------------------------------------------------
@@ -45,6 +52,9 @@ const cardService = new CardService();
 const isUploadModalOpen = ref(false);
 const isYesLoading = ref(false);
 
+const shippingToolOption = ref('Bulk');
+const shippingToolOptions = ref(['Bulk', 'Single']);
+
 // Provided ---------------------------------------------------------------------------
 
 // Exposed ----------------------------------------------------------------------------
@@ -52,6 +62,9 @@ const isYesLoading = ref(false);
 // Injections -------------------------------------------------------------------------
 
 // Watchers ---------------------------------------------------------------------------
+watch(shippingToolOption, (newValue) => {
+  localStorage.setItem('shippingToolOption', newValue);
+});
 
 // Methods ----------------------------------------------------------------------------
 const handleYes = async () => {
@@ -103,4 +116,8 @@ const handleYes = async () => {
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------
+onMounted(() => {
+  const cachedShippingToolOption = localStorage.getItem('shippingToolOption');
+  if (cachedShippingToolOption) shippingToolOption.value = cachedShippingToolOption;
+});
 </script>
