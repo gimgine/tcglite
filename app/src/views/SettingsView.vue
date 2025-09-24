@@ -37,20 +37,30 @@
         <div class="grid grid-cols-1 gap-1 text-sm">
           <div class="grid grid-cols-11 gap-2 [&>*]:col-span-3">
             <div class="!col-span-2 font-semibold">Envelope</div>
-            <div>1 Ounce</div>
-            <div>2 Ounce</div>
-            <div>3 Ounce</div>
+            <div v-tooltip.top="'Packed envelopes weighing less than or equal to 1 ounce.'">1 Ounce</div>
+            <div v-tooltip.top="'Packed envelopes weighing less than or equal to 2 ounces.'">2 Ounce</div>
+            <div v-tooltip.top="'Packed envelopes weighing less than or equal to 3 ounces.'">3 Ounce</div>
           </div>
 
           <div class="grid grid-cols-11 gap-2 [&>*]:col-span-3">
-            <div class="!col-span-2 flex items-center justify-end">Max Cards</div>
+            <div
+              v-tooltip="'The maximum amount of cards that can fit in an order at this weight including all shipping materials.'"
+              class="!col-span-2 flex items-center justify-end"
+            >
+              Max Cards
+            </div>
             <div><InputNumber name="oneOunceCards" fluid /></div>
             <div><InputNumber name="twoOunceCards" fluid /></div>
             <div><InputNumber name="threeOunceCards" fluid /></div>
           </div>
 
           <div class="grid grid-cols-11 gap-2 [&>*]:col-span-3">
-            <div class="!col-span-2 flex items-center justify-end">Shipping Cost</div>
+            <div
+              v-tooltip="'Total cost to ship a package at this weight, including both postage and shipping materials.'"
+              class="!col-span-2 flex items-center justify-end"
+            >
+              Shipping Cost
+            </div>
             <div>
               <InputGroup>
                 <InputGroupAddon class="pi pi-dollar" />
@@ -75,7 +85,12 @@
         </div>
 
         <div class="flex w-full flex-col gap-1">
-          <label for="moreOunceCost" class="ml-3 text-sm">More Ounces Cost</label>
+          <label
+            v-tooltip.top="'Total cost to ship a package that is more than 3 ounces, including both postage and shipping materials.'"
+            for="moreOunceCost"
+            class="ml-3 text-sm"
+            >More Ounces Cost</label
+          >
           <InputGroup>
             <InputGroupAddon class="pi pi-dollar" />
             <InputNumber name="moreOunceCost" currency="USD" mode="currency" />
@@ -87,7 +102,9 @@
 
         <div class="flex gap-2">
           <div class="flex w-full flex-col gap-1">
-            <label for="trackingThreshold" class="ml-3 text-sm">Tracking Threshold</label>
+            <label v-tooltip.top="'Minimum order price for which tracking is required.'" for="trackingThreshold" class="ml-3 text-sm"
+              >Tracking Threshold</label
+            >
             <InputGroup>
               <InputGroupAddon class="pi pi-dollar" />
               <InputNumber name="trackingThreshold" currency="USD" mode="currency" />
@@ -98,7 +115,12 @@
           </div>
 
           <div class="flex w-full flex-col gap-1">
-            <label for="trackingCost" class="ml-3 text-sm">Tracking Cost</label>
+            <label
+              v-tooltip.top="'Total cost to ship a package with tracking, including both postage and shipping materials.'"
+              for="trackingCost"
+              class="ml-3 text-sm"
+              >Tracking Cost</label
+            >
             <InputGroup>
               <InputGroupAddon class="pi pi-dollar" />
               <InputNumber name="trackingCost" currency="USD" mode="currency" />
