@@ -13,8 +13,9 @@
           <span class="text-lg">Expenses</span>
         </div>
         <div class="flex items-center gap-2">
-          <Button label="Profit" icon="pi pi-refresh" :loading="isRefreshProfitLoading" @click="handleRefreshProfitClick" />
-          <Button label="Add" icon="pi pi-plus" @click="openExpenseModal()" />
+          <Button label="Profit" icon="pi pi-refresh" :loading="isRefreshProfitLoading" severity="secondary" @click="handleRefreshProfitClick" />
+          <Button icon="pi pi-plus" @click="openExpenseModal()" />
+          <Button icon="pi pi-file-arrow-up" severity="info" @click="openExpenseUploadModal()" />
         </div>
       </div>
       <ag-grid-vue ref="grid" class="h-[calc(100vh-270px)] [&_.ag-row]:!cursor-pointer" :grid-options :column-defs :row-data="expenses" />
@@ -77,9 +78,23 @@
       <Button class="mt-2" type="submit" label="Submit" :loading="isSubmitLoading" />
     </Form>
   </Dialog>
+  <Dialog v-model:visible="isUploadModalOpen" modal header="Upload Expenses">
+    <div class="flex flex-col items-end gap-4">
+      <Message severity="secondary" class="mt-1">
+        Download the <a :href="uploadTemplate" download="expenses_upload_template.csv" class="text-blue-400">template</a> and fill it with the
+        expenses you would like to upload. The valid expense types are cards, supplies, and other.
+      </Message>
+      <div class="w-full">
+        <div class="mb-1">Expenses Csv</div>
+        <FileUpload accept=".csv" mode="basic" @select="handleExpensesUpload" />
+      </div>
+      <Button label="Submit" class="align-end" :disabled="!uploadExpenses" :loading="isUploadLoading" @click="submitExpensesUpload" />
+    </div>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
+import uploadTemplate from '@/assets/expenses_upload_template.csv?url';
 import StatIndicator from '@/components/StatIndicator.vue';
 import { OrderService } from '@/service/order-service';
 import { useOrderStore } from '@/store/order-store';
@@ -87,11 +102,25 @@ import { Collections, ExpensesTypeOptions, type ExpensesRecord } from '@/types/p
 import { formatCurrency } from '@/util/functions';
 import pb from '@/util/pocketbase';
 import { Form, type FormInstance, type FormSubmitEvent } from '@primevue/forms';
-import { Button, Dialog, IconField, InputIcon, Select, InputNumber, InputText, Message, useToast, DatePicker } from 'primevue';
+import {
+  Button,
+  Dialog,
+  IconField,
+  InputIcon,
+  Select,
+  InputNumber,
+  InputText,
+  Message,
+  useToast,
+  DatePicker,
+  FileUpload,
+  type FileUploadSelectEvent
+} from 'primevue';
 import { onMounted, reactive, ref, nextTick, useTemplateRef } from 'vue';
 import type { GridOptions, ColDef, ValueFormatterParams, ValueGetterParams, ICellRendererParams } from 'ag-grid-community';
 import { AgGridVue } from 'ag-grid-vue3';
 import { useAgGridTheme } from '@/composables/useAgGridTheme';
+import { parseExpensesCsv, type ExpensesCsv } from '@/util/csv-parse';
 // Types ------------------------------------------------------------------------------
 interface FormValues {
   type?: string;
@@ -158,6 +187,9 @@ const isModalVisible = ref(false);
 const isSubmitLoading = ref(false);
 const isRefreshProfitLoading = ref(false);
 
+const isUploadModalOpen = ref(false);
+const isUploadLoading = ref(false);
+
 const initialValues = reactive({
   type: null,
   quantity: null,
@@ -173,6 +205,8 @@ const typeOptions = [
   { label: 'Supplies', value: 'supplies' },
   { label: 'Other', value: 'other' }
 ];
+
+const uploadExpenses = ref<ExpensesCsv[]>();
 
 // Provided ---------------------------------------------------------------------------
 
@@ -306,6 +340,53 @@ const openExpenseModal = async (expenseId?: string) => {
       purchaseDate: new Date(res.purchaseDate),
       id: res.id
     });
+  }
+};
+
+const openExpenseUploadModal = () => {
+  isUploadModalOpen.value = true;
+};
+
+const handleExpensesUpload = async (event: FileUploadSelectEvent) => {
+  try {
+    uploadExpenses.value = await parseExpensesCsv(event.files[0]);
+  } catch {
+    toast.add({
+      severity: 'error',
+      summary: 'Csv Upload Error',
+      detail: 'There was a problem uploading the selected csv. Please make sure you filled out the template correctly.',
+      life: 3000
+    });
+  }
+};
+
+const submitExpensesUpload = async () => {
+  try {
+    isUploadLoading.value = true;
+    const batch = pb.createBatch();
+    uploadExpenses.value?.forEach((e) =>
+      batch
+        .collection(Collections.Expenses)
+        .create({ ...e, store: pb.authStore.record?.store, purchaseDate: e.purchaseDate ? new Date(e.purchaseDate).toISOString() : '' })
+    );
+    await batch.send();
+    isUploadModalOpen.value = false;
+    toast.add({
+      severity: 'success',
+      summary: 'Csv Uploaded',
+      detail: 'The uploaded expenses were successfully saved.',
+      life: 3000
+    });
+    expenses.value = await pb.collection(Collections.Expenses).getFullList();
+  } catch {
+    toast.add({
+      severity: 'error',
+      summary: 'Upload Submit Error',
+      detail: 'There was a problem saving the expenses.',
+      life: 3000
+    });
+  } finally {
+    isUploadLoading.value = false;
   }
 };
 

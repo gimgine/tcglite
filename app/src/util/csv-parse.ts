@@ -1,3 +1,4 @@
+import type { ExpensesTypeOptions } from '@/types/pocketbase-types';
 import Papa from 'papaparse';
 
 export interface ShippingCsv {
@@ -138,5 +139,38 @@ export const parsePricingCsv = async (file: File): Promise<PricingCsv[]> => {
       console.error('Unable to parse Pull Sheet CSV. The header did not contain all required fields.');
       reject();
     }
+  });
+};
+
+export interface ExpensesCsv {
+  name?: string;
+  price?: number;
+  purchaseDate?: string;
+  quantity?: number;
+  type?: ExpensesTypeOptions;
+  url?: string;
+}
+
+export const parseExpensesCsv = async (file: File): Promise<ExpensesCsv[]> => {
+  return new Promise((resolve, reject) => {
+    Papa.parse(file, {
+      preview: 1,
+      complete: (results) => {
+        const firstRow = results.data[0] as string[];
+        if (firstRow.length !== 6) {
+          reject();
+        }
+
+        Papa.parse<ExpensesCsv>(file, {
+          header: true,
+          dynamicTyping: (header) => (header === 'Number' ? false : true),
+          skipEmptyLines: true,
+          complete(results) {
+            resolve(results.data);
+          }
+        });
+      },
+      error: () => reject()
+    });
   });
 };
