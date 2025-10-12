@@ -13,9 +13,11 @@ export enum Collections {
   Superusers = '_superusers',
   Cards = 'cards',
   Expenses = 'expenses',
+  OrderItems = 'orderItems',
   Orders = 'orders',
   PricingRules = 'pricingRules',
   PricingStrategies = 'pricingStrategies',
+  Products = 'products',
   Sets = 'sets',
   StorePreferences = 'storePreferences',
   Stores = 'stores',
@@ -127,6 +129,16 @@ export type ExpensesRecord = {
   url?: string;
 };
 
+export type OrderItemsRecord = {
+  created?: IsoDateString;
+  id: string;
+  order?: RecordIdString;
+  product?: RecordIdString;
+  quantity?: number;
+  store?: RecordIdString;
+  updated?: IsoDateString;
+};
+
 export type OrdersRecord = {
   address: string;
   addressTwo?: string;
@@ -200,6 +212,24 @@ export type PricingStrategiesRecord = {
   updated?: IsoDateString;
 };
 
+export type ProductsRecord = {
+  condition?: string;
+  created?: IsoDateString;
+  id: string;
+  language?: string;
+  marketPrice?: number;
+  marketPriceUpdated?: IsoDateString;
+  name?: string;
+  number?: string;
+  printing?: string;
+  productLine?: string;
+  rarity?: string;
+  scryfallId?: string;
+  store?: RecordIdString;
+  tcgPlayerId?: number;
+  updated?: IsoDateString;
+};
+
 export type SetsRecord = {
   code?: string;
   created?: IsoDateString;
@@ -262,9 +292,11 @@ export type OtpsResponse<Texpand = unknown> = Required<OtpsRecord> & BaseSystemF
 export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> & AuthSystemFields<Texpand>;
 export type CardsResponse<Texpand = unknown> = Required<CardsRecord> & BaseSystemFields<Texpand>;
 export type ExpensesResponse<Texpand = unknown> = Required<ExpensesRecord> & BaseSystemFields<Texpand>;
+export type OrderItemsResponse<Texpand = unknown> = Required<OrderItemsRecord> & BaseSystemFields<Texpand>;
 export type OrdersResponse<Texpand = unknown> = Required<OrdersRecord> & BaseSystemFields<Texpand>;
 export type PricingRulesResponse<Texpand = unknown> = Required<PricingRulesRecord> & BaseSystemFields<Texpand>;
 export type PricingStrategiesResponse<Texpand = unknown> = Required<PricingStrategiesRecord> & BaseSystemFields<Texpand>;
+export type ProductsResponse<Texpand = unknown> = Required<ProductsRecord> & BaseSystemFields<Texpand>;
 export type SetsResponse<Texpand = unknown> = Required<SetsRecord> & BaseSystemFields<Texpand>;
 export type StorePreferencesResponse<Texpand = unknown> = Required<StorePreferencesRecord> & BaseSystemFields<Texpand>;
 export type StoresResponse<Texpand = unknown> = Required<StoresRecord> & BaseSystemFields<Texpand>;
@@ -281,9 +313,11 @@ export type CollectionRecords = {
   _superusers: SuperusersRecord;
   cards: CardsRecord;
   expenses: ExpensesRecord;
+  orderItems: OrderItemsRecord;
   orders: OrdersRecord;
   pricingRules: PricingRulesRecord;
   pricingStrategies: PricingStrategiesRecord;
+  products: ProductsRecord;
   sets: SetsRecord;
   storePreferences: StorePreferencesRecord;
   stores: StoresRecord;
@@ -299,9 +333,11 @@ export type CollectionResponses = {
   _superusers: SuperusersResponse;
   cards: CardsResponse;
   expenses: ExpensesResponse;
+  orderItems: OrderItemsResponse;
   orders: OrdersResponse;
   pricingRules: PricingRulesResponse;
   pricingStrategies: PricingStrategiesResponse;
+  products: ProductsResponse;
   sets: SetsResponse;
   storePreferences: StorePreferencesResponse;
   stores: StoresResponse;
@@ -320,9 +356,11 @@ export type TypedPocketBase = PocketBase & {
   collection(idOrName: '_superusers'): RecordService<SuperusersResponse>;
   collection(idOrName: 'cards'): RecordService<CardsResponse>;
   collection(idOrName: 'expenses'): RecordService<ExpensesResponse>;
+  collection(idOrName: 'orderItems'): RecordService<OrderItemsResponse>;
   collection(idOrName: 'orders'): RecordService<OrdersResponse>;
   collection(idOrName: 'pricingRules'): RecordService<PricingRulesResponse>;
   collection(idOrName: 'pricingStrategies'): RecordService<PricingStrategiesResponse>;
+  collection(idOrName: 'products'): RecordService<ProductsResponse>;
   collection(idOrName: 'sets'): RecordService<SetsResponse>;
   collection(idOrName: 'storePreferences'): RecordService<StorePreferencesResponse>;
   collection(idOrName: 'stores'): RecordService<StoresResponse>;

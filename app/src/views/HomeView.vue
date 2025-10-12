@@ -98,7 +98,7 @@
 <script setup lang="ts">
 import StatIndicator from '@/components/StatIndicator.vue';
 import { useAgGridTheme } from '@/composables/useAgGridTheme';
-import { CardService } from '@/service/card-service';
+import { OrderItemService } from '@/service/order-item-service';
 import { OrderService } from '@/service/order-service';
 import { useOrderStore } from '@/store/order-store';
 import { type OrdersRecord } from '@/types/pocketbase-types';
@@ -127,7 +127,7 @@ const orderService = new OrderService();
 const orderStore = useOrderStore();
 const theme = useAgGridTheme();
 
-const cardService = new CardService();
+const cardService = new OrderItemService();
 
 const gridOptions: GridOptions<OrdersRecord> = {
   theme: theme.value,

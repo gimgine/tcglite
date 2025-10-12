@@ -164,6 +164,13 @@
         </template>
       </DataView>
     </Panel>
+
+    <Panel v-if="store" header="Additional Options" class="basis-full">
+      <div class="flex flex-col gap-2 text-sm">
+        <FileUpload mode="basic" choose-label="Update Products" choose-icon="pi pi-upload" accept=".csv" auto @select="syncProducts" />
+        <p class="text-xs italic">Upload your latest Pricing CSV to update your product list.</p>
+      </div>
+    </Panel>
   </div>
 </template>
 
@@ -171,13 +178,27 @@
 import router from '@/router';
 import { StorePreferencesService } from '@/service/store-preferences-service';
 import { StoreService } from '@/service/store-service';
-import { UserService } from '@/service/user service';
+import { UserService } from '@/service/user-service';
 import { usePreferencesStore } from '@/store/preferences-store';
-import { Collections, type StorePreferencesRecord, type StoresRecord, type UsersRecord } from '@/types/pocketbase-types';
+import { Collections, type ProductsRecord, type StorePreferencesRecord, type StoresRecord, type UsersRecord } from '@/types/pocketbase-types';
+import { parsePricingCsv, type PricingCsv } from '@/util/csv-parse';
 import pb from '@/util/pocketbase';
 import { Form, type FormInstance, type FormSubmitEvent } from '@primevue/forms';
 import { zodResolver } from '@primevue/forms/resolvers/zod';
-import { Avatar, Button, DataView, InputGroup, InputGroupAddon, InputNumber, InputText, Message, Panel, useToast } from 'primevue';
+import {
+  Avatar,
+  Button,
+  DataView,
+  InputGroup,
+  InputGroupAddon,
+  InputNumber,
+  InputText,
+  Message,
+  Panel,
+  useToast,
+  FileUpload,
+  type FileUploadSelectEvent
+} from 'primevue';
 import { computed, nextTick, onMounted, reactive, ref, useTemplateRef } from 'vue';
 import z from 'zod';
 
@@ -333,6 +354,59 @@ const handleShippingSubmit = async ({ valid, values }: FormSubmitEvent) => {
 const handleSignout = () => {
   pb.authStore.clear();
   router.push({ name: 'login' });
+};
+
+const syncProducts = async (event: FileUploadSelectEvent) => {
+  const pricingCsv = await parsePricingCsv(event.files[0]);
+  const products = await pb.collection(Collections.Products).getFullList();
+
+  const productsToCreate: PricingCsv[] = [];
+  const productsToUpdate: ProductsRecord[] = [];
+
+  // update market price for exising products and identify which pricing records are new
+  for (const pricing of pricingCsv) {
+    const possibleProductForPricing = products.find((p) => pricing['TCGplayer Id'] === p.tcgPlayerId);
+    if (possibleProductForPricing) {
+      if (possibleProductForPricing.marketPrice !== (pricing['TCG Market Price'] ?? 0)) {
+        possibleProductForPricing.marketPrice = pricing['TCG Market Price'];
+        possibleProductForPricing.marketPriceUpdated = new Date().toUTCString();
+        productsToUpdate.push(possibleProductForPricing);
+      }
+    } else {
+      productsToCreate.push(pricing);
+    }
+  }
+
+  if (!productsToCreate.length && !productsToUpdate.length) {
+    toast.add({ severity: 'success', summary: 'Products Synced', detail: 'No updates were needed.', life: 3000 });
+    return;
+  }
+
+  // create new products
+  const batch = pb.createBatch();
+
+  productsToCreate.forEach((product) => {
+    batch.collection(Collections.Products).create({
+      store: pb.authStore.record?.store,
+      productLine: product['Product Line'],
+      name: product['Product Name'],
+      condition: product['Condition'],
+      set: product['Set Name'],
+      number: product['Number'],
+      rarity: product.Rarity,
+      language: product.Condition.split(' - ')[1] ?? 'English', // ex. 'Near Mint - Japanese'
+      tcgPlayerId: product['TCGplayer Id'],
+      marketPrice: product['TCG Market Price'],
+      marketPriceUpdated: new Date().toUTCString()
+    });
+  });
+
+  productsToUpdate.forEach((product) => {
+    batch.collection(Collections.Products).update(product.id, product);
+  });
+
+  await batch.send();
+  toast.add({ severity: 'success', summary: 'Products Synced', detail: 'Store product list successfully synchronized.', life: 3000 });
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------
