@@ -29,13 +29,10 @@ export interface OrderRequest {
   feePercentage?: number;
 }
 
-export interface CardRequest {
-  name: string;
-  condition: string;
-  number: string;
-  set: string;
-  rarity: string;
+export interface OrderItemRequest {
   order: string;
-  quantity: number;
+  product: string;
   store: string;
+  quantity: number;
+  tcgPlayerId: number;
 }

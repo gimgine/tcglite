@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 import router from '@/router';
-import { CardService } from '@/service/card-service';
+import { OrderItemService } from '@/service/order-item-service';
 import { OrderService } from '@/service/order-service';
 import { useOrderStore } from '@/store/order-store';
 import { type PullSheetCsv, type ShippingCsv } from '@/util/csv-parse';
@@ -47,7 +47,7 @@ const toast = useToast();
 const orderStore = useOrderStore();
 
 const orderService = new OrderService();
-const cardService = new CardService();
+const cardService = new OrderItemService();
 
 const isUploadModalOpen = ref(false);
 const isYesLoading = ref(false);
