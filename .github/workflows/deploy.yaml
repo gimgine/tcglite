@@ -1,36 +1,129 @@
-name: Deploy to PocketHost
+# .github/workflows/deploy.yml
+name: Deploy to PocketHost (test/prod)
 
 on:
   push:
     branches:
-      - main
+      - main # Auto-deploy TEST on pushes to main
+    tags:
+      - "v*" # Auto-deploy PROD on tags like v1.2.3
+  release:
+    types: [published] # Auto-deploy PROD on Release published
   workflow_dispatch:
+    inputs:
+      environment:
+        description: "Where to deploy"
+        required: true
+        type: choice
+        options: [test, prod]
+      ref:
+        description: "Branch, tag, or SHA to deploy (defaults to triggering ref)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  APP_DIR: app
+  BUILD_DIR: app/dist
+  ARTIFACT_NAME: web-dist
 
 jobs:
-  deploy:
+  prepare:
+    name: Determine environment & ref
     runs-on: ubuntu-latest
-
+    outputs:
+      env-name: ${{ steps.setenv.outputs.env }}
+      ref: ${{ steps.setref.outputs.ref }}
     steps:
-      - name: Checkout Repository
+      - id: setenv
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "env=${{ github.event.inputs.environment }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "release" ]; then
+            echo "env=prod" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "env=test" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "env=prod" >> "$GITHUB_OUTPUT"
+          else
+            echo "env=test" >> "$GITHUB_OUTPUT"
+          fi
+      - id: setref
+        shell: bash
+        run: |
+          REF_INPUT="${{ github.event.inputs.ref }}"
+          if [ -n "$REF_INPUT" ]; then
+            echo "ref=$REF_INPUT" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=${{ github.ref }}" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: prepare
+    # Attach the GitHub Environment so we can read env-scoped secrets (e.g., VITE_PB_URL)
+    environment: ${{ needs.prepare.outputs.env-name }}
+    steps:
+      - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.ref }}
 
       - name: Set Up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Install Dependencies and Build
-        run: |
-          cd app
-          npm ci
-          npm run build
+      - name: Install Dependencies
+        working-directory: ${{ env.APP_DIR }}
+        run: npm ci
 
-      - name: Deploy to PocketHost
+      - name: Build (uses env-scoped VITE_PB_URL)
+        working-directory: ${{ env.APP_DIR }}
+        env:
+          # Define VITE_PB_URL in each GitHub Environment (test/prod)
+          VITE_PB_URL: ${{ secrets.VITE_PB_URL }}
+        run: |
+          if [ "${{ needs.prepare.outputs.env-name }}" = "prod" ]; then
+            npm run build:prod
+          else
+            npm run build:test
+          fi
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ${{ env.BUILD_DIR }}
+          if-no-files-found: error
+          retention-days: 7
+
+  deploy:
+    name: Deploy (${{ needs.prepare.outputs.env-name }})
+    runs-on: ubuntu-latest
+    needs: [prepare, build]
+    environment: ${{ needs.prepare.outputs.env-name }} # approvals + env-scoped secrets
+    concurrency:
+      group: deploy-${{ needs.prepare.outputs.env-name }}
+      cancel-in-progress: true
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ./artifact
+
+      - name: Deploy to PocketHost via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
+          # Define these per-environment (test/prod) in GitHub Environments
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: ./tcglite/pb_public/
-          local-dir: ./app/dist/
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          local-dir: ./artifact
           dangerous-clean-slate: true
