@@ -166,9 +166,16 @@
     </Panel>
 
     <Panel v-if="store" header="Additional Options" class="basis-full">
-      <div class="flex flex-col gap-2 text-sm">
-        <FileUpload mode="basic" choose-label="Update Products" choose-icon="pi pi-upload" accept=".csv" auto @select="syncProducts" />
-        <p class="text-xs italic">Upload your latest Pricing CSV to update your product list.</p>
+      <div class="flex gap-4">
+        <div class="flex flex-col gap-2 text-sm">
+          <FileUpload mode="basic" choose-label="Refresh Products" choose-icon="pi pi-upload" accept=".csv" auto @select="syncProducts" />
+          <p class="text-xs italic">Upload your latest Pricing CSV to update your product list.</p>
+        </div>
+
+        <div class="flex flex-col gap-2 text-sm">
+          <Button label="Update Order Costs" class="w-fit" :loading="isUpdateShippingLoading" @click="updateShippingInformation" />
+          <p class="text-xs italic">Recalculate costs on all orders using current shipping options.</p>
+        </div>
       </div>
     </Panel>
   </div>
@@ -176,9 +183,11 @@
 
 <script setup lang="ts">
 import router from '@/router';
+import { OrderService } from '@/service/order-service';
 import { StorePreferencesService } from '@/service/store-preferences-service';
 import { StoreService } from '@/service/store-service';
 import { UserService } from '@/service/user-service';
+import { useOrderStore } from '@/store/order-store';
 import { usePreferencesStore } from '@/store/preferences-store';
 import { Collections, type ProductsRecord, type StorePreferencesRecord, type StoresRecord, type UsersRecord } from '@/types/pocketbase-types';
 import { parsePricingCsv, type PricingCsv } from '@/util/csv-parse';
@@ -258,7 +267,7 @@ const storeMembers = ref<UsersRecord[]>();
 const storeMembersFilter = ref<string>('');
 
 const storePreferenceSubmitLoading = ref(false);
-
+const isUpdateShippingLoading = ref(false);
 const topPanelCollapsed = ref(true);
 
 const initialValues = reactive<FormValues>({
@@ -407,6 +416,42 @@ const syncProducts = async (event: FileUploadSelectEvent) => {
 
   await batch.send();
   toast.add({ severity: 'success', summary: 'Products Synced', detail: 'Store product list successfully synchronized.', life: 3000 });
+};
+
+const updateShippingInformation = async () => {
+  isUpdateShippingLoading.value = true;
+
+  const orderService = new OrderService();
+  const orders = await pb.collection(Collections.Orders).getFullList();
+  const preferences = preferencesStore.preferences;
+
+  const batch = pb.createBatch();
+
+  orders.forEach((order) => {
+    if (preferences) {
+      order.shippingCost = orderService.determineShippingCost(order.totalPrice, order.itemCount, preferences);
+      order.packageOunces = orderService.determineWeight(order.itemCount, preferences);
+      order.isTracking = orderService.determineTracking(order.totalPrice, preferences);
+      order.profit = orderService.determineProfit(order.totalPrice, order.vendorFee, order.processingFee, order.cogs, order.shippingCost);
+
+      batch.collection(Collections.Orders).update(order.id, order);
+    }
+  });
+
+  try {
+    await batch.send();
+    toast.add({
+      summary: 'Shipping Information Updated',
+      detail: 'Shipping and profit data was updated using current store preferences.',
+      life: 3000,
+      severity: 'success'
+    });
+    await useOrderStore().refresh();
+  } catch {
+    toast.add({ summary: 'Error', detail: 'Something went wrong updating records.', life: 3000, severity: 'error' });
+  } finally {
+    isUpdateShippingLoading.value = false;
+  }
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------
