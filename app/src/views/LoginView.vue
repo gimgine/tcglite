@@ -18,12 +18,14 @@ import { Collections } from '@/types/pocketbase-types';
 import pb from '@/util/pocketbase';
 import { Button, Panel } from 'primevue';
 import tcgliteLogo from '@/assets/tcglitelogo-test-yellow-blue.svg';
+import { useOrderStore } from '@/store/order-store';
 
 const authenticate = async () => {
   await pb.collection(Collections.Users).authWithOAuth2({ provider: 'discord' });
 
   if (pb.authStore.isValid) {
     router.push({ name: 'home' });
+    useOrderStore().refresh();
   }
 };
 </script>

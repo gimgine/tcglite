@@ -17,8 +17,16 @@
                 <span class="float-right">{{ `(${shippingExport.length})` }}</span>
               </div>
               <ul class="overflow-y-auto">
-                <li v-for="order in shippingExport" :key="order['Order #']" class="flex items-center justify-between py-2">
-                  <span>{{ `${order.FirstName} ${order.LastName}` }}</span>
+                <li
+                  v-for="order in shippingExport.sort((a, b) => b['Item Count'] - a['Item Count'])"
+                  :key="order['Order #']"
+                  class="flex items-center justify-between py-2"
+                >
+                  <div class="flex items-center gap-2">
+                    <span>{{ `${order.FirstName} ${order.LastName}` }}</span>
+                    <span class="text-muted-color text-sm italic">{{ `(${order['Item Count']})` }}</span>
+                  </div>
+
                   <Button
                     v-tooltip="'Remove'"
                     text
