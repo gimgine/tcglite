@@ -39,7 +39,7 @@
               auto
               @select="handleCheckOrdersCsvClick"
             />
-            <Button icon="pi pi-file-arrow-up" label="Upload Orders" :loading="isUploadLoading" @click="isUploadModalVisible = true" />
+            <Button icon="pi pi-file-arrow-up" label="Upload Orders" @click="isUploadModalVisible = true" />
           </div>
         </div>
         <ag-grid-vue ref="grid" class="h-[calc(100vh-270px)]" :grid-options :column-defs :row-data="orderStore.orders" />
@@ -60,7 +60,7 @@
         </div>
       </div>
       <div class="flex w-full flex-col items-end">
-        <Button label="Upload" icon="pi pi-file-arrow-up" :disabled="!pullSheet || !shippingExport" @click="handleOrdersUpload" />
+        <Button label="Upload" icon="pi pi-file-arrow-up" :loading="isUploadLoading" :disabled="!pullSheet" @click="handleOrdersUpload" />
       </div>
     </div>
   </Dialog>
@@ -216,13 +216,16 @@ const handleOrdersUpload = async () => {
   isUploadLoading.value = true;
 
   try {
-    await orderService.create({ file: shippingExport.value });
-    await cardService.create({ file: pullSheet.value });
+    if (shippingExport.value) {
+      await orderService.create({ file: shippingExport.value });
+    } else if (pullSheet.value) {
+      await cardService.create({ file: pullSheet.value });
+    }
 
     toast.add({
       severity: 'success',
       summary: 'Orders Uploaded',
-      detail: 'Orders and order contents were successfully uploaded to the server.',
+      detail: 'Orders/order contents were successfully uploaded to the server.',
       life: 3000
     });
 
