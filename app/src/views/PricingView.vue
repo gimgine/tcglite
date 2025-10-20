@@ -16,7 +16,7 @@
             </div>
           </div>
 
-          <div class="h-[calc(100vh-30rem)] overflow-y-auto">
+          <div class="h-[calc(100vh-32rem)] overflow-y-auto">
             <PanelMenu v-model:expanded-keys="expandedKeys" :model="items">
               <template #item="{ item }">
                 <div v-if="item.isStrategy" :class="['relative', pricing.length ? 'cursor-pointer' : 'dark:bg-surface-900! bg-white!']">
