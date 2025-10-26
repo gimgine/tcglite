@@ -429,42 +429,6 @@ const updateShippingInformation = async () => {
   }
 };
 
-const updateShippingInformation = async () => {
-  isUpdateShippingLoading.value = true;
-
-  const orderService = new OrderService();
-  const orders = await pb.collection(Collections.Orders).getFullList();
-  const preferences = preferencesStore.preferences;
-
-  const batch = pb.createBatch();
-
-  orders.forEach((order) => {
-    if (preferences) {
-      order.shippingCost = orderService.determineShippingCost(order.totalPrice, order.itemCount, preferences);
-      order.packageOunces = orderService.determineWeight(order.itemCount, preferences);
-      order.isTracking = orderService.determineTracking(order.totalPrice, preferences);
-      order.profit = orderService.determineProfit(order.totalPrice, order.vendorFee, order.processingFee, order.cogs, order.shippingCost);
-
-      batch.collection(Collections.Orders).update(order.id, order);
-    }
-  });
-
-  try {
-    await batch.send();
-    toast.add({
-      summary: 'Shipping Information Updated',
-      detail: 'Shipping and profit data was updated using current store preferences.',
-      life: 3000,
-      severity: 'success'
-    });
-    await useOrderStore().refresh();
-  } catch {
-    toast.add({ summary: 'Error', detail: 'Something went wrong updating records.', life: 3000, severity: 'error' });
-  } finally {
-    isUpdateShippingLoading.value = false;
-  }
-};
-
 // Lifecycle Hooks --------------------------------------------------------------------
 onMounted(async () => {
   if (pb.authStore.record?.store) store.value = await storeService.getOne(pb.authStore.record?.store);
