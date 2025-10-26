@@ -218,7 +218,9 @@ const handleOrdersUpload = async () => {
   try {
     if (shippingExport.value) {
       await orderService.create({ file: shippingExport.value });
-    } else if (pullSheet.value) {
+    }
+
+    if (pullSheet.value) {
       await cardService.create({ file: pullSheet.value });
     }
 
