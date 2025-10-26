@@ -27,6 +27,18 @@ export class OrderItemService {
     const products = await this.productService.getProductsForTcgPlayerIds(csvData.map((c) => c.SkuId));
 
     if (products.length !== csvData.length) {
+      const productIds = new Set(products.map((p) => p.tcgPlayerId));
+      const missingProducts = csvData.filter((c) => !productIds.has(c.SkuId));
+
+      console.error(
+        `Missing ${missingProducts.length} products:`,
+        missingProducts.map((p) => ({
+          name: p['Product Name'] ?? '(unknown name)',
+          number: p.Number,
+          set: p.Set
+        }))
+      );
+
       throw new Error(
         `${csvData.length - products.length} products were not found for the submitted order items. Please update your product list in settings.`
       );
