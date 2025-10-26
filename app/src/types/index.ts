@@ -36,3 +36,8 @@ export interface OrderItemRequest {
   quantity: number;
   tcgPlayerId: number;
 }
+
+export interface Result {
+  success: boolean;
+  message: string;
+}

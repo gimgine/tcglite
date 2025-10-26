@@ -12,7 +12,9 @@ export enum Collections {
   Otps = '_otps',
   Superusers = '_superusers',
   Cards = 'cards',
+  Collections = 'collections',
   Expenses = 'expenses',
+  InventoryItems = 'inventoryItems',
   OrderItems = 'orderItems',
   Orders = 'orders',
   PricingRules = 'pricingRules',
@@ -111,6 +113,17 @@ export type CardsRecord = {
   updated?: IsoDateString;
 };
 
+export type CollectionsRecord = {
+  created?: IsoDateString;
+  id: string;
+  name?: string;
+  purchaseCost?: number;
+  purchased?: IsoDateString;
+  purchasedFrom?: string;
+  store?: RecordIdString;
+  updated?: IsoDateString;
+};
+
 export enum ExpensesTypeOptions {
   'cards' = 'cards',
   'supplies' = 'supplies',
@@ -127,6 +140,25 @@ export type ExpensesRecord = {
   type?: ExpensesTypeOptions;
   updated?: IsoDateString;
   url?: string;
+};
+
+export enum InventoryItemsSourceOptions {
+  'manual' = 'manual',
+  'auto' = 'auto'
+}
+export type InventoryItemsRecord = {
+  acquired?: IsoDateString;
+  collection?: RecordIdString;
+  created?: IsoDateString;
+  id: string;
+  marketPriceAtImport?: number;
+  product: RecordIdString;
+  qtyAcquired?: number;
+  qtySold?: number;
+  source: InventoryItemsSourceOptions;
+  store: RecordIdString;
+  unitCogs?: number;
+  updated?: IsoDateString;
 };
 
 export type OrderItemsRecord = {
@@ -221,12 +253,12 @@ export type ProductsRecord = {
   marketPriceUpdated?: IsoDateString;
   name?: string;
   number?: string;
-  printing?: string;
   productLine?: string;
   rarity?: string;
   scryfallId?: string;
+  set?: string;
   store?: RecordIdString;
-  tcgPlayerId?: number;
+  tcgPlayerId: number;
   updated?: IsoDateString;
 };
 
@@ -291,7 +323,9 @@ export type MfasResponse<Texpand = unknown> = Required<MfasRecord> & BaseSystemF
 export type OtpsResponse<Texpand = unknown> = Required<OtpsRecord> & BaseSystemFields<Texpand>;
 export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> & AuthSystemFields<Texpand>;
 export type CardsResponse<Texpand = unknown> = Required<CardsRecord> & BaseSystemFields<Texpand>;
+export type CollectionsResponse<Texpand = unknown> = Required<CollectionsRecord> & BaseSystemFields<Texpand>;
 export type ExpensesResponse<Texpand = unknown> = Required<ExpensesRecord> & BaseSystemFields<Texpand>;
+export type InventoryItemsResponse<Texpand = unknown> = Required<InventoryItemsRecord> & BaseSystemFields<Texpand>;
 export type OrderItemsResponse<Texpand = unknown> = Required<OrderItemsRecord> & BaseSystemFields<Texpand>;
 export type OrdersResponse<Texpand = unknown> = Required<OrdersRecord> & BaseSystemFields<Texpand>;
 export type PricingRulesResponse<Texpand = unknown> = Required<PricingRulesRecord> & BaseSystemFields<Texpand>;
@@ -312,7 +346,9 @@ export type CollectionRecords = {
   _otps: OtpsRecord;
   _superusers: SuperusersRecord;
   cards: CardsRecord;
+  collections: CollectionsRecord;
   expenses: ExpensesRecord;
+  inventoryItems: InventoryItemsRecord;
   orderItems: OrderItemsRecord;
   orders: OrdersRecord;
   pricingRules: PricingRulesRecord;
@@ -332,7 +368,9 @@ export type CollectionResponses = {
   _otps: OtpsResponse;
   _superusers: SuperusersResponse;
   cards: CardsResponse;
+  collections: CollectionsResponse;
   expenses: ExpensesResponse;
+  inventoryItems: InventoryItemsResponse;
   orderItems: OrderItemsResponse;
   orders: OrdersResponse;
   pricingRules: PricingRulesResponse;
@@ -355,7 +393,9 @@ export type TypedPocketBase = PocketBase & {
   collection(idOrName: '_otps'): RecordService<OtpsResponse>;
   collection(idOrName: '_superusers'): RecordService<SuperusersResponse>;
   collection(idOrName: 'cards'): RecordService<CardsResponse>;
+  collection(idOrName: 'collections'): RecordService<CollectionsResponse>;
   collection(idOrName: 'expenses'): RecordService<ExpensesResponse>;
+  collection(idOrName: 'inventoryItems'): RecordService<InventoryItemsResponse>;
   collection(idOrName: 'orderItems'): RecordService<OrderItemsResponse>;
   collection(idOrName: 'orders'): RecordService<OrdersResponse>;
   collection(idOrName: 'pricingRules'): RecordService<PricingRulesResponse>;

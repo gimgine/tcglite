@@ -127,7 +127,7 @@ const orderService = new OrderService();
 const orderStore = useOrderStore();
 const theme = useAgGridTheme();
 
-const cardService = new OrderItemService();
+const orderItemService = new OrderItemService();
 
 const gridOptions: GridOptions<OrdersRecord> = {
   theme: theme.value,
@@ -218,8 +218,10 @@ const handleOrdersUpload = async () => {
   try {
     if (shippingExport.value) {
       await orderService.create({ file: shippingExport.value });
-    } else if (pullSheet.value) {
-      await cardService.create({ file: pullSheet.value });
+    }
+
+    if (pullSheet.value) {
+      await orderItemService.create({ file: pullSheet.value });
     }
 
     toast.add({
