@@ -11,6 +11,7 @@ import SettingsView from '@/views/SettingsView.vue';
 import { createRouter, createWebHashHistory } from 'vue-router';
 import HomeView from '../views/HomeView.vue';
 import OrderHelperView from '../views/OrderHelperView.vue';
+import InventoryView from '@/views/InventoryView.vue';
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -57,6 +58,12 @@ const router = createRouter({
       path: '/expenses',
       name: 'expenses',
       component: ExpensesView
+    },
+    {
+      path: '/inventory/:collectionId?',
+      name: 'inventory',
+      component: InventoryView,
+      props: true
     },
     {
       path: '/stats',
