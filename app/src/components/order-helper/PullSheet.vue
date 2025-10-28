@@ -185,8 +185,6 @@ const getConditionSeverity = (condition: Condition): TagProps['severity'] => {
 };
 
 const handleHover = (pull: PullSheetCsv, position: 'left' | 'right') => {
-  console.log(position);
-
   const setImage = (img: string, position: 'left' | 'right') => {
     if (position === 'left') {
       hoveredImageLeft.value = img;
