@@ -21,7 +21,7 @@
         <div class="mb-4 flex items-center justify-between">
           <div class="flex items-center gap-2">
             <div class="text-xl font-semibold">Collections</div>
-            <Button icon="pi pi-plus" text rounded />
+            <Button icon="pi pi-plus" text rounded @click="handleAddCollection" />
           </div>
           <InputText placeholder="Search collections" />
         </div>
@@ -51,6 +51,62 @@
       </div>
     </div>
   </div>
+
+  <Dialog v-model:visible="isAddCollectionModalVisible" modal header="New Collection">
+    <Form v-slot="$form" ref="form" class="flex flex-col gap-4" :initial-values :resolver @submit="handleSubmit">
+      <div class="flex w-full flex-col gap-1">
+        <label for="name" class="ml-3 text-sm">Name</label>
+        <InputText name="name" />
+        <Message v-if="$form.name?.invalid" severity="error" size="small" variant="simple">{{ $form.name.error?.message }}</Message>
+      </div>
+
+      <div class="flex w-full items-center gap-2">
+        <div class="flex w-full flex-col gap-1">
+          <label for="purchaseCost" class="ml-3 text-sm">Cost</label>
+          <IconField>
+            <InputIcon class="pi pi-dollar" />
+            <InputNumber name="purchaseCost" fluid currency="USD" mode="currency" />
+          </IconField>
+          <Message v-if="$form.purchaseCost?.invalid" severity="error" size="small" variant="simple">{{ $form.purchaseCost.error?.message }}</Message>
+        </div>
+
+        <div class="flex w-full flex-col gap-1">
+          <label for="purchasedFrom" class="ml-3 text-sm">Purchased From</label>
+          <InputText name="purchasedFrom" />
+          <Message v-if="$form.purchasedFrom?.invalid" severity="error" size="small" variant="simple">
+            {{ $form.purchasedFrom.error?.message }}
+          </Message>
+        </div>
+      </div>
+
+      <div class="flex w-1/2 flex-col gap-1 pr-1">
+        <label for="purchased" class="ml-3 text-sm">Purchase Date</label>
+        <IconField>
+          <InputIcon class="pi pi-calendar" />
+          <DatePicker name="purchased" />
+        </IconField>
+        <Message v-if="$form.purchased?.invalid" severity="error" size="small" variant="simple">{{ $form.purchased.error?.message }}</Message>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <Checkbox v-model="fromNewProducts" binary name="fromNewProducts" />
+        <label for="fromNewProducts">From New Products</label>
+      </div>
+
+      <div class="dark:border-surface-800 dark:bg-surface-950 flex flex-col gap-4 rounded-md border p-4">
+        <div class="flex flex-col gap-2">
+          <label for="listPullSheetUpload">List Pull Sheet</label>
+          <FileUpload name="listPullSheetUpload" accept=".csv" mode="basic" @select="handleListPullSheetUpload" />
+        </div>
+        <div v-show="fromNewProducts" class="flex flex-col gap-2">
+          <label for="pricingUpload">Pricing</label>
+          <FileUpload name="pricingUpload" accept=".csv" mode="basic" @select="handlePricingUpload" />
+        </div>
+      </div>
+
+      <Button label="Submit" type="submit" :loading="isSubmitLoading" />
+    </Form>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -60,17 +116,38 @@ import { useInventoryStore, type InventoryItemsExpandProduct } from '@/store/inv
 import { Collections, type CollectionsRecord } from '@/types/pocketbase-types';
 import { formatCurrency } from '@/util/functions';
 import pb from '@/util/pocketbase';
+import { Form, type FormInstance, type FormSubmitEvent } from '@primevue/forms';
 import { type ColDef, type GridOptions } from 'ag-grid-community';
 import { AgGridVue } from 'ag-grid-vue3';
-import { Button, InputText, Knob, Checkbox } from 'primevue';
-import { computed, nextTick, onMounted, ref } from 'vue';
+import {
+  Button,
+  Checkbox,
+  Dialog,
+  InputText,
+  FileUpload,
+  Message,
+  Knob,
+  IconField,
+  InputIcon,
+  InputNumber,
+  DatePicker,
+  type FileUploadSelectEvent
+} from 'primevue';
+import { computed, nextTick, onMounted, reactive, ref, useTemplateRef } from 'vue';
 // Types ------------------------------------------------------------------------------
+interface FormValues {
+  name?: string;
+  purchasedFrom?: string;
+  purchaseCost?: number;
+  purchased?: string;
+}
 
 // Component Info (props/emits) -------------------------------------------------------
 const props = defineProps<{ collectionId?: string }>();
 
 // Template Refs ----------------------------------------------------------------------
 const grid = ref();
+const form = useTemplateRef<FormInstance>('form');
 
 // Variables --------------------------------------------------------------------------
 const inventoryStore = useInventoryStore();
@@ -148,8 +225,20 @@ const columnDefs: ColDef<InventoryItemsExpandProduct>[] = [
 // Reactive Variables -----------------------------------------------------------------
 const collections = ref<CollectionsRecord[]>([]);
 
-const showCollectionSelection = computed(() => props.collectionId === '');
+const isAddCollectionModalVisible = ref(false);
+const fromNewProducts = ref(false);
+const showCollectionSelection = computed(() => !props.collectionId);
 const showZeroQuantity = ref(false);
+const isSubmitLoading = ref(false);
+
+const initialValues = reactive({
+  name: '',
+  purchasedFrom: '',
+  purchaseCost: null,
+  purchased: ''
+});
+const listPullSheet = ref();
+const pricing = ref();
 
 const filteredInventoryItems = computed(() => {
   const items = inventoryStore.inventory ?? [];
@@ -184,9 +273,64 @@ const handleCollectionSelect = (collectionId: string) => {
   router.push({ name: 'inventory', params: { collectionId } });
 };
 
+const handleAddCollection = () => {
+  isAddCollectionModalVisible.value = true;
+};
+
+const handleListPullSheetUpload = (event: FileUploadSelectEvent) => {
+  listPullSheet.value = event.files[0];
+};
+
+const handlePricingUpload = (event: FileUploadSelectEvent) => {
+  pricing.value = event.files[0];
+};
+
+const resolver = ({ values }: { values: FormValues }) => {
+  const errors: Record<string, { message: string }[]> = {};
+
+  if (!values.name) {
+    errors.name = [{ message: 'Name is required' }];
+  }
+
+  if (!values.purchasedFrom) {
+    errors.purchasedFrom = [{ message: 'Purchased from is required' }];
+  }
+
+  if (!values.purchaseCost) {
+    errors.purchaseCost = [{ message: 'Purchase cost is required' }];
+  }
+
+  if (!values.purchased) {
+    errors.purchased = [{ message: 'Purchase date is required' }];
+  }
+
+  return {
+    values,
+    errors
+  };
+};
+
+const handleSubmit = async (event: FormSubmitEvent) => {
+  if (event.valid) {
+    isSubmitLoading.value = true;
+
+    if (event.values.id) {
+      await pb.collection(Collections.Collections).update(event.values.id, event.values);
+    } else {
+      await pb.collection(Collections.Collections).create({ store: pb.authStore.record?.store, ...event.values });
+    }
+
+    event.reset();
+    collections.value = await pb.collection(Collections.Collections).getFullList();
+    isSubmitLoading.value = false;
+    isAddCollectionModalVisible.value = false;
+  }
+};
+
 // Lifecycle Hooks --------------------------------------------------------------------
 onMounted(async () => {
   inventoryStore.refresh();
   collections.value = await pb.collection(Collections.Collections).getFullList();
+  isAddCollectionModalVisible.value = true; //remove
 });
 </script>

@@ -94,6 +94,46 @@ export const parsePullSheetCsv = async (file: File): Promise<PullSheetCsv[]> => 
   });
 };
 
+export interface ListPullSheetCsv {
+  'Product Line': string;
+  'Product Name': string;
+  Condition: string;
+  Number: string;
+  Set: string;
+  Rarity: string;
+  Quantity: number;
+  'Saved Price': string;
+}
+
+export const parseListPullSheetCsv = async (file: File): Promise<ListPullSheetCsv[]> => {
+  return new Promise((resolve, reject) => {
+    let aborted = false;
+    Papa.parse(file, {
+      preview: 1,
+      complete: (results) => {
+        const firstRow = results.data[0] as string[];
+        if (firstRow.length !== 8) {
+          aborted = true;
+          return;
+        }
+
+        Papa.parse<ListPullSheetCsv>(file, {
+          header: true,
+          dynamicTyping: true,
+          skipEmptyLines: true,
+          complete(results) {
+            resolve(results.data);
+          }
+        });
+      }
+    });
+    if (aborted) {
+      console.error('Unable to parse List Pull Sheet CSV. The header did not contain all required fields.');
+      reject();
+    }
+  });
+};
+
 export interface PricingCsv {
   'TCGplayer Id': number;
   'Product Line': string;
