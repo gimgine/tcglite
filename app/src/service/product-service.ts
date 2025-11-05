@@ -31,9 +31,19 @@ export class ProductService {
       for (const pricing of pricingCsv) {
         const possibleProductForPricing = products.find((p) => pricing['TCGplayer Id'] === p.tcgPlayerId);
         if (possibleProductForPricing) {
+          let shouldUpdate = false;
           if (possibleProductForPricing.marketPrice !== (pricing['TCG Market Price'] ?? 0)) {
             possibleProductForPricing.marketPrice = pricing['TCG Market Price'];
             possibleProductForPricing.marketPriceUpdated = new Date().toUTCString();
+            shouldUpdate = true;
+          }
+
+          if (possibleProductForPricing.ourPrice !== (pricing['TCG Marketplace Price'] ?? 0)) {
+            possibleProductForPricing.ourPrice = pricing['TCG Marketplace Price'];
+            shouldUpdate = true;
+          }
+
+          if (shouldUpdate) {
             productsToUpdate.push(possibleProductForPricing);
           }
         } else {

@@ -107,6 +107,7 @@ export type CollectionStatsRecord<TtotalMarketValue = unknown, TtotalQtyAcquired
   purchaseCost?: number;
   purchased?: IsoDateString;
   purchasedFrom?: string;
+  store?: RecordIdString;
   totalMarketValue?: null | TtotalMarketValue;
   totalQtyAcquired?: null | TtotalQtyAcquired;
   totalQtySold?: null | TtotalQtySold;
@@ -253,6 +254,7 @@ export type ProductsRecord = {
   marketPriceUpdated?: IsoDateString;
   name?: string;
   number?: string;
+  ourPrice?: number;
   productLine?: string;
   rarity?: string;
   scryfallId?: string;

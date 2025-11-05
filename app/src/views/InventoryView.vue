@@ -33,13 +33,16 @@
             class="dark:border-surface-700 group flex cursor-pointer items-center justify-between rounded-md border border-gray-200 p-6"
             @click="handleCollectionSelect(collection.id)"
           >
-            <div class="flex gap-4 transition-opacity group-hover:opacity-50">
-              <Knob
-                :model-value="Math.round(((collection.totalQtySold as number) / (collection.totalQtyAcquired as number)) * 100)"
-                :size="75"
-                value-template="{value}%"
-                readonly
-              />
+            <div class="flex items-center gap-4 transition-opacity group-hover:opacity-50">
+              <div class="flex flex-col items-center">
+                <Knob
+                  :model-value="Math.round(((collection.totalQtySold as number) / (collection.totalQtyAcquired as number)) * 100)"
+                  :size="75"
+                  value-template="{value}%"
+                  readonly
+                />
+                <span class="text-muted-color text-xs">{{ `${collection.totalQtySold as number} / ${collection.totalQtyAcquired as number}` }}</span>
+              </div>
               <div class="flex flex-col">
                 <span class="text-lg">{{ collection.name }}</span>
                 <span class="text-muted-color text-sm">{{ collection.purchasedFrom }}</span>
@@ -47,8 +50,13 @@
               </div>
             </div>
             <div class="flex items-center gap-4">
-              <span class="text-lg">
-                {{ `${formatCurrency(collection.totalSoldValue as number)} / ${formatCurrency(collection.totalMarketValue as number)}` }}
+              <span class="text-muted-color">
+                {{ `${formatCurrency(collection.totalSoldValue as number)} / ${formatCurrency(collection.purchaseCost as number)}` }}
+              </span>
+              <span
+                :class="['text-lg', (collection.totalSoldValue as number) - (collection.purchaseCost as number) ? 'text-red-600' : 'text-green-600']"
+              >
+                {{ `${formatCurrency((collection.totalSoldValue as number) - (collection.purchaseCost as number))}` }}
               </span>
               <i class="pi pi-chevron-right transition-opacity group-hover:opacity-50"></i>
             </div>
