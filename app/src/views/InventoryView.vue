@@ -68,7 +68,14 @@
       </div>
 
       <div v-show="!showCollectionSelection">
-        <AgGridVue ref="grid" class="h-[calc(100vh-82px)]" :grid-options :column-defs :row-data="filteredInventoryItems" />
+        <div class="mb-2 flex items-center justify-between">
+          <RouterLink class="flex items-center gap-2" :to="{ name: 'inventory' }">
+            <i class="pi pi-chevron-left"></i>
+            <span class="text-lg font-semibold">{{ collections.find((c) => c.id === collectionId)?.name ?? 'Full Inventory' }}</span>
+          </RouterLink>
+          <Button icon="pi-trash pi" label="Selected" severity="danger" :disabled="!selectedRows.length" @click="handleDeleteSelected" />
+        </div>
+        <AgGridVue ref="grid" class="h-[calc(100vh-130px)]" :grid-options :column-defs :row-data="filteredInventoryItems" />
       </div>
     </div>
   </div>
@@ -148,6 +155,7 @@ import {
   InputText,
   Knob,
   Message,
+  useToast,
   type FileUploadSelectEvent
 } from 'primevue';
 import { computed, nextTick, onMounted, reactive, ref, useTemplateRef } from 'vue';
@@ -167,6 +175,7 @@ const grid = ref();
 const form = useTemplateRef<FormInstance>('form');
 
 // Variables --------------------------------------------------------------------------
+const toast = useToast();
 const inventoryStore = useInventoryStore();
 const inventoryService = new InventoryService();
 const theme = useAgGridTheme();
@@ -177,6 +186,7 @@ const gridOptions: GridOptions<InventoryItemsExpandProduct> = {
   pagination: true,
   paginationPageSize: 50,
   suppressCellFocus: true,
+  rowSelection: { mode: 'multiRow', selectAll: 'filtered' },
   onModelUpdated: (e) => {
     e.api.autoSizeAllColumns();
     nextTick(() => {
@@ -184,13 +194,16 @@ const gridOptions: GridOptions<InventoryItemsExpandProduct> = {
         e.api.sizeColumnsToFit();
       }
     });
+  },
+  onSelectionChanged: (e) => {
+    selectedRows.value = e.api.getSelectedRows();
   }
 };
 
 const columnDefs: ColDef<InventoryItemsExpandProduct>[] = [
-  { field: 'expand.product.name', headerName: 'Name' },
-  { field: 'expand.product.number', headerName: 'Number' },
+  { field: 'expand.product.name', headerName: 'Name', sort: 'asc' },
   { field: 'expand.product.set', headerName: 'Set' },
+  { field: 'expand.product.number', headerName: 'Number' },
   { field: 'expand.product.condition', headerName: 'Condition' },
   { field: 'qtyAcquired', headerName: 'Acquired', hide: true },
   { field: 'qtySold', headerName: 'Sold', hide: true },
@@ -276,6 +289,7 @@ const filteredInventoryItems = computed(() => {
     return true;
   });
 });
+const selectedRows = ref<InventoryItemsExpandProduct[]>([]);
 
 // Provided ---------------------------------------------------------------------------
 
@@ -339,10 +353,23 @@ const handleSubmit = async (event: FormSubmitEvent) => {
     }
 
     event.reset();
-    collections.value = await pb.collection(Collections.Collections).getFullList();
+    collections.value = await pb.collection(Collections.CollectionStats).getFullList();
     isSubmitLoading.value = false;
     isAddCollectionModalVisible.value = false;
   }
+};
+
+const handleDeleteSelected = async () => {
+  const batch = pb.createBatch();
+
+  for (const selectedRow of selectedRows.value) {
+    batch.collection(Collections.InventoryItems).delete(selectedRow.id);
+  }
+
+  await batch.send();
+  toast.add({ severity: 'success', summary: 'Inventory Items Deleted', detail: 'Selected inventory items were deleted successfully.', life: 3000 });
+  selectedRows.value = [];
+  await inventoryStore.refresh();
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------
