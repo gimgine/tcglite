@@ -6,7 +6,7 @@ export class StorePreferencesService {
     return (await pb.collection(Collections.StorePreferences).getFullList())[0];
   };
 
-  create = async (preferences: Omit<StorePreferencesRecord, 'id'>) => {
+  create = async (preferences: Omit<StorePreferencesRecord, 'id' | 'created' | 'updated'>) => {
     await pb.collection(Collections.StorePreferences).create(preferences);
   };
 
