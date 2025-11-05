@@ -5,4 +5,6 @@ const url = import.meta.env.VITE_PB_URL;
 
 const pb = new PocketBase(url) as TypedPocketBase;
 
+pb.autoCancellation(false);
+
 export default pb;

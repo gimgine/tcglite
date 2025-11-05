@@ -1,5 +1,5 @@
 import type { OrderItemRequest } from '@/types';
-import { Collections, type CardsRecord, type OrderItemsRecord, type ProductsRecord } from '@/types/pocketbase-types';
+import { Collections, type OrderItemsRecord, type ProductsRecord } from '@/types/pocketbase-types';
 import { parsePullSheetCsv, type PullSheetCsv } from '@/util/csv-parse';
 import { chunkArray } from '@/util/functions';
 import pb from '@/util/pocketbase';

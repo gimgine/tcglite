@@ -51,6 +51,7 @@ const isDev = import.meta.env.DEV;
 const items = ref([
   { label: 'Orders', icon: 'pi pi-receipt', routeName: 'home' },
   { label: 'Expenses', icon: 'pi pi-credit-card', routeName: 'expenses' },
+  { label: 'Inventory', icon: 'pi pi-warehouse', routeName: 'inventory' },
   { label: 'Stats', icon: 'pi pi-chart-line', routeName: 'stats' },
   { label: 'Order Helper', icon: 'pi pi-box', routeName: 'orderHelper' },
   { label: 'Pricing', icon: 'pi pi-dollar', routeName: 'pricing' }

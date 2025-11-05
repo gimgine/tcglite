@@ -283,7 +283,7 @@ const gridOptions: GridOptions<PricingCsv> = {
   defaultColDef: { filter: true },
   theme: theme.value,
   pagination: true,
-  paginationPageSize: 20,
+  paginationPageSize: 50,
   rowSelection: { mode: 'multiRow', selectAll: 'filtered' },
   suppressCellFocus: true,
   onModelUpdated: (e) => {

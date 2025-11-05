@@ -1,8 +1,8 @@
 import { Collections } from '@/types/pocketbase-types';
+import axios from 'axios';
+import { type ToastServiceMethods } from 'primevue';
 import { parsePricingCsv, type PricingCsv } from './csv-parse';
 import pb from './pocketbase';
-import axios from 'axios';
-import { useToast, type ToastServiceMethods } from 'primevue';
 
 export const formatCurrency = (value?: number) => {
   return value?.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -21,55 +21,55 @@ export const chunkArray = <T>(arr: T[], size: number): T[][] => {
   return chunks;
 };
 
-export const syncSetsTable = async (fromPricingCsv: boolean) => {
-  try {
-    // Fetch unique TCGplayer set names
-    let uniqueSetNames: string[] = [];
+// export const syncSetsTable = async (fromPricingCsv: boolean) => {
+//   try {
+//     // Fetch unique TCGplayer set names
+//     let uniqueSetNames: string[] = [];
 
-    if (fromPricingCsv) {
-      const response = await fetch('/TCGplayer__MyPricing_20250708_092458.csv');
-      const blob = await response.blob();
-      const file = new File([blob], 'Pricing.csv', { type: blob.type });
-      const pricing: PricingCsv[] = await parsePricingCsv(file);
+//     if (fromPricingCsv) {
+//       const response = await fetch('/TCGplayer__MyPricing_20250708_092458.csv');
+//       const blob = await response.blob();
+//       const file = new File([blob], 'Pricing.csv', { type: blob.type });
+//       const pricing: PricingCsv[] = await parsePricingCsv(file);
 
-      uniqueSetNames = Array.from(
-        new Set(
-          pricing
-            .filter((p) => p['Product Line'] === 'Magic')
-            .map((p) => p['Set Name'])
-            .filter(Boolean)
-        )
-      );
-    } else {
-      const cardsRes = await pb.collection(Collections.Cards).getFullList();
-      uniqueSetNames = Array.from(new Set(cardsRes.map((c) => c.set).filter(Boolean)));
-    }
+//       uniqueSetNames = Array.from(
+//         new Set(
+//           pricing
+//             .filter((p) => p['Product Line'] === 'Magic')
+//             .map((p) => p['Set Name'])
+//             .filter(Boolean)
+//         )
+//       );
+//     } else {
+//       const cardsRes = await pb.collection(Collections.Cards).getFullList();
+//       uniqueSetNames = Array.from(new Set(cardsRes.map((c) => c.set).filter(Boolean)));
+//     }
 
-    // Load existing Sets table and Scryfall data
-    const setsRes = await pb.collection(Collections.Sets).getFullList();
-    const scryfallRes = await axios.get<{ data: Array<{ code: string; name: string }> }>('https://api.scryfall.com/sets');
+//     // Load existing Sets table and Scryfall data
+//     const setsRes = await pb.collection(Collections.Sets).getFullList();
+//     const scryfallRes = await axios.get<{ data: Array<{ code: string; name: string }> }>('https://api.scryfall.com/sets');
 
-    const existingTcgplayerNames = new Set(setsRes.map((s) => s.tcgplayer.toLowerCase()));
-    const scryfallNameToCode = new Map(scryfallRes.data.data.map((set) => [set.name.toLowerCase(), set.code]));
+//     const existingTcgplayerNames = new Set(setsRes.map((s) => s.tcgplayer.toLowerCase()));
+//     const scryfallNameToCode = new Map(scryfallRes.data.data.map((set) => [set.name.toLowerCase(), set.code]));
 
-    for (const tcgName of uniqueSetNames) {
-      const normalized = tcgName.toLowerCase();
+//     for (const tcgName of uniqueSetNames) {
+//       const normalized = tcgName.toLowerCase();
 
-      if (existingTcgplayerNames.has(normalized)) continue;
+//       if (existingTcgplayerNames.has(normalized)) continue;
 
-      const matchingCode = scryfallNameToCode.get(normalized) || '';
+//       const matchingCode = scryfallNameToCode.get(normalized) || '';
 
-      await pb.collection(Collections.Sets).create({
-        code: matchingCode,
-        tcgplayer: tcgName
-      });
-    }
+//       await pb.collection(Collections.Sets).create({
+//         code: matchingCode,
+//         tcgplayer: tcgName
+//       });
+//     }
 
-    console.log(`Sets table synced from ${fromPricingCsv ? 'PricingCsv' : 'Cards'}`);
-  } catch (error) {
-    console.error('Error syncing Sets table:', error);
-  }
-};
+//     console.log(`Sets table synced from ${fromPricingCsv ? 'PricingCsv' : 'Cards'}`);
+//   } catch (error) {
+//     console.error('Error syncing Sets table:', error);
+//   }
+// };
 
 export const copyToClipboard = async (value: string, toast: ToastServiceMethods, label?: string) => {
   try {

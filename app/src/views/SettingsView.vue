@@ -168,13 +168,17 @@
     <Panel v-if="store" header="Additional Options" class="basis-full">
       <div class="flex gap-4">
         <div class="flex flex-col gap-2 text-sm">
-          <FileUpload mode="basic" choose-label="Refresh Products" choose-icon="pi pi-upload" accept=".csv" auto @select="syncProducts" />
+          <FileUpload mode="basic" choose-label="Refresh Products" choose-icon="pi pi-upload" accept=".csv" auto @select="handleProductsRefresh" />
           <p class="text-xs italic">Upload your latest Pricing CSV to update your product list.</p>
         </div>
 
         <div class="flex flex-col gap-2 text-sm">
           <Button label="Update Order Costs" class="w-fit" :loading="isUpdateShippingLoading" @click="updateShippingInformation" />
           <p class="text-xs italic">Recalculate costs on all orders using current shipping options.</p>
+        </div>
+
+        <div class="flex flex-col gap-2 text-sm">
+          <FileUpload mode="basic" choose-label="Init Inventory" choose-icon="pi pi-upload" accept=".csv" auto @select="handleInventoryInit" />
         </div>
       </div>
     </Panel>
@@ -183,14 +187,16 @@
 
 <script setup lang="ts">
 import router from '@/router';
+import { InventoryService } from '@/service/inventory-service';
 import { OrderService } from '@/service/order-service';
+import { ProductService } from '@/service/product-service';
 import { StorePreferencesService } from '@/service/store-preferences-service';
 import { StoreService } from '@/service/store-service';
 import { UserService } from '@/service/user-service';
 import { useOrderStore } from '@/store/order-store';
 import { usePreferencesStore } from '@/store/preferences-store';
-import { Collections, type ProductsRecord, type StorePreferencesRecord, type StoresRecord, type UsersRecord } from '@/types/pocketbase-types';
-import { parsePricingCsv, type PricingCsv } from '@/util/csv-parse';
+import { Collections, type StorePreferencesRecord, type StoresRecord, type UsersRecord } from '@/types/pocketbase-types';
+import { parsePricingCsv } from '@/util/csv-parse';
 import pb from '@/util/pocketbase';
 import { Form, type FormInstance, type FormSubmitEvent } from '@primevue/forms';
 import { zodResolver } from '@primevue/forms/resolvers/zod';
@@ -198,6 +204,7 @@ import {
   Avatar,
   Button,
   DataView,
+  FileUpload,
   InputGroup,
   InputGroupAddon,
   InputNumber,
@@ -205,7 +212,6 @@ import {
   Message,
   Panel,
   useToast,
-  FileUpload,
   type FileUploadSelectEvent
 } from 'primevue';
 import { computed, nextTick, onMounted, reactive, ref, useTemplateRef } from 'vue';
@@ -365,57 +371,26 @@ const handleSignout = () => {
   router.push({ name: 'login' });
 };
 
-const syncProducts = async (event: FileUploadSelectEvent) => {
-  const pricingCsv = await parsePricingCsv(event.files[0]);
-  const products = await pb.collection(Collections.Products).getFullList();
-
-  const productsToCreate: PricingCsv[] = [];
-  const productsToUpdate: ProductsRecord[] = [];
-
-  // update market price for exising products and identify which pricing records are new
-  for (const pricing of pricingCsv) {
-    const possibleProductForPricing = products.find((p) => pricing['TCGplayer Id'] === p.tcgPlayerId);
-    if (possibleProductForPricing) {
-      if (possibleProductForPricing.marketPrice !== (pricing['TCG Market Price'] ?? 0)) {
-        possibleProductForPricing.marketPrice = pricing['TCG Market Price'];
-        possibleProductForPricing.marketPriceUpdated = new Date().toUTCString();
-        productsToUpdate.push(possibleProductForPricing);
-      }
-    } else {
-      productsToCreate.push(pricing);
-    }
-  }
-
-  if (!productsToCreate.length && !productsToUpdate.length) {
-    toast.add({ severity: 'success', summary: 'Products Synced', detail: 'No updates were needed.', life: 3000 });
-    return;
-  }
-
-  // create new products
-  const batch = pb.createBatch();
-
-  productsToCreate.forEach((product) => {
-    batch.collection(Collections.Products).create({
-      store: pb.authStore.record?.store,
-      productLine: product['Product Line'],
-      name: product['Product Name'],
-      condition: product['Condition'],
-      set: product['Set Name'],
-      number: product['Number'],
-      rarity: product.Rarity,
-      language: product.Condition.split(' - ')[1] ?? 'English', // ex. 'Near Mint - Japanese'
-      tcgPlayerId: product['TCGplayer Id'],
-      marketPrice: product['TCG Market Price'],
-      marketPriceUpdated: new Date().toUTCString()
-    });
+const handleProductsRefresh = async (event: FileUploadSelectEvent) => {
+  const service = new ProductService();
+  const result = await service.syncProducts(await parsePricingCsv(event.files[0]));
+  toast.add({
+    severity: result.success ? 'success' : 'error',
+    summary: result.success ? 'Products Synced' : 'Sync Failed',
+    detail: result.message,
+    life: 3000
   });
+};
 
-  productsToUpdate.forEach((product) => {
-    batch.collection(Collections.Products).update(product.id, product);
+const handleInventoryInit = async (event: FileUploadSelectEvent) => {
+  const service = new InventoryService();
+  const result = await service.initializeInventory(await parsePricingCsv(event.files[0]));
+  toast.add({
+    severity: result.success ? 'success' : 'error',
+    summary: result.success ? 'Inventory Initialized' : 'Init failed',
+    detail: result.message,
+    life: 3000
   });
-
-  await batch.send();
-  toast.add({ severity: 'success', summary: 'Products Synced', detail: 'Store product list successfully synchronized.', life: 3000 });
 };
 
 const updateShippingInformation = async () => {
