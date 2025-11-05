@@ -54,7 +54,10 @@
                 {{ `${formatCurrency(collection.totalSoldValue as number)} / ${formatCurrency(collection.purchaseCost as number)}` }}
               </span>
               <span
-                :class="['text-lg', (collection.totalSoldValue as number) - (collection.purchaseCost as number) ? 'text-red-600' : 'text-green-600']"
+                :class="[
+                  'text-lg',
+                  (collection.totalSoldValue as number) - (collection.purchaseCost as number) >= 0 ? 'text-green-600' : 'text-red-600'
+                ]"
               >
                 {{ `${formatCurrency((collection.totalSoldValue as number) - (collection.purchaseCost as number))}` }}
               </span>
