@@ -34,14 +34,24 @@
             @click="handleCollectionSelect(collection.id)"
           >
             <div class="flex gap-4 transition-opacity group-hover:opacity-50">
-              <Knob :model-value="50" :size="75" value-template="{value}%" readonly></Knob>
+              <Knob
+                :model-value="Math.round(((collection.totalQtySold as number) / (collection.totalQtyAcquired as number)) * 100)"
+                :size="75"
+                value-template="{value}%"
+                readonly
+              />
               <div class="flex flex-col">
                 <span class="text-lg">{{ collection.name }}</span>
                 <span class="text-muted-color text-sm">{{ collection.purchasedFrom }}</span>
                 <span class="text-muted-color text-sm">{{ new Date(collection.purchased ?? '').toLocaleDateString() }}</span>
               </div>
             </div>
-            <i class="pi pi-chevron-right transition-opacity group-hover:opacity-50"></i>
+            <div class="flex items-center gap-4">
+              <span class="text-lg">
+                {{ `${formatCurrency(collection.totalSoldValue as number)} / ${formatCurrency(collection.totalMarketValue as number)}` }}
+              </span>
+              <i class="pi pi-chevron-right transition-opacity group-hover:opacity-50"></i>
+            </div>
           </div>
         </div>
       </div>
@@ -88,17 +98,12 @@
         <Message v-if="$form.purchased?.invalid" severity="error" size="small" variant="simple">{{ $form.purchased.error?.message }}</Message>
       </div>
 
-      <div class="flex items-center gap-2">
-        <Checkbox v-model="fromNewProducts" binary name="fromNewProducts" />
-        <label for="fromNewProducts">From New Products</label>
-      </div>
-
       <div class="dark:border-surface-800 dark:bg-surface-950 flex flex-col gap-4 rounded-md border p-4">
         <div class="flex flex-col gap-2">
           <label for="listPullSheetUpload">List Pull Sheet</label>
           <FileUpload name="listPullSheetUpload" accept=".csv" mode="basic" @select="handleListPullSheetUpload" />
         </div>
-        <div v-show="fromNewProducts" class="flex flex-col gap-2">
+        <div class="flex flex-col gap-2">
           <label for="pricingUpload">Pricing</label>
           <FileUpload name="pricingUpload" accept=".csv" mode="basic" @select="handlePricingUpload" />
         </div>
@@ -112,8 +117,9 @@
 <script setup lang="ts">
 import { useAgGridTheme } from '@/composables/useAgGridTheme';
 import router from '@/router';
+import { InventoryService } from '@/service/inventory-service';
 import { useInventoryStore, type InventoryItemsExpandProduct } from '@/store/inventory-store';
-import { Collections, type CollectionsRecord } from '@/types/pocketbase-types';
+import { Collections, type CollectionStatsRecord } from '@/types/pocketbase-types';
 import { formatCurrency } from '@/util/functions';
 import pb from '@/util/pocketbase';
 import { Form, type FormInstance, type FormSubmitEvent } from '@primevue/forms';
@@ -122,15 +128,15 @@ import { AgGridVue } from 'ag-grid-vue3';
 import {
   Button,
   Checkbox,
+  DatePicker,
   Dialog,
-  InputText,
   FileUpload,
-  Message,
-  Knob,
   IconField,
   InputIcon,
   InputNumber,
-  DatePicker,
+  InputText,
+  Knob,
+  Message,
   type FileUploadSelectEvent
 } from 'primevue';
 import { computed, nextTick, onMounted, reactive, ref, useTemplateRef } from 'vue';
@@ -151,6 +157,7 @@ const form = useTemplateRef<FormInstance>('form');
 
 // Variables --------------------------------------------------------------------------
 const inventoryStore = useInventoryStore();
+const inventoryService = new InventoryService();
 const theme = useAgGridTheme();
 
 const gridOptions: GridOptions<InventoryItemsExpandProduct> = {
@@ -223,10 +230,9 @@ const columnDefs: ColDef<InventoryItemsExpandProduct>[] = [
 ];
 
 // Reactive Variables -----------------------------------------------------------------
-const collections = ref<CollectionsRecord[]>([]);
+const collections = ref<CollectionStatsRecord[]>([]);
 
 const isAddCollectionModalVisible = ref(false);
-const fromNewProducts = ref(false);
 const showCollectionSelection = computed(() => !props.collectionId);
 const showZeroQuantity = ref(false);
 const isSubmitLoading = ref(false);
@@ -317,7 +323,8 @@ const handleSubmit = async (event: FormSubmitEvent) => {
     if (event.values.id) {
       await pb.collection(Collections.Collections).update(event.values.id, event.values);
     } else {
-      await pb.collection(Collections.Collections).create({ store: pb.authStore.record?.store, ...event.values });
+      const res = await pb.collection(Collections.Collections).create({ store: pb.authStore.record?.store, ...event.values });
+      await inventoryService.addToCollection(res, listPullSheet.value, pricing.value);
     }
 
     event.reset();
@@ -330,7 +337,20 @@ const handleSubmit = async (event: FormSubmitEvent) => {
 // Lifecycle Hooks --------------------------------------------------------------------
 onMounted(async () => {
   inventoryStore.refresh();
-  collections.value = await pb.collection(Collections.Collections).getFullList();
-  isAddCollectionModalVisible.value = true; //remove
+  collections.value = await pb.collection(Collections.CollectionStats).getFullList();
+
+  if (import.meta.env.DEV) {
+    const pullResponse = await fetch('/TCGplayer_ManageLists_PullSheet.csv');
+    const pricingResponse = await fetch('/TCGplayer__MyPricing.csv');
+
+    const pullBlob = await pullResponse.blob();
+    const pricingBlob = await pricingResponse.blob();
+
+    const pullFile = new File([pullBlob], 'PullSheet.csv', { type: pullBlob.type });
+    const pricingFile = new File([pricingBlob], 'Pricing.csv', { type: pricingBlob.type });
+
+    listPullSheet.value = pullFile;
+    pricing.value = pricingFile;
+  }
 });
 </script>

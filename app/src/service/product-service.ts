@@ -1,9 +1,8 @@
 import type { Result } from '@/types';
 import { Collections, type ProductsRecord } from '@/types/pocketbase-types';
-import { parsePricingCsv, type PricingCsv } from '@/util/csv-parse';
+import { type PricingCsv } from '@/util/csv-parse';
 import { chunkArray } from '@/util/functions';
 import pb from '@/util/pocketbase';
-import type { FileUploadSelectEvent } from 'primevue/fileupload';
 
 export class ProductService {
   getProductsForTcgPlayerIds = async (tcgPlayerIds: number[]) => {

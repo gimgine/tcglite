@@ -11,7 +11,7 @@ export enum Collections {
   Mfas = '_mfas',
   Otps = '_otps',
   Superusers = '_superusers',
-  Cards = 'cards',
+  CollectionStats = 'collectionStats',
   Collections = 'collections',
   Expenses = 'expenses',
   InventoryItems = 'inventoryItems',
@@ -29,7 +29,9 @@ export enum Collections {
 
 // Alias types for improved usability
 export type IsoDateString = string;
+export type IsoAutoDateString = string & { readonly autodate: unique symbol };
 export type RecordIdString = string;
+export type FileNameString = string & { readonly filename: unique symbol };
 export type HTMLString = string;
 
 type ExpandType<T> = unknown extends T ? (T extends unknown ? { expand?: unknown } : { expand: T }) : { expand: T };
@@ -52,76 +54,74 @@ export type AuthSystemFields<T = unknown> = {
 
 export type AuthoriginsRecord = {
   collectionRef: string;
-  created?: IsoDateString;
+  created: IsoAutoDateString;
   fingerprint: string;
   id: string;
   recordRef: string;
-  updated?: IsoDateString;
+  updated: IsoAutoDateString;
 };
 
 export type ExternalauthsRecord = {
   collectionRef: string;
-  created?: IsoDateString;
+  created: IsoAutoDateString;
   id: string;
   provider: string;
   providerId: string;
   recordRef: string;
-  updated?: IsoDateString;
+  updated: IsoAutoDateString;
 };
 
 export type MfasRecord = {
   collectionRef: string;
-  created?: IsoDateString;
+  created: IsoAutoDateString;
   id: string;
   method: string;
   recordRef: string;
-  updated?: IsoDateString;
+  updated: IsoAutoDateString;
 };
 
 export type OtpsRecord = {
   collectionRef: string;
-  created?: IsoDateString;
+  created: IsoAutoDateString;
   id: string;
   password: string;
   recordRef: string;
   sentTo?: string;
-  updated?: IsoDateString;
+  updated: IsoAutoDateString;
 };
 
 export type SuperusersRecord = {
-  created?: IsoDateString;
+  created: IsoAutoDateString;
   email: string;
   emailVisibility?: boolean;
   id: string;
   password: string;
   tokenKey: string;
-  updated?: IsoDateString;
+  updated: IsoAutoDateString;
   verified?: boolean;
 };
 
-export type CardsRecord = {
-  condition?: string;
-  created?: IsoDateString;
+export type CollectionStatsRecord<TtotalMarketValue = unknown, TtotalQtyAcquired = unknown, TtotalQtySold = unknown, TtotalSoldValue = unknown> = {
   id: string;
   name?: string;
-  number?: string;
-  order?: RecordIdString;
-  quantity: number;
-  rarity?: string;
-  set?: string;
-  store?: RecordIdString;
-  updated?: IsoDateString;
+  purchaseCost?: number;
+  purchased?: IsoDateString;
+  purchasedFrom?: string;
+  totalMarketValue?: null | TtotalMarketValue;
+  totalQtyAcquired?: null | TtotalQtyAcquired;
+  totalQtySold?: null | TtotalQtySold;
+  totalSoldValue?: null | TtotalSoldValue;
 };
 
 export type CollectionsRecord = {
-  created?: IsoDateString;
+  created: IsoAutoDateString;
   id: string;
   name?: string;
   purchaseCost?: number;
   purchased?: IsoDateString;
   purchasedFrom?: string;
   store?: RecordIdString;
-  updated?: IsoDateString;
+  updated: IsoAutoDateString;
 };
 
 export enum ExpensesTypeOptions {
@@ -130,7 +130,7 @@ export enum ExpensesTypeOptions {
   'other' = 'other'
 }
 export type ExpensesRecord = {
-  created?: IsoDateString;
+  created: IsoAutoDateString;
   id: string;
   name?: string;
   price?: number;
@@ -138,18 +138,18 @@ export type ExpensesRecord = {
   quantity?: number;
   store?: RecordIdString;
   type?: ExpensesTypeOptions;
-  updated?: IsoDateString;
+  updated: IsoAutoDateString;
   url?: string;
 };
 
 export enum InventoryItemsSourceOptions {
-  'manual' = 'manual',
-  'auto' = 'auto'
+  'auto' = 'auto',
+  'manual' = 'manual'
 }
 export type InventoryItemsRecord = {
   acquired?: IsoDateString;
   collection?: RecordIdString;
-  created?: IsoDateString;
+  created: IsoAutoDateString;
   id: string;
   marketPriceAtImport?: number;
   product: RecordIdString;
@@ -158,17 +158,17 @@ export type InventoryItemsRecord = {
   source: InventoryItemsSourceOptions;
   store: RecordIdString;
   unitCogs?: number;
-  updated?: IsoDateString;
+  updated: IsoAutoDateString;
 };
 
 export type OrderItemsRecord = {
-  created?: IsoDateString;
+  created: IsoAutoDateString;
   id: string;
   order?: RecordIdString;
   product?: RecordIdString;
   quantity?: number;
   store?: RecordIdString;
-  updated?: IsoDateString;
+  updated: IsoAutoDateString;
 };
 
 export type OrdersRecord = {
@@ -178,7 +178,7 @@ export type OrdersRecord = {
   city: string;
   cogs?: number;
   country: string;
-  created?: IsoDateString;
+  created: IsoAutoDateString;
   feePercentage?: number;
   firstName: string;
   id: string;
@@ -199,7 +199,7 @@ export type OrdersRecord = {
   store?: RecordIdString;
   totalPrice?: number;
   trackingNumber?: string;
-  updated?: IsoDateString;
+  updated: IsoAutoDateString;
   vendorFee?: number;
 };
 
@@ -225,28 +225,28 @@ export enum PricingRulesFilterTypeOptions {
   'less than or equal' = 'less than or equal'
 }
 export type PricingRulesRecord = {
-  created?: IsoDateString;
+  created: IsoAutoDateString;
   filter?: PricingRulesFilterOptions;
   filterType?: PricingRulesFilterTypeOptions;
   filterValue?: string;
   id: string;
   pricing: string;
   store?: RecordIdString;
-  updated?: IsoDateString;
+  updated: IsoAutoDateString;
 };
 
 export type PricingStrategiesRecord = {
-  created?: IsoDateString;
+  created: IsoAutoDateString;
   id: string;
   lastUsed?: IsoDateString;
   name?: string;
   store?: RecordIdString;
-  updated?: IsoDateString;
+  updated: IsoAutoDateString;
 };
 
 export type ProductsRecord = {
   condition?: string;
-  created?: IsoDateString;
+  created: IsoAutoDateString;
   id: string;
   language?: string;
   marketPrice?: number;
@@ -259,19 +259,19 @@ export type ProductsRecord = {
   set?: string;
   store?: RecordIdString;
   tcgPlayerId: number;
-  updated?: IsoDateString;
+  updated: IsoAutoDateString;
 };
 
 export type SetsRecord = {
   code?: string;
-  created?: IsoDateString;
+  created: IsoAutoDateString;
   id: string;
   tcgplayer: string;
-  updated?: IsoDateString;
+  updated: IsoAutoDateString;
 };
 
 export type StorePreferencesRecord = {
-  created?: IsoDateString;
+  created: IsoAutoDateString;
   id: string;
   moreOunceCost?: number;
   oneOunceCards?: number;
@@ -283,28 +283,28 @@ export type StorePreferencesRecord = {
   trackingThreshold?: number;
   twoOunceCards?: number;
   twoOunceCost?: number;
-  updated?: IsoDateString;
+  updated: IsoAutoDateString;
 };
 
 export type StoresRecord = {
-  created?: IsoDateString;
+  created: IsoAutoDateString;
   id: string;
   name?: string;
-  updated?: IsoDateString;
+  updated: IsoAutoDateString;
 };
 
 export type StrategyRulesRecord = {
-  created?: IsoDateString;
+  created: IsoAutoDateString;
   id: string;
   order?: number;
   rule?: RecordIdString;
   store?: RecordIdString;
   strategy?: RecordIdString;
-  updated?: IsoDateString;
+  updated: IsoAutoDateString;
 };
 
 export type UsersRecord = {
-  created?: IsoDateString;
+  created: IsoAutoDateString;
   email: string;
   emailVisibility?: boolean;
   id: string;
@@ -312,7 +312,7 @@ export type UsersRecord = {
   password: string;
   store?: RecordIdString;
   tokenKey: string;
-  updated?: IsoDateString;
+  updated: IsoAutoDateString;
   verified?: boolean;
 };
 
@@ -322,7 +322,13 @@ export type ExternalauthsResponse<Texpand = unknown> = Required<ExternalauthsRec
 export type MfasResponse<Texpand = unknown> = Required<MfasRecord> & BaseSystemFields<Texpand>;
 export type OtpsResponse<Texpand = unknown> = Required<OtpsRecord> & BaseSystemFields<Texpand>;
 export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> & AuthSystemFields<Texpand>;
-export type CardsResponse<Texpand = unknown> = Required<CardsRecord> & BaseSystemFields<Texpand>;
+export type CollectionStatsResponse<
+  TtotalMarketValue = unknown,
+  TtotalQtyAcquired = unknown,
+  TtotalQtySold = unknown,
+  TtotalSoldValue = unknown,
+  Texpand = unknown
+> = Required<CollectionStatsRecord<TtotalMarketValue, TtotalQtyAcquired, TtotalQtySold, TtotalSoldValue>> & BaseSystemFields<Texpand>;
 export type CollectionsResponse<Texpand = unknown> = Required<CollectionsRecord> & BaseSystemFields<Texpand>;
 export type ExpensesResponse<Texpand = unknown> = Required<ExpensesRecord> & BaseSystemFields<Texpand>;
 export type InventoryItemsResponse<Texpand = unknown> = Required<InventoryItemsRecord> & BaseSystemFields<Texpand>;
@@ -345,7 +351,7 @@ export type CollectionRecords = {
   _mfas: MfasRecord;
   _otps: OtpsRecord;
   _superusers: SuperusersRecord;
-  cards: CardsRecord;
+  collectionStats: CollectionStatsRecord;
   collections: CollectionsRecord;
   expenses: ExpensesRecord;
   inventoryItems: InventoryItemsRecord;
@@ -367,7 +373,7 @@ export type CollectionResponses = {
   _mfas: MfasResponse;
   _otps: OtpsResponse;
   _superusers: SuperusersResponse;
-  cards: CardsResponse;
+  collectionStats: CollectionStatsResponse;
   collections: CollectionsResponse;
   expenses: ExpensesResponse;
   inventoryItems: InventoryItemsResponse;
@@ -383,27 +389,58 @@ export type CollectionResponses = {
   users: UsersResponse;
 };
 
+// Utility types for create/update operations
+
+type ProcessCreateAndUpdateFields<T> = Omit<
+  {
+    // Omit AutoDate fields
+    [K in keyof T as Extract<T[K], IsoAutoDateString> extends never ? K : never]: // Convert FileNameString to File
+    T[K] extends infer U ? (U extends FileNameString | FileNameString[] ? (U extends any[] ? File[] : File) : U) : never;
+  },
+  'id'
+>;
+
+// Create type for Auth collections
+export type CreateAuth<T> = {
+  id?: RecordIdString;
+  email: string;
+  emailVisibility?: boolean;
+  password: string;
+  passwordConfirm: string;
+  verified?: boolean;
+} & ProcessCreateAndUpdateFields<T>;
+
+// Create type for Base collections
+export type CreateBase<T> = {
+  id?: RecordIdString;
+} & ProcessCreateAndUpdateFields<T>;
+
+// Update type for Auth collections
+export type UpdateAuth<T> = Partial<Omit<ProcessCreateAndUpdateFields<T>, keyof AuthSystemFields>> & {
+  email?: string;
+  emailVisibility?: boolean;
+  oldPassword?: string;
+  password?: string;
+  passwordConfirm?: string;
+  verified?: boolean;
+};
+
+// Update type for Base collections
+export type UpdateBase<T> = Partial<Omit<ProcessCreateAndUpdateFields<T>, keyof BaseSystemFields>>;
+
+// Get the correct create type for any collection
+export type Create<T extends keyof CollectionResponses> = CollectionResponses[T] extends AuthSystemFields
+  ? CreateAuth<CollectionRecords[T]>
+  : CreateBase<CollectionRecords[T]>;
+
+// Get the correct update type for any collection
+export type Update<T extends keyof CollectionResponses> = CollectionResponses[T] extends AuthSystemFields
+  ? UpdateAuth<CollectionRecords[T]>
+  : UpdateBase<CollectionRecords[T]>;
+
 // Type for usage with type asserted PocketBase instance
 // https://github.com/pocketbase/js-sdk#specify-typescript-definitions
 
-export type TypedPocketBase = PocketBase & {
-  collection(idOrName: '_authOrigins'): RecordService<AuthoriginsResponse>;
-  collection(idOrName: '_externalAuths'): RecordService<ExternalauthsResponse>;
-  collection(idOrName: '_mfas'): RecordService<MfasResponse>;
-  collection(idOrName: '_otps'): RecordService<OtpsResponse>;
-  collection(idOrName: '_superusers'): RecordService<SuperusersResponse>;
-  collection(idOrName: 'cards'): RecordService<CardsResponse>;
-  collection(idOrName: 'collections'): RecordService<CollectionsResponse>;
-  collection(idOrName: 'expenses'): RecordService<ExpensesResponse>;
-  collection(idOrName: 'inventoryItems'): RecordService<InventoryItemsResponse>;
-  collection(idOrName: 'orderItems'): RecordService<OrderItemsResponse>;
-  collection(idOrName: 'orders'): RecordService<OrdersResponse>;
-  collection(idOrName: 'pricingRules'): RecordService<PricingRulesResponse>;
-  collection(idOrName: 'pricingStrategies'): RecordService<PricingStrategiesResponse>;
-  collection(idOrName: 'products'): RecordService<ProductsResponse>;
-  collection(idOrName: 'sets'): RecordService<SetsResponse>;
-  collection(idOrName: 'storePreferences'): RecordService<StorePreferencesResponse>;
-  collection(idOrName: 'stores'): RecordService<StoresResponse>;
-  collection(idOrName: 'strategyRules'): RecordService<StrategyRulesResponse>;
-  collection(idOrName: 'users'): RecordService<UsersResponse>;
-};
+export type TypedPocketBase = {
+  collection<T extends keyof CollectionResponses>(idOrName: T): RecordService<CollectionResponses[T]>;
+} & PocketBase;

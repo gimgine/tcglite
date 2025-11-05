@@ -105,33 +105,64 @@ export interface ListPullSheetCsv {
   'Saved Price': string;
 }
 
-export const parseListPullSheetCsv = async (file: File): Promise<ListPullSheetCsv[]> => {
-  return new Promise((resolve, reject) => {
-    let aborted = false;
-    Papa.parse(file, {
-      preview: 1,
-      complete: (results) => {
-        const firstRow = results.data[0] as string[];
-        if (firstRow.length !== 8) {
-          aborted = true;
-          return;
-        }
+function detectTextEncoding(u8: Uint8Array): 'utf-8' | 'utf-16le' | 'utf-16be' {
+  if (u8.length >= 2) {
+    const b0 = u8[0],
+      b1 = u8[1];
+    if (b0 === 0xff && b1 === 0xfe) return 'utf-16le'; // BOM LE
+    if (b0 === 0xfe && b1 === 0xff) return 'utf-16be'; // BOM BE
+  }
+  // Heuristic: lots of 0x00 suggests UTF-16 even without BOM
+  const sample = u8.slice(0, Math.min(u8.length, 512));
+  const nullCount = sample.filter((b) => b === 0x00).length;
+  if (nullCount > sample.length * 0.2) return 'utf-16le'; // Excel default is LE
+  return 'utf-8';
+}
 
-        Papa.parse<ListPullSheetCsv>(file, {
-          header: true,
-          dynamicTyping: true,
-          skipEmptyLines: true,
-          complete(results) {
-            resolve(results.data);
-          }
-        });
-      }
-    });
-    if (aborted) {
-      console.error('Unable to parse List Pull Sheet CSV. The header did not contain all required fields.');
-      reject();
-    }
+export const parseListPullSheetCsv = async (file: File): Promise<ListPullSheetCsv[]> => {
+  const ab = await file.arrayBuffer();
+  const u8 = new Uint8Array(ab);
+  const enc = detectTextEncoding(u8);
+
+  // Decode text using the detected encoding
+  const decoder = new TextDecoder(enc);
+  let text = decoder.decode(ab);
+
+  // Remove BOM if present (TextDecoder usually handles it, but be safe)
+  if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+
+  // Strip stray NULLs that come from mismatched encoding
+  if (text.includes('\u0000')) {
+    console.warn('[CSV] Found NULs in decoded text; stripping.');
+    text = text.replace(/\u0000/g, '');
+  }
+
+  // Normalize line endings (helps Papa w/ Windows files)
+  text = text.replace(/\r\n/g, '\n');
+
+  // Quick preview to validate header count
+  const preview = Papa.parse<string[]>(text, { preview: 1 });
+  const firstRow = (preview.data?.[0] ?? []) as string[];
+
+  if (!firstRow || firstRow.length !== 8) {
+    console.error('[CSV] Expected 8 columns in header, got:', firstRow?.length, firstRow);
+    throw new Error('Unable to parse List Pull Sheet CSV. The header did not contain all required fields.');
+  }
+
+  // Parse full CSV
+  const results = Papa.parse<ListPullSheetCsv>(text, {
+    header: true,
+    dynamicTyping: true,
+    skipEmptyLines: true
   });
+
+  if (results.errors?.length) {
+    console.error('[CSV] Papa parse errors:', results.errors);
+    // You can choose to throw or continue; throwing is safer:
+    throw new Error('CSV parse error(s): ' + results.errors.map((e) => e.message).join('; '));
+  }
+
+  return results.data;
 };
 
 export interface PricingCsv {
