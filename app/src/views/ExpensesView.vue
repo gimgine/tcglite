@@ -188,6 +188,18 @@ const columnDefs: ColDef<ExpensesRecord>[] = [
       const timeA = a ? new Date(a).getTime() : Infinity;
       const timeB = b ? new Date(b).getTime() : Infinity;
       return timeA - timeB;
+    },
+    filter: 'agDateColumnFilter',
+    filterParams: {
+      comparator: (filterLocalDateAtMidnight: Date, cellValue: unknown) => {
+        if (!cellValue) return -1;
+        const cellDate = cellValue instanceof Date ? cellValue : new Date(cellValue as string);
+        if (Number.isNaN(cellDate.getTime())) return -1;
+        const cellMidnight = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+        if (cellMidnight < filterLocalDateAtMidnight) return -1;
+        if (cellMidnight > filterLocalDateAtMidnight) return 1;
+        return 0;
+      }
     }
   },
   {
