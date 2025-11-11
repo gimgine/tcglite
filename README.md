@@ -5,6 +5,7 @@
 Create a `.env.local` file for Pocketbase type generation.
 
 ```
+VITE_PB_URL=http://127.0.0.1:8090
 PB_TYPEGEN_URL=http://127.0.0.1:8090
 PB_TYPEGEN_EMAIL=adminEmail
 PB_TYPEGEN_PASSWORD=adminPassword
