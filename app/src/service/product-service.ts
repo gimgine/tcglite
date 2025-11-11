@@ -70,7 +70,8 @@ export class ProductService {
           language: product.Condition.split(' - ')[1] ?? 'English', // ex. 'Near Mint - Japanese'
           tcgPlayerId: product['TCGplayer Id'],
           marketPrice: product['TCG Market Price'],
-          marketPriceUpdated: new Date().toUTCString()
+          marketPriceUpdated: new Date().toUTCString(),
+          ourPrice: product['TCG Marketplace Price']
         });
       });
 

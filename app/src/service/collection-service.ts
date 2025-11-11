@@ -1,6 +1,5 @@
-import { Collections, type CollectionItemsRecord } from '@/types/pocketbase-types';
+import { Collections, type OrderItemsResponse, type OrdersRecord } from '@/types/pocketbase-types';
 import { parseListPullSheetCsv, parsePricingCsv, type ListPullSheetCsv, type PricingCsv } from '@/util/csv-parse';
-import { chunkArray } from '@/util/functions';
 import pb from '@/util/pocketbase';
 import { OrderItemService } from './order-item-service';
 import { OrderService } from './order-service';
@@ -54,6 +53,94 @@ export class CollectionService {
     }
 
     await batch.send();
+  };
+
+  scanForSoldCards = async () => {
+    // 1) Get all collections, sorted oldest → newest
+    const collections = (await pb.collection(Collections.Collections).getFullList()).sort(
+      (a, b) => new Date(a.purchased || 0).getTime() - new Date(b.purchased || 0).getTime()
+    );
+
+    // 2) Get all order items (expand order for orderDate)
+    const orderItems = await pb.collection<OrderItemsResponse<{ order: OrdersRecord }>>(Collections.OrderItems).getFullList({ expand: 'order' });
+
+    // 3) Build product → [{ qty, orderDate }]
+    const soldByProduct = new Map<string, { qty: number; orderDate: string }[]>();
+    for (const oi of orderItems) {
+      const productId = oi.product;
+      const orderDate = oi.expand?.order?.orderDate;
+      const qty = oi.quantity;
+      if (!productId || !orderDate || qty <= 0) continue;
+
+      const arr = soldByProduct.get(productId) ?? [];
+      arr.push({ qty, orderDate });
+      soldByProduct.set(productId, arr);
+    }
+
+    // 4) Sort each product’s sales by order date
+    for (const arr of soldByProduct.values()) {
+      arr.sort((a, b) => new Date(a.orderDate).getTime() - new Date(b.orderDate).getTime());
+    }
+
+    const batch = pb.createBatch();
+    let updatedCount = 0;
+    let totalAllocated = 0;
+
+    // 5) Process collections oldest → newest
+    for (const collection of collections) {
+      const collectionDate = new Date(collection.purchased || 0);
+      const collectionItems = await pb.collection(Collections.CollectionItems).getFullList({ filter: `collection="${collection.id}"` });
+
+      let update: null | { id: string; qtySold: number } = null;
+      for (const item of collectionItems) {
+        const cap = item.qtyAcquired ?? 0;
+        if (item.qtySold > 0) {
+          update = { id: item.id, qtySold: 0 };
+        }
+
+        if (!item.product || cap <= 0) continue;
+
+        const sales = soldByProduct.get(item.product);
+        if (!sales || sales.length === 0) continue;
+
+        // Filter only sales after collection’s purchase date
+        const validSales = sales.filter((s) => new Date(s.orderDate) >= collectionDate);
+        const availableQty = validSales.reduce((sum, s) => sum + s.qty, 0);
+        if (availableQty <= 0) continue;
+
+        const allocate = Math.min(cap, availableQty);
+        if (allocate <= 0) continue;
+
+        // Always overwrite qtySold (reset + new value)
+        update = { id: item.id, qtySold: allocate };
+
+        // Consume from pool
+        let toConsume = allocate;
+        while (toConsume > 0 && sales.length > 0) {
+          const sale = sales[0];
+          if (sale.qty <= toConsume) {
+            toConsume -= sale.qty;
+            sales.shift();
+          } else {
+            sale.qty -= toConsume;
+            toConsume = 0;
+          }
+        }
+
+        updatedCount++;
+        totalAllocated += allocate;
+      }
+
+      if (update) {
+        batch.collection(Collections.CollectionItems).update(update.id, { qtySold: update.qtySold });
+      }
+    }
+
+    if (updatedCount > 0) {
+      await batch.send();
+    }
+
+    return { updatedCount, totalAllocated };
   };
 
   getCollectionItemSeeds = async (listPullSheetCsvData: ListPullSheetCsv[], pricingCsvData: PricingCsv[]) => {

@@ -9,6 +9,7 @@
             <Checkbox v-model="showZeroQuantity" binary name="showZeroQuantity" />
             <label for="showZeroQuantity">Zero Quantity</label>
           </div>
+          <Button label="Scan for Sold Cards" @click="handleScan" />
         </div>
       </div>
     </div>
@@ -293,6 +294,13 @@ watch(
 // Methods ----------------------------------------------------------------------------
 const refreshCollectionItems = async (collectionId: string) => {
   collectionItems.value = await pb.collection(Collections.CollectionItems).getFullList({ filter: `collection="${collectionId}"`, expand: 'product' });
+};
+
+const handleScan = async () => {
+  const results = await inventoryService.scanForSoldCards();
+  toast.add({ severity: 'success', summary: 'Scan Complete', detail: `Updated ${results.updatedCount} item(s).`, life: 3000 });
+  await refreshCollectionItems(props.collectionId ?? '');
+  collections.value = await pb.collection(Collections.CollectionStats).getFullList();
 };
 
 const handleCollectionSelect = (collectionId: string) => {
