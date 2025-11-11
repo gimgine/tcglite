@@ -11,10 +11,10 @@ export enum Collections {
   Mfas = '_mfas',
   Otps = '_otps',
   Superusers = '_superusers',
+  CollectionItems = 'collectionItems',
   CollectionStats = 'collectionStats',
   Collections = 'collections',
   Expenses = 'expenses',
-  InventoryItems = 'inventoryItems',
   OrderItems = 'orderItems',
   Orders = 'orders',
   PricingRules = 'pricingRules',
@@ -101,7 +101,27 @@ export type SuperusersRecord = {
   verified?: boolean;
 };
 
-export type CollectionStatsRecord<TtotalMarketValue = unknown, TtotalQtyAcquired = unknown, TtotalQtySold = unknown, TtotalSoldValue = unknown> = {
+export type CollectionItemsRecord = {
+  collection?: RecordIdString;
+  created: IsoAutoDateString;
+  id: string;
+  listed?: IsoDateString;
+  marketPriceAtImport?: number;
+  product: RecordIdString;
+  qtyAcquired?: number;
+  qtySold?: number;
+  store: RecordIdString;
+  unitCogs?: number;
+  updated: IsoAutoDateString;
+};
+
+export type CollectionStatsRecord<
+  TtotalMarketValue = unknown,
+  TtotalMarketValueAtImport = unknown,
+  TtotalQtyAcquired = unknown,
+  TtotalQtySold = unknown,
+  TtotalSoldValue = unknown
+> = {
   id: string;
   name?: string;
   purchaseCost?: number;
@@ -109,6 +129,7 @@ export type CollectionStatsRecord<TtotalMarketValue = unknown, TtotalQtyAcquired
   purchasedFrom?: string;
   store?: RecordIdString;
   totalMarketValue?: null | TtotalMarketValue;
+  totalMarketValueAtImport?: null | TtotalMarketValueAtImport;
   totalQtyAcquired?: null | TtotalQtyAcquired;
   totalQtySold?: null | TtotalQtySold;
   totalSoldValue?: null | TtotalSoldValue;
@@ -141,25 +162,6 @@ export type ExpensesRecord = {
   type?: ExpensesTypeOptions;
   updated: IsoAutoDateString;
   url?: string;
-};
-
-export enum InventoryItemsSourceOptions {
-  'auto' = 'auto',
-  'manual' = 'manual'
-}
-export type InventoryItemsRecord = {
-  acquired?: IsoDateString;
-  collection?: RecordIdString;
-  created: IsoAutoDateString;
-  id: string;
-  marketPriceAtImport?: number;
-  product: RecordIdString;
-  qtyAcquired?: number;
-  qtySold?: number;
-  source: InventoryItemsSourceOptions;
-  store: RecordIdString;
-  unitCogs?: number;
-  updated: IsoAutoDateString;
 };
 
 export type OrderItemsRecord = {
@@ -324,16 +326,18 @@ export type ExternalauthsResponse<Texpand = unknown> = Required<ExternalauthsRec
 export type MfasResponse<Texpand = unknown> = Required<MfasRecord> & BaseSystemFields<Texpand>;
 export type OtpsResponse<Texpand = unknown> = Required<OtpsRecord> & BaseSystemFields<Texpand>;
 export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> & AuthSystemFields<Texpand>;
+export type CollectionItemsResponse<Texpand = unknown> = Required<CollectionItemsRecord> & BaseSystemFields<Texpand>;
 export type CollectionStatsResponse<
   TtotalMarketValue = unknown,
+  TtotalMarketValueAtImport = unknown,
   TtotalQtyAcquired = unknown,
   TtotalQtySold = unknown,
   TtotalSoldValue = unknown,
   Texpand = unknown
-> = Required<CollectionStatsRecord<TtotalMarketValue, TtotalQtyAcquired, TtotalQtySold, TtotalSoldValue>> & BaseSystemFields<Texpand>;
+> = Required<CollectionStatsRecord<TtotalMarketValue, TtotalMarketValueAtImport, TtotalQtyAcquired, TtotalQtySold, TtotalSoldValue>> &
+  BaseSystemFields<Texpand>;
 export type CollectionsResponse<Texpand = unknown> = Required<CollectionsRecord> & BaseSystemFields<Texpand>;
 export type ExpensesResponse<Texpand = unknown> = Required<ExpensesRecord> & BaseSystemFields<Texpand>;
-export type InventoryItemsResponse<Texpand = unknown> = Required<InventoryItemsRecord> & BaseSystemFields<Texpand>;
 export type OrderItemsResponse<Texpand = unknown> = Required<OrderItemsRecord> & BaseSystemFields<Texpand>;
 export type OrdersResponse<Texpand = unknown> = Required<OrdersRecord> & BaseSystemFields<Texpand>;
 export type PricingRulesResponse<Texpand = unknown> = Required<PricingRulesRecord> & BaseSystemFields<Texpand>;
@@ -353,10 +357,10 @@ export type CollectionRecords = {
   _mfas: MfasRecord;
   _otps: OtpsRecord;
   _superusers: SuperusersRecord;
+  collectionItems: CollectionItemsRecord;
   collectionStats: CollectionStatsRecord;
   collections: CollectionsRecord;
   expenses: ExpensesRecord;
-  inventoryItems: InventoryItemsRecord;
   orderItems: OrderItemsRecord;
   orders: OrdersRecord;
   pricingRules: PricingRulesRecord;
@@ -375,10 +379,10 @@ export type CollectionResponses = {
   _mfas: MfasResponse;
   _otps: OtpsResponse;
   _superusers: SuperusersResponse;
+  collectionItems: CollectionItemsResponse;
   collectionStats: CollectionStatsResponse;
   collections: CollectionsResponse;
   expenses: ExpensesResponse;
-  inventoryItems: InventoryItemsResponse;
   orderItems: OrderItemsResponse;
   orders: OrdersResponse;
   pricingRules: PricingRulesResponse;

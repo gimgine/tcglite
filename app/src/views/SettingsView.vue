@@ -176,10 +176,6 @@
           <Button label="Update Order Costs" class="w-fit" :loading="isUpdateShippingLoading" @click="updateShippingInformation" />
           <p class="text-xs italic">Recalculate costs on all orders using current shipping options.</p>
         </div>
-
-        <div class="flex flex-col gap-2 text-sm">
-          <FileUpload mode="basic" choose-label="Init Inventory" choose-icon="pi pi-upload" accept=".csv" auto @select="handleInventoryInit" />
-        </div>
       </div>
     </Panel>
   </div>
@@ -187,7 +183,6 @@
 
 <script setup lang="ts">
 import router from '@/router';
-import { InventoryService } from '@/service/inventory-service';
 import { OrderService } from '@/service/order-service';
 import { ProductService } from '@/service/product-service';
 import { StorePreferencesService } from '@/service/store-preferences-service';
@@ -377,17 +372,6 @@ const handleProductsRefresh = async (event: FileUploadSelectEvent) => {
   toast.add({
     severity: result.success ? 'success' : 'error',
     summary: result.success ? 'Products Synced' : 'Sync Failed',
-    detail: result.message,
-    life: 3000
-  });
-};
-
-const handleInventoryInit = async (event: FileUploadSelectEvent) => {
-  const service = new InventoryService();
-  const result = await service.initializeInventory(await parsePricingCsv(event.files[0]));
-  toast.add({
-    severity: result.success ? 'success' : 'error',
-    summary: result.success ? 'Inventory Initialized' : 'Init failed',
     detail: result.message,
     life: 3000
   });

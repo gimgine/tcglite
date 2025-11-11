@@ -5,7 +5,6 @@
       <div class="flex h-full flex-col justify-between gap-4">
         <div class="flex h-full flex-col gap-4">
           <span class="text-2xl font-semibold">Inventory</span>
-          <Button label="View Full Inventory" @click="$router.push({ name: 'inventory', params: { collectionId: 'full' } })" />
           <div class="flex items-center gap-2">
             <Checkbox v-model="showZeroQuantity" binary name="showZeroQuantity" />
             <label for="showZeroQuantity">Zero Quantity</label>
@@ -71,11 +70,11 @@
         <div class="mb-2 flex items-center justify-between">
           <RouterLink class="flex items-center gap-2" :to="{ name: 'inventory' }">
             <i class="pi pi-chevron-left"></i>
-            <span class="text-lg font-semibold">{{ collections.find((c) => c.id === collectionId)?.name ?? 'Full Inventory' }}</span>
+            <span class="text-lg font-semibold">{{ collections.find((c) => c.id === collectionId)?.name ?? 'Back' }}</span>
           </RouterLink>
           <Button icon="pi-trash pi" label="Selected" severity="danger" :disabled="!selectedRows.length" @click="handleDeleteSelected" />
         </div>
-        <AgGridVue ref="grid" class="h-[calc(100vh-130px)]" :grid-options :column-defs :row-data="filteredInventoryItems" />
+        <AgGridVue ref="grid" class="h-[calc(100vh-130px)]" :grid-options :column-defs :row-data="collectionItems" />
       </div>
     </div>
   </div>
@@ -135,9 +134,8 @@
 <script setup lang="ts">
 import { useAgGridTheme } from '@/composables/useAgGridTheme';
 import router from '@/router';
-import { InventoryService } from '@/service/inventory-service';
-import { useInventoryStore, type InventoryItemsExpandProduct } from '@/store/inventory-store';
-import { Collections, type CollectionStatsRecord } from '@/types/pocketbase-types';
+import { CollectionService } from '@/service/collection-service';
+import { Collections, type CollectionItemsResponse, type CollectionStatsRecord, type ProductsRecord } from '@/types/pocketbase-types';
 import { formatCurrency } from '@/util/functions';
 import pb from '@/util/pocketbase';
 import { Form, type FormInstance, type FormSubmitEvent } from '@primevue/forms';
@@ -158,7 +156,8 @@ import {
   useToast,
   type FileUploadSelectEvent
 } from 'primevue';
-import { computed, nextTick, onMounted, reactive, ref, useTemplateRef } from 'vue';
+import { computed, nextTick, onMounted, reactive, ref, useTemplateRef, watch } from 'vue';
+
 // Types ------------------------------------------------------------------------------
 interface FormValues {
   name?: string;
@@ -166,6 +165,7 @@ interface FormValues {
   purchaseCost?: number;
   purchased?: string;
 }
+type CollectionItemsExpandProduct = CollectionItemsResponse<{ product: ProductsRecord }>;
 
 // Component Info (props/emits) -------------------------------------------------------
 const props = defineProps<{ collectionId?: string }>();
@@ -176,11 +176,10 @@ const form = useTemplateRef<FormInstance>('form');
 
 // Variables --------------------------------------------------------------------------
 const toast = useToast();
-const inventoryStore = useInventoryStore();
-const inventoryService = new InventoryService();
+const inventoryService = new CollectionService();
 const theme = useAgGridTheme();
 
-const gridOptions: GridOptions<InventoryItemsExpandProduct> = {
+const gridOptions: GridOptions<CollectionItemsExpandProduct> = {
   defaultColDef: { filter: true },
   theme: theme.value,
   pagination: true,
@@ -200,7 +199,7 @@ const gridOptions: GridOptions<InventoryItemsExpandProduct> = {
   }
 };
 
-const columnDefs: ColDef<InventoryItemsExpandProduct>[] = [
+const columnDefs: ColDef<CollectionItemsExpandProduct>[] = [
   { field: 'expand.product.name', headerName: 'Name', sort: 'asc' },
   { field: 'expand.product.set', headerName: 'Set' },
   { field: 'expand.product.number', headerName: 'Number' },
@@ -221,10 +220,10 @@ const columnDefs: ColDef<InventoryItemsExpandProduct>[] = [
     valueFormatter: (params) => formatCurrency(params.data?.marketPriceAtImport) ?? ''
   },
   {
-    headerName: 'Acquired',
-    field: 'acquired',
+    headerName: 'List Date',
+    field: 'listed',
     valueGetter: (params) => {
-      const utc = params.data?.acquired as string | undefined;
+      const utc = params.data?.listed as string | undefined;
       if (!utc) return null;
       const d = new Date(utc);
       return Number.isNaN(d.getTime()) ? null : d;
@@ -270,26 +269,9 @@ const initialValues = reactive({
 const listPullSheet = ref();
 const pricing = ref();
 
-const filteredInventoryItems = computed(() => {
-  const items = inventoryStore.inventory ?? [];
+const collectionItems = ref([]);
 
-  const wantAllCollections = !props.collectionId || props.collectionId === 'full';
-  const wantAllQty = showZeroQuantity.value;
-
-  return items.filter((item) => {
-    if (!wantAllCollections && String(item.collection) !== String(props.collectionId)) {
-      return false;
-    }
-
-    if (!wantAllQty) {
-      const remaining = Number(item.qtyAcquired ?? 0) - Number(item.qtySold ?? 0);
-      if (remaining <= 0) return false;
-    }
-
-    return true;
-  });
-});
-const selectedRows = ref<InventoryItemsExpandProduct[]>([]);
+const selectedRows = ref<CollectionItemsExpandProduct[]>([]);
 
 // Provided ---------------------------------------------------------------------------
 
@@ -298,8 +280,21 @@ const selectedRows = ref<InventoryItemsExpandProduct[]>([]);
 // Injections -------------------------------------------------------------------------
 
 // Watchers ---------------------------------------------------------------------------
+watch(
+  () => props.collectionId,
+  async (newValue) => {
+    if (newValue) {
+      collectionItems.value = await pb.collection(Collections.CollectionItems).getFullList({ filter: `collection="${newValue}"`, expand: 'product' });
+    }
+  },
+  { immediate: true }
+);
 
 // Methods ----------------------------------------------------------------------------
+const refreshCollectionItems = async (collectionId: string) => {
+  collectionItems.value = await pb.collection(Collections.CollectionItems).getFullList({ filter: `collection="${collectionId}"`, expand: 'product' });
+};
+
 const handleCollectionSelect = (collectionId: string) => {
   router.push({ name: 'inventory', params: { collectionId } });
 };
@@ -349,7 +344,9 @@ const handleSubmit = async (event: FormSubmitEvent) => {
       await pb.collection(Collections.Collections).update(event.values.id, event.values);
     } else {
       const res = await pb.collection(Collections.Collections).create({ store: pb.authStore.record?.store, ...event.values });
-      await inventoryService.addToCollection(res, listPullSheet.value, pricing.value);
+      // TODO add additional field to specify listing date
+      await inventoryService.addToCollection(res.id, res.purchased, listPullSheet.value, pricing.value);
+      await inventoryService.updateCogs(res.id);
     }
 
     event.reset();
@@ -363,18 +360,17 @@ const handleDeleteSelected = async () => {
   const batch = pb.createBatch();
 
   for (const selectedRow of selectedRows.value) {
-    batch.collection(Collections.InventoryItems).delete(selectedRow.id);
+    batch.collection(Collections.CollectionItems).delete(selectedRow.id);
   }
 
   await batch.send();
   toast.add({ severity: 'success', summary: 'Inventory Items Deleted', detail: 'Selected inventory items were deleted successfully.', life: 3000 });
   selectedRows.value = [];
-  await inventoryStore.refresh();
+  if (props.collectionId) await refreshCollectionItems(props.collectionId);
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------
 onMounted(async () => {
-  inventoryStore.refresh();
   collections.value = await pb.collection(Collections.CollectionStats).getFullList();
 
   if (import.meta.env.DEV) {
