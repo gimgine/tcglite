@@ -152,7 +152,12 @@ const columnDefs: ColDef<OrdersRecord>[] = [
     field: 'orderDate',
     headerName: 'Order Date',
     valueFormatter: (params: ValueFormatterParams) => new Date(params.data.orderDate).toLocaleDateString(),
-    sort: 'desc'
+    sort: 'desc',
+    comparator: (a, b) => {
+      const timeA = a ? new Date(a).getTime() : Infinity;
+      const timeB = b ? new Date(b).getTime() : Infinity;
+      return timeA - timeB;
+    }
   },
   { field: 'itemCount', maxWidth: 150 },
   { field: 'totalPrice', maxWidth: 150, valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.data.totalPrice) ?? '' },

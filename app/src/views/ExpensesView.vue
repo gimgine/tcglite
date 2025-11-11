@@ -1,9 +1,20 @@
 <template>
   <div class="grid grid-cols-12 gap-4">
-    <div class="col-span-12 md:col-span-3">
+    <div class="col-span-12 md:col-span-4">
       <StatIndicator label="Total Expenses" :details="totalExpenses()" is-currency />
     </div>
-    <div class="col-span-12 md:col-span-3">
+    <div class="relative col-span-12 md:col-span-4">
+      <Select
+        v-model="selectedType"
+        class="!absolute top-5 right-6 w-32"
+        size="small"
+        :options="typeOptions"
+        option-value="value"
+        option-label="label"
+      />
+      <StatIndicator label="Total Expenses For Type" :details="expensesForType" is-currency />
+    </div>
+    <div class="col-span-12 md:col-span-4">
       <StatIndicator label="Average COGS" :details="averageCogs()" is-currency />
     </div>
 
@@ -116,8 +127,8 @@ import {
   FileUpload,
   type FileUploadSelectEvent
 } from 'primevue';
-import { onMounted, reactive, ref, nextTick, useTemplateRef } from 'vue';
-import type { GridOptions, ColDef, ValueFormatterParams, ValueGetterParams, ICellRendererParams } from 'ag-grid-community';
+import { onMounted, reactive, ref, nextTick, useTemplateRef, computed } from 'vue';
+import type { GridOptions, ColDef, ValueFormatterParams, ICellRendererParams } from 'ag-grid-community';
 import { AgGridVue } from 'ag-grid-vue3';
 import { useAgGridTheme } from '@/composables/useAgGridTheme';
 import { parseExpensesCsv, type ExpensesCsv } from '@/util/csv-parse';
@@ -172,7 +183,12 @@ const columnDefs: ColDef<ExpensesRecord>[] = [
   { field: 'quantity' },
   {
     field: 'purchaseDate',
-    valueGetter: (params: ValueGetterParams) => (params.data.purchaseDate ? new Date(params.data.purchaseDate).toLocaleDateString() : '-')
+    valueFormatter: (params: ValueFormatterParams) => (params.data.purchaseDate ? new Date(params.data.purchaseDate).toLocaleDateString() : '-'),
+    comparator: (a, b) => {
+      const timeA = a ? new Date(a).getTime() : Infinity;
+      const timeB = b ? new Date(b).getTime() : Infinity;
+      return timeA - timeB;
+    }
   },
   {
     field: 'url',
@@ -207,6 +223,11 @@ const typeOptions = [
 ];
 
 const uploadExpenses = ref<ExpensesCsv[]>();
+
+const selectedType = ref<ExpensesTypeOptions>(ExpensesTypeOptions.cards);
+const expensesForType = computed(() =>
+  expenses.value.reduce((sum, order) => (order.type === selectedType.value ? sum + (order.price ?? 0) : sum), 0)
+);
 
 // Provided ---------------------------------------------------------------------------
 
