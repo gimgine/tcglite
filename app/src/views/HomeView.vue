@@ -113,6 +113,7 @@ import {
   type ValueGetterParams
 } from 'ag-grid-community';
 import { AgGridVue } from 'ag-grid-vue3';
+import { CollectionService } from '@/service/collection-service';
 import { Button, Dialog, FileUpload, type FileUploadSelectEvent, useToast } from 'primevue';
 import { computed, nextTick, ref } from 'vue';
 // Types ------------------------------------------------------------------------------
@@ -128,6 +129,7 @@ const orderStore = useOrderStore();
 const theme = useAgGridTheme();
 
 const orderItemService = new OrderItemService();
+const collectionService = new CollectionService();
 
 const gridOptions: GridOptions<OrdersRecord> = {
   theme: theme.value,
@@ -227,6 +229,7 @@ const handleOrdersUpload = async () => {
 
     if (pullSheet.value) {
       await orderItemService.create({ file: pullSheet.value });
+      await collectionService.scanForSoldCards();
     }
 
     toast.add({

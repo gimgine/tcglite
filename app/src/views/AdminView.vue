@@ -11,6 +11,7 @@
               <Select v-model="selectedStore" :options="stores" option-label="name" placeholder="Store" />
             </div>
           </Panel>
+          <Button label="Split up Order Items" class="mt-2" @click="splitOrderItems" />
         </div>
         <div v-show="!pb.authStore.isSuperuser">
           <Form ref="loginForm" class="flex flex-col gap-2" @submit="login">
@@ -47,6 +48,28 @@ const login = async (event: FormSubmitEvent) => {
 
 const getStores = async () => {
   stores.value = await pb.collection(Collections.Stores).getFullList();
+};
+
+const splitOrderItems = async () => {
+  const toSplit = await pb.collection(Collections.OrderItems).getFullList({ filter: 'quantity>1' });
+
+  if (!toSplit.length) return;
+
+  const totalQuantity = toSplit.reduce((sum, item) => sum + item.quantity, 0);
+  console.log('Expected new record quantity: ', totalQuantity);
+
+  const batch = pb.createBatch();
+
+  let count = 0;
+  for (const item of toSplit) {
+    batch.collection(Collections.OrderItems).delete(item.id);
+    for (let i = item.quantity; i > 0; i--) {
+      batch.collection(Collections.OrderItems).create({ order: item.order, product: item.product, store: item.store, quantity: 1 });
+      count++;
+    }
+  }
+
+  if (totalQuantity === count) await batch.send();
 };
 
 onMounted(async () => {

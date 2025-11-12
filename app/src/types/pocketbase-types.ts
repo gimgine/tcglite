@@ -165,7 +165,7 @@ export type ExpensesRecord = {
 };
 
 export type OrderItemsRecord = {
-  collectionItem?: RecordIdString[];
+  collectionItem?: RecordIdString;
   created: IsoAutoDateString;
   id: string;
   order?: RecordIdString;

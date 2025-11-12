@@ -32,6 +32,7 @@ import { Button, Dialog, SelectButton, useToast } from 'primevue';
 import { onMounted, ref, watch } from 'vue';
 import BulkOrders from './BulkOrders.vue';
 import SingleOrder from './SingleOrder.vue';
+import { CollectionService } from '@/service/collection-service';
 // Types ------------------------------------------------------------------------------
 
 // Component Info (props/emits) -------------------------------------------------------
@@ -47,7 +48,8 @@ const toast = useToast();
 const orderStore = useOrderStore();
 
 const orderService = new OrderService();
-const cardService = new OrderItemService();
+const orderItemService = new OrderItemService();
+const collectionService = new CollectionService();
 
 const isUploadModalOpen = ref(false);
 const isYesLoading = ref(false);
@@ -90,7 +92,7 @@ const handleYes = async () => {
       });
     });
 
-  await cardService
+  await orderItemService
     .create({ cards: props.pullSheet })
     .then(() => {
       toast.add({
@@ -113,6 +115,9 @@ const handleYes = async () => {
       isUploadModalOpen.value = false;
       router.push({ name: 'upload' });
     });
+
+  await collectionService.scanForSoldCards();
+  toast.add({ severity: 'success', summary: 'Collections Updated', detail: 'Collections were updated with sold cards.', life: 3000 });
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------

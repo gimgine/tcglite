@@ -5,11 +5,12 @@
       <div class="flex h-full flex-col justify-between gap-4">
         <div class="flex h-full flex-col gap-4">
           <span class="text-2xl font-semibold">Inventory</span>
-          <div class="flex items-center gap-2">
-            <Checkbox v-model="showZeroQuantity" binary name="showZeroQuantity" />
-            <label for="showZeroQuantity">Zero Quantity</label>
-          </div>
-          <Button label="Scan for Sold Cards" @click="handleScan" />
+          <Button
+            icon="pi pi-search"
+            :label="collectionId ? 'Scan Collection' : 'Scan All'"
+            @click="collectionId ? handleScan(collectionId) : handleScan()"
+          />
+          <Button class="mt-auto" icon="pi pi-refresh" severity="danger" label="Reset Allocations" text @click="handleResetAllocations" />
         </div>
       </div>
     </div>
@@ -144,7 +145,6 @@ import { type ColDef, type GridOptions } from 'ag-grid-community';
 import { AgGridVue } from 'ag-grid-vue3';
 import {
   Button,
-  Checkbox,
   DatePicker,
   Dialog,
   FileUpload,
@@ -258,7 +258,6 @@ const collections = ref<CollectionStatsRecord[]>([]);
 
 const isAddCollectionModalVisible = ref(false);
 const showCollectionSelection = computed(() => !props.collectionId);
-const showZeroQuantity = ref(false);
 const isSubmitLoading = ref(false);
 
 const initialValues = reactive({
@@ -296,10 +295,43 @@ const refreshCollectionItems = async (collectionId: string) => {
   collectionItems.value = await pb.collection(Collections.CollectionItems).getFullList({ filter: `collection="${collectionId}"`, expand: 'product' });
 };
 
-const handleScan = async () => {
-  const results = await inventoryService.scanForSoldCards();
-  toast.add({ severity: 'success', summary: 'Scan Complete', detail: `Updated ${results.updatedCount} item(s).`, life: 3000 });
+const handleScan = async (collectionId?: string) => {
+  if (!collectionId) {
+    await inventoryService.scanForSoldCards();
+    toast.add({
+      severity: 'success',
+      summary: 'Scan Complete',
+      life: 3000
+    });
+  } else {
+    const results = await inventoryService.scanForSoldCardsForCollection(collectionId);
+    toast.add({
+      severity: 'success',
+      summary: 'Scan Complete',
+      detail: `Updated ${results.itemsUpdated} collection items.\nUpdated ${results.ordersUpdated} order items.\nAssigned ${results.unitsAssigned} units.`,
+      life: 3000
+    });
+  }
   await refreshCollectionItems(props.collectionId ?? '');
+  collections.value = await pb.collection(Collections.CollectionStats).getFullList();
+};
+
+const handleResetAllocations = async () => {
+  const allItems = await pb.collection(Collections.CollectionItems).getFullList();
+  const allOrderItems = await pb.collection(Collections.OrderItems).getFullList({ filter: 'collectionItem != null' });
+
+  const batch = pb.createBatch();
+
+  for (const item of allItems) {
+    batch.collection(Collections.CollectionItems).update(item.id, { qtySold: 0 });
+  }
+
+  for (const item of allOrderItems) {
+    batch.collection(Collections.OrderItems).update(item.id, { collectionItem: null });
+  }
+
+  await batch.send();
+  toast.add({ severity: 'success', summary: 'Allocations Reset', detail: 'Order and collection items were reset.', life: 3000 });
   collections.value = await pb.collection(Collections.CollectionStats).getFullList();
 };
 

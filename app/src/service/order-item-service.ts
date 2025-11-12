@@ -15,15 +15,6 @@ export class OrderItemService {
 
     const csvData = config.file ? await parsePullSheetCsv(config.file) : config.cards!;
 
-    // end result --> create orderItems records for each card
-    // orderId, productId, store, quantity
-    // 1. parse CSV
-    // 2. get productId for all cards in CSV using tcgPlayerId = SkuId
-    // 3. get all existing records in orderItems for the orderId
-    // 4. filter out records that have already been created
-    // 5. create new requests for each new order item
-    // 6. submit
-
     const products = await this.productService.getProductsForTcgPlayerIds(csvData.map((c) => c.SkuId));
 
     if (products.length !== csvData.length) {
@@ -87,15 +78,16 @@ export class OrderItemService {
       });
 
       for (const order of orders) {
-        const request: OrderItemRequest = {
-          order: order.orderNumber,
-          product: productsForPullSheet[row.SkuId].id,
-          quantity: Number(order.quantity),
-          store: pb.authStore.record?.store,
-          tcgPlayerId: row.SkuId
-        };
-
-        cardRequests.push(request);
+        for (let i = 0; i < Number(order.quantity); i++) {
+          const request: OrderItemRequest = {
+            order: order.orderNumber,
+            product: productsForPullSheet[row.SkuId].id,
+            quantity: 1,
+            store: pb.authStore.record?.store,
+            tcgPlayerId: row.SkuId
+          };
+          cardRequests.push(request);
+        }
       }
     }
 

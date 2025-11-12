@@ -11,6 +11,8 @@ interface NewInventorySeed {
   marketPrice: number;
 }
 
+type OrderWithExpand = OrderItemsResponse<{ order: OrdersRecord }>;
+
 export class CollectionService {
   orderService = new OrderService();
   orderItemService = new OrderItemService();
@@ -56,91 +58,134 @@ export class CollectionService {
   };
 
   scanForSoldCards = async () => {
-    // 1) Get all collections, sorted oldest → newest
-    const collections = (await pb.collection(Collections.Collections).getFullList()).sort(
-      (a, b) => new Date(a.purchased || 0).getTime() - new Date(b.purchased || 0).getTime()
-    );
+    const collections = await pb.collection(Collections.Collections).getFullList();
 
-    // 2) Get all order items (expand order for orderDate)
-    const orderItems = await pb.collection<OrderItemsResponse<{ order: OrdersRecord }>>(Collections.OrderItems).getFullList({ expand: 'order' });
+    for (const id of collections) {
+      await this.scanForSoldCardsForCollection(id.id);
+    }
+  };
 
-    // 3) Build product → [{ qty, orderDate }]
-    const soldByProduct = new Map<string, { qty: number; orderDate: string }[]>();
+  scanForSoldCardsForCollection = async (
+    collectionId: string,
+    opts?: {
+      respectListedDate?: boolean; // default true
+    }
+  ) => {
+    const respectListedDate = opts?.respectListedDate ?? true;
+
+    // 1) Load the collection & its items
+    const collection = await pb.collection(Collections.Collections).getOne(collectionId);
+    const collectionPurchasedISO = collection.purchased;
+    if (!collectionPurchasedISO) {
+      throw new Error(`Collection ${collectionId} is missing 'purchased' date.`);
+    }
+    const collectionPurchased = new Date(collectionPurchasedISO);
+
+    const collectionItems = await pb.collection(Collections.CollectionItems).getFullList({
+      filter: `collection="${collectionId}"`
+    });
+
+    // Deterministic item order (optional): earliest listed first, then by id
+    collectionItems.sort((a, b) => {
+      const aTime = a.listed ? new Date(a.listed).getTime() : 0;
+      const bTime = b.listed ? new Date(b.listed).getTime() : 0;
+      if (aTime !== bTime) return aTime - bTime;
+      return a.id.localeCompare(b.id);
+    });
+
+    // 2) Load UNASSIGNED orderItems on/after the collection's purchase date
+    //    We filter server-side: order.orderDate >= collection.purchased AND collectionItem empty
+    const orderItems = await pb.collection(Collections.OrderItems).getFullList<OrderWithExpand>({
+      filter: `order.orderDate >= "${collectionPurchasedISO}" && (collectionItem = null || collectionItem = "")`,
+      expand: 'order',
+      sort: 'order.orderDate' // oldest first
+    });
+
+    // 3) Build per-product FIFO queues of unassigned orderItems
+    const queueByProduct = new Map<string, OrderWithExpand[]>();
     for (const oi of orderItems) {
       const productId = oi.product;
       const orderDate = oi.expand?.order?.orderDate;
-      const qty = oi.quantity;
-      if (!productId || !orderDate || qty <= 0) continue;
-
-      const arr = soldByProduct.get(productId) ?? [];
-      arr.push({ qty, orderDate });
-      soldByProduct.set(productId, arr);
+      if (!productId || !orderDate) continue; // must have product & order.date
+      const arr = queueByProduct.get(productId) ?? [];
+      arr.push(oi);
+      queueByProduct.set(productId, arr);
     }
 
-    // 4) Sort each product’s sales by order date
-    for (const arr of soldByProduct.values()) {
-      arr.sort((a, b) => new Date(a.orderDate).getTime() - new Date(b.orderDate).getTime());
-    }
-
+    // 4) Allocate: walk each collection item, fill up to (qtyAcquired - qtySold)
     const batch = pb.createBatch();
-    let updatedCount = 0;
-    let totalAllocated = 0;
+    let itemsUpdated = 0;
+    let ordersUpdated = 0;
+    let totalAssigned = 0;
 
-    // 5) Process collections oldest → newest
-    for (const collection of collections) {
-      const collectionDate = new Date(collection.purchased || 0);
-      const collectionItems = await pb.collection(Collections.CollectionItems).getFullList({ filter: `collection="${collection.id}"` });
+    for (const ci of collectionItems) {
+      const cap = ci.qtyAcquired ?? 0;
+      const currentSold = ci.qtySold ?? 0;
+      if (!ci.product || cap <= 0 || currentSold >= cap) continue;
 
-      let update: null | { id: string; qtySold: number } = null;
-      for (const item of collectionItems) {
-        const cap = item.qtyAcquired ?? 0;
-        if (item.qtySold > 0) {
-          update = { id: item.id, qtySold: 0 };
+      const queue = queueByProduct.get(ci.product);
+      if (!queue || queue.length === 0) continue;
+
+      // Determine the earliest allowable order date for this item
+      // Orders must be on/after the collection purchased date (already filtered)
+      // If we also respect listed date, ensure orderDate >= ci.listed
+      const listedCutoff = respectListedDate && ci.listed ? new Date(ci.listed) : collectionPurchased;
+
+      let remaining = cap - currentSold;
+      let added = 0;
+
+      // Consume oldest orders that satisfy the listed cutoff
+      // (Since queue is sorted by order.orderDate, we can skip until cutoff)
+      let i = 0;
+      while (remaining > 0 && i < queue.length) {
+        const oi = queue[i];
+        const orderDateISO = oi.expand?.order?.orderDate;
+        if (!orderDateISO) {
+          i++;
+          continue;
         }
 
-        if (!item.product || cap <= 0) continue;
-
-        const sales = soldByProduct.get(item.product);
-        if (!sales || sales.length === 0) continue;
-
-        // Filter only sales after collection’s purchase date
-        const validSales = sales.filter((s) => new Date(s.orderDate) >= collectionDate);
-        const availableQty = validSales.reduce((sum, s) => sum + s.qty, 0);
-        if (availableQty <= 0) continue;
-
-        const allocate = Math.min(cap, availableQty);
-        if (allocate <= 0) continue;
-
-        // Always overwrite qtySold (reset + new value)
-        update = { id: item.id, qtySold: allocate };
-
-        // Consume from pool
-        let toConsume = allocate;
-        while (toConsume > 0 && sales.length > 0) {
-          const sale = sales[0];
-          if (sale.qty <= toConsume) {
-            toConsume -= sale.qty;
-            sales.shift();
-          } else {
-            sale.qty -= toConsume;
-            toConsume = 0;
-          }
+        const orderDate = new Date(orderDateISO);
+        if (orderDate < listedCutoff) {
+          // This order is too early for this item—skip it for this item,
+          // but don't remove from the global queue; it might fit a different item with an earlier listed date.
+          i++;
+          continue;
         }
 
-        updatedCount++;
-        totalAllocated += allocate;
+        // Assign this order to the collection item
+        batch.collection(Collections.OrderItems).update(oi.id, {
+          // collectionItem is a single relation now:
+          collectionItem: ci.id
+        });
+        ordersUpdated++;
+        totalAssigned++;
+
+        // Remove it from the queue so it can't be reused
+        queue.splice(i, 1);
+
+        // Increment the item's sold count locally
+        remaining -= 1;
+        added += 1;
       }
 
-      if (update) {
-        batch.collection(Collections.CollectionItems).update(update.id, { qtySold: update.qtySold });
+      if (added > 0) {
+        batch.collection(Collections.CollectionItems).update(ci.id, {
+          qtySold: currentSold + added
+        });
+        itemsUpdated++;
       }
     }
 
-    if (updatedCount > 0) {
+    if (itemsUpdated > 0 || ordersUpdated > 0) {
       await batch.send();
     }
 
-    return { updatedCount, totalAllocated };
+    return {
+      itemsUpdated,
+      ordersUpdated,
+      unitsAssigned: totalAssigned
+    };
   };
 
   getCollectionItemSeeds = async (listPullSheetCsvData: ListPullSheetCsv[], pricingCsvData: PricingCsv[]) => {
