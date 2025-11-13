@@ -46,7 +46,7 @@ export class CollectionService {
     const collectionStats = await pb.collection(Collections.CollectionStats).getOne(collectionId);
     const collectionItems = await pb.collection(Collections.CollectionItems).getFullList({ filter: `collection="${collectionId}"` });
 
-    const purchaseRate = (collectionStats.purchaseCost as number) / (collectionStats.totalQtyAcquired as number);
+    const purchaseRate = (collectionStats.totalQtyAcquired as number) / (collectionStats.purchaseCost as number);
 
     const batch = pb.createBatch();
 

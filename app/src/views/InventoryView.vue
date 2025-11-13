@@ -10,6 +10,7 @@
             :label="collectionId ? 'Scan Collection' : 'Scan All'"
             @click="collectionId ? handleScan(collectionId) : handleScan()"
           />
+          <Button v-show="collectionId" icon="pi pi-refresh" label="Unit COGS" @click="handleUpdateUnitCogs(collectionId!)" />
           <Button class="mt-auto" icon="pi pi-refresh" severity="danger" label="Reset Allocations" text @click="handleResetAllocations" />
         </div>
       </div>
@@ -70,10 +71,13 @@
 
       <div v-show="!showCollectionSelection">
         <div class="mb-2 flex items-center justify-between">
-          <RouterLink class="flex items-center gap-2" :to="{ name: 'inventory' }">
-            <i class="pi pi-chevron-left"></i>
-            <span class="text-lg font-semibold">{{ collections.find((c) => c.id === collectionId)?.name ?? 'Back' }}</span>
-          </RouterLink>
+          <div class="flex items-center gap-2">
+            <RouterLink class="flex items-center gap-2" :to="{ name: 'inventory' }">
+              <i class="pi pi-chevron-left"></i>
+              <span class="text-lg font-semibold">{{ collections.find((c) => c.id === collectionId)?.name ?? 'Back' }}</span>
+            </RouterLink>
+            <Button icon="pi pi-plus" text @click="handleAddCollection" />
+          </div>
           <Button icon="pi-trash pi" label="Selected" severity="danger" :disabled="!selectedRows.length" @click="handleDeleteSelected" />
         </div>
         <AgGridVue ref="grid" class="h-[calc(100vh-130px)]" :grid-options :column-defs :row-data="collectionItems" />
@@ -81,15 +85,15 @@
     </div>
   </div>
 
-  <Dialog v-model:visible="isAddCollectionModalVisible" modal header="New Collection">
+  <Dialog v-model:visible="isAddCollectionModalVisible" class="w-xl" modal :header="collectionId ? 'Add to Collection' : 'New Collection'">
     <Form v-slot="$form" ref="form" class="flex flex-col gap-4" :initial-values :resolver @submit="handleSubmit">
-      <div class="flex w-full flex-col gap-1">
+      <div v-if="!collectionId" class="flex w-full flex-col gap-1">
         <label for="name" class="ml-3 text-sm">Name</label>
         <InputText name="name" />
         <Message v-if="$form.name?.invalid" severity="error" size="small" variant="simple">{{ $form.name.error?.message }}</Message>
       </div>
 
-      <div class="flex w-full items-center gap-2">
+      <div v-if="!collectionId" class="flex w-full items-center gap-2">
         <div class="flex w-full flex-col gap-1">
           <label for="purchaseCost" class="ml-3 text-sm">Cost</label>
           <IconField>
@@ -108,13 +112,23 @@
         </div>
       </div>
 
-      <div class="flex w-1/2 flex-col gap-1 pr-1">
-        <label for="purchased" class="ml-3 text-sm">Purchase Date</label>
-        <IconField>
-          <InputIcon class="pi pi-calendar" />
-          <DatePicker name="purchased" />
-        </IconField>
-        <Message v-if="$form.purchased?.invalid" severity="error" size="small" variant="simple">{{ $form.purchased.error?.message }}</Message>
+      <div class="flex w-full items-center gap-2">
+        <div v-if="!collectionId" :class="`flex ${showListDateInput ? 'w-full' : 'w-1/2 pr-1'} flex-col gap-1`">
+          <label for="purchased" class="ml-3 text-sm">Purchase Date</label>
+          <InputGroup>
+            <DatePicker name="purchased" />
+            <InputGroupAddon>
+              <Checkbox v-model="showListDateInput" v-tooltip.top="'Specify listing date'" binary />
+            </InputGroupAddon>
+          </InputGroup>
+          <Message v-if="$form.purchased?.invalid" severity="error" size="small" variant="simple">{{ $form.purchased.error?.message }}</Message>
+        </div>
+
+        <div v-show="showListDateInput" class="flex w-full flex-col gap-1">
+          <label for="listed" class="ml-3 text-sm">List Date</label>
+          <DatePicker name="listed" />
+          <Message v-if="$form.listed?.invalid" severity="error" size="small" variant="simple">{{ $form.listed.error?.message }}</Message>
+        </div>
       </div>
 
       <div class="dark:border-surface-800 dark:bg-surface-950 flex flex-col gap-4 rounded-md border p-4">
@@ -155,6 +169,9 @@ import {
   Knob,
   Message,
   useToast,
+  InputGroup,
+  InputGroupAddon,
+  Checkbox,
   type FileUploadSelectEvent
 } from 'primevue';
 import { computed, nextTick, onMounted, reactive, ref, useTemplateRef, watch } from 'vue';
@@ -165,6 +182,7 @@ interface FormValues {
   purchasedFrom?: string;
   purchaseCost?: number;
   purchased?: string;
+  listed?: string;
 }
 type CollectionItemsExpandProduct = CollectionItemsResponse<{ product: ProductsRecord }>;
 
@@ -258,13 +276,15 @@ const collections = ref<CollectionStatsRecord[]>([]);
 
 const isAddCollectionModalVisible = ref(false);
 const showCollectionSelection = computed(() => !props.collectionId);
+const showListDateInput = ref(false);
 const isSubmitLoading = ref(false);
 
 const initialValues = reactive({
   name: '',
   purchasedFrom: '',
   purchaseCost: null,
-  purchased: ''
+  purchased: '',
+  listed: ''
 });
 const listPullSheet = ref();
 const pricing = ref();
@@ -283,7 +303,7 @@ const selectedRows = ref<CollectionItemsExpandProduct[]>([]);
 watch(
   () => props.collectionId,
   async (newValue) => {
-    if (newValue) {
+    if (newValue && newValue != '') {
       collectionItems.value = await pb.collection(Collections.CollectionItems).getFullList({ filter: `collection="${newValue}"`, expand: 'product' });
     }
   },
@@ -311,9 +331,14 @@ const handleScan = async (collectionId?: string) => {
       detail: `Updated ${results.itemsUpdated} collection items.\nUpdated ${results.ordersUpdated} order items.\nAssigned ${results.unitsAssigned} units.`,
       life: 3000
     });
+    await refreshCollectionItems(props.collectionId ?? '');
   }
-  await refreshCollectionItems(props.collectionId ?? '');
   collections.value = await pb.collection(Collections.CollectionStats).getFullList();
+};
+
+const handleUpdateUnitCogs = async (collectionId: string) => {
+  await inventoryService.updateCogs(collectionId);
+  toast.add({ severity: 'success', summary: 'Unit COGS Refreshed', life: 3000 });
 };
 
 const handleResetAllocations = async () => {
@@ -341,6 +366,12 @@ const handleCollectionSelect = (collectionId: string) => {
 
 const handleAddCollection = () => {
   isAddCollectionModalVisible.value = true;
+
+  if (props.collectionId) {
+    showListDateInput.value = true;
+  } else {
+    showListDateInput.value = false;
+  }
 };
 
 const handleListPullSheetUpload = (event: FileUploadSelectEvent) => {
@@ -354,20 +385,28 @@ const handlePricingUpload = (event: FileUploadSelectEvent) => {
 const resolver = ({ values }: { values: FormValues }) => {
   const errors: Record<string, { message: string }[]> = {};
 
-  if (!values.name) {
+  if (!props.collectionId && !values.name) {
     errors.name = [{ message: 'Name is required' }];
   }
 
-  if (!values.purchasedFrom) {
+  if (!props.collectionId && !values.purchasedFrom) {
     errors.purchasedFrom = [{ message: 'Purchased from is required' }];
   }
 
-  if (!values.purchaseCost) {
+  if (!props.collectionId && !values.purchaseCost) {
     errors.purchaseCost = [{ message: 'Purchase cost is required' }];
   }
 
-  if (!values.purchased) {
+  if (!props.collectionId && !values.purchased) {
     errors.purchased = [{ message: 'Purchase date is required' }];
+  }
+
+  if (showListDateInput.value) {
+    if (!values.listed) {
+      errors.listed = [{ message: 'List date is required' }];
+    } else if (!props.collectionId && values.purchased && new Date(values.listed).getTime() < new Date(values.purchased).getTime()) {
+      errors.listed = [{ message: 'List date must be after purchase date' }];
+    }
   }
 
   return {
@@ -383,14 +422,23 @@ const handleSubmit = async (event: FormSubmitEvent) => {
     if (event.values.id) {
       await pb.collection(Collections.Collections).update(event.values.id, event.values);
     } else {
-      const res = await pb.collection(Collections.Collections).create({ store: pb.authStore.record?.store, ...event.values });
+      let collectionId = props.collectionId;
+      if (!props.collectionId) {
+        collectionId = (await pb.collection(Collections.Collections).create({ store: pb.authStore.record?.store, ...event.values })).id;
+      }
       // TODO add additional field to specify listing date
-      await inventoryService.addToCollection(res.id, res.purchased, listPullSheet.value, pricing.value);
-      await inventoryService.updateCogs(res.id);
+      await inventoryService.addToCollection(
+        collectionId!,
+        showListDateInput.value ? event.values.listed : event.values.purchased,
+        listPullSheet.value,
+        pricing.value
+      );
+      await inventoryService.updateCogs(collectionId!);
     }
 
     event.reset();
     collections.value = await pb.collection(Collections.CollectionStats).getFullList();
+    if (props.collectionId) await refreshCollectionItems(props.collectionId);
     isSubmitLoading.value = false;
     isAddCollectionModalVisible.value = false;
   }
