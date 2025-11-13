@@ -1,7 +1,7 @@
 <template>
   <div class="grid h-screen grid-cols-12 gap-4">
     <!-- left col -->
-    <div class="dark:border-surface-700 dark:bg-surface-900 col-span-2 rounded-md border border-gray-200 bg-white p-6 shadow">
+    <div class="dark:border-surface-700 dark:bg-surface-900 col-span-2 h-[calc(100vh-32px)] rounded-md border border-gray-200 bg-white p-6 shadow">
       <div class="flex h-full flex-col justify-between gap-4">
         <div class="flex h-full flex-col gap-4">
           <span class="text-2xl font-semibold">Inventory</span>
@@ -17,7 +17,9 @@
     </div>
 
     <!-- main content-->
-    <div class="dark:bg-surface-900 dark:border-surface-700 col-span-10 h-full rounded-md border border-gray-200 bg-white p-6 shadow">
+    <div
+      class="dark:bg-surface-900 dark:border-surface-700 col-span-10 h-[calc(100vh-32px)] overflow-y-auto rounded-md border border-gray-200 bg-white p-6 shadow"
+    >
       <!-- collections list -->
       <div v-show="showCollectionSelection">
         <div class="mb-4 flex items-center justify-between">
@@ -28,7 +30,7 @@
           <InputText placeholder="Search collections" />
         </div>
 
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col gap-2 overflow-y-auto">
           <div
             v-for="collection in collections"
             :key="collection.id"
