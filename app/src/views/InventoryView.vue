@@ -54,10 +54,38 @@
               </div>
             </div>
             <div class="flex items-center gap-4">
-              <span class="text-muted-color">
-                {{ `${formatCurrency(collection.totalSoldValue as number)} / ${formatCurrency(collection.purchaseCost as number)}` }}
-              </span>
+              <div class="mr-8 flex items-center gap-8">
+                <div v-tooltip.top="'Σ (ourPrice * qtySold)'" class="flex flex-col">
+                  <span class="text-muted-color text-sm">Total Sold</span>
+                  <span>
+                    {{ formatCurrency(collection.totalSoldValue as number) }}
+                  </span>
+                </div>
+
+                <div class="flex flex-col">
+                  <span class="text-muted-color text-sm">Cost</span>
+                  <span>
+                    {{ formatCurrency(collection.purchaseCost as number) }}
+                  </span>
+                </div>
+
+                <div class="flex flex-col">
+                  <span class="text-muted-color text-sm">Market Value</span>
+                  <span>
+                    {{ formatCurrency(collection.totalMarketValue as number) }}
+                  </span>
+                </div>
+
+                <div class="flex flex-col">
+                  <span v-tooltip.top="'totalMarketValue - totalSoldValue'" class="text-muted-color text-sm">Remaining Value</span>
+                  <span>
+                    {{ formatCurrency((collection.totalMarketValue as number) - (collection.totalSoldValue as number)) }}
+                  </span>
+                </div>
+              </div>
+
               <span
+                v-tooltip.top="'totalSoldValue - purchaseCost'"
                 :class="[
                   'text-lg',
                   (collection.totalSoldValue as number) - (collection.purchaseCost as number) >= 0 ? 'text-green-600' : 'text-red-600'
