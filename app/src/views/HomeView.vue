@@ -98,6 +98,7 @@
 <script setup lang="ts">
 import StatIndicator from '@/components/StatIndicator.vue';
 import { useAgGridTheme } from '@/composables/useAgGridTheme';
+import { CollectionService } from '@/service/collection-service';
 import { OrderItemService } from '@/service/order-item-service';
 import { OrderService } from '@/service/order-service';
 import { useOrderStore } from '@/store/order-store';
@@ -113,7 +114,6 @@ import {
   type ValueGetterParams
 } from 'ag-grid-community';
 import { AgGridVue } from 'ag-grid-vue3';
-import { CollectionService } from '@/service/collection-service';
 import { Button, Dialog, FileUpload, type FileUploadSelectEvent, useToast } from 'primevue';
 import { computed, nextTick, ref } from 'vue';
 // Types ------------------------------------------------------------------------------

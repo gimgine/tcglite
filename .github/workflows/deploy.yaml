@@ -28,6 +28,7 @@ env:
   APP_DIR: app
   BUILD_DIR: app/dist
   ARTIFACT_NAME: web-dist
+  HOOKS_DIR: api/pb_hooks
 
 jobs:
   prepare:
@@ -111,19 +112,37 @@ jobs:
       group: deploy-${{ needs.prepare.outputs.env-name }}
       cancel-in-progress: true
     steps:
+      - name: Checkout repo (for pb_hooks)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.ref }}
+
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.ARTIFACT_NAME }}
           path: ./artifact
 
-      - name: Deploy to PocketHost via FTP
+      # Deploy frontend to pb_public
+      - name: Deploy web (pb_public) to PocketHost via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          # Define these per-environment (test/prod) in GitHub Environments
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          # FTP_SERVER_DIR secret should be just the PocketHost app name, e.g. "tcglite"
+          server-dir: ./${{ secrets.FTP_SERVER_DIR }}/pb_public/
           local-dir: ./artifact/
+          dangerous-clean-slate: true
+
+      # Deploy PocketBase hooks to pb_hooks
+      - name: Deploy pb_hooks to PocketHost via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          # Same app name, different directory
+          server-dir: ./${{ secrets.FTP_SERVER_DIR }}/pb_hooks/
+          local-dir: ./${{ env.HOOKS_DIR }}/
           dangerous-clean-slate: true

@@ -368,7 +368,8 @@ const handleSignout = () => {
 
 const handleProductsRefresh = async (event: FileUploadSelectEvent) => {
   const service = new ProductService();
-  const result = await service.syncProducts(await parsePricingCsv(event.files[0]));
+  const pricingCsv = await parsePricingCsv(event.files[0]);
+  const result = await service.syncProducts(pricingCsv);
   toast.add({
     severity: result.success ? 'success' : 'error',
     summary: result.success ? 'Products Synced' : 'Sync Failed',
