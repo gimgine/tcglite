@@ -1,5 +1,5 @@
 /// <reference path="../pb_data/types.d.ts" />
-// @ts-nocheck
+/// <reference lib="es2015" />
 
 routerAdd(
   "POST",
@@ -129,6 +129,112 @@ routerAdd(
 
     return e.json(200, {
       message: "Store product list successfully synchronized.",
+    });
+  },
+  $apis.requireAuth()
+);
+
+routerAdd(
+  "PATCH",
+  "/collections/{collectionId}/scan",
+  (e) => {
+    const storeId = e.auth?.get("store");
+    const collectionId = e.request?.pathValue("collectionId");
+
+    // 1) Load the collection & its items
+    const collection = $app.findRecordById("collections", collectionId);
+    const collectionPurchasedISO = collection.get("purchased");
+
+    const collectionItems = $app.findRecordsByFilter("collectionItems", `collection = "${collectionId}" && store = "${storeId}"`, "listed", 0, 0);
+
+    // 2) Load UNASSIGNED orderItems on/after the collection's purchase date
+    const orderItems = $app.findRecordsByFilter(
+      "orderItems",
+      `order.orderDate >= "${collectionPurchasedISO}" && (collectionItem = null || collectionItem = "") && store = "${storeId}"`,
+      "order.orderDate", // same as client
+      0,
+      0
+    );
+    $app.expandRecords(orderItems, ["order"], null);
+
+    // 3) Build per-product FIFO queues of unassigned orderItems
+    const queueByProduct = new Map();
+    for (const oi of orderItems) {
+      const productId = oi.get("product");
+      const orderDate = oi.expandedOne("order").get("orderDate");
+      if (!productId || !orderDate) continue; // must have product & order.date
+      const arr = queueByProduct.get(productId) ?? [];
+      arr.push(oi);
+      queueByProduct.set(productId, arr);
+    }
+
+    // 4) Allocate: walk each collection item, fill up to (qtyAcquired - qtySold)
+    $app.runInTransaction((txApp) => {
+      let itemsUpdated = 0;
+      let ordersUpdated = 0;
+      let totalAssigned = 0;
+
+      for (const ci of collectionItems) {
+        const cap = ci.get("qtyAcquired") ?? 0;
+        const currentSold = ci.get("qtySold") ?? 0;
+        if (!ci.get("product") || cap <= 0 || currentSold >= cap) continue;
+
+        const queue = queueByProduct.get(ci.get("product"));
+        if (!queue || queue.length === 0) continue;
+
+        // Determine the earliest allowable order date for this item
+        // Orders must be on/after the collection purchased date (already filtered)
+        // If we also respect listed date, ensure orderDate >= ci.listed
+        const listedCutoff = new Date(ci.get("listed"));
+
+        let remaining = cap - currentSold;
+        let added = 0;
+
+        // Consume oldest orders that satisfy the listed cutoff
+        // (Since queue is sorted by order.orderDate, we can skip until cutoff)
+        let i = 0;
+        while (remaining > 0 && i < queue.length) {
+          const oi = queue[i];
+          const orderDateISO = oi.expandedOne("order").get("orderDate");
+          if (!orderDateISO) {
+            i++;
+            continue;
+          }
+
+          const orderDate = new Date(orderDateISO);
+          if (orderDate < listedCutoff) {
+            // This order is too early for this item—skip it for this item,
+            // but don't remove from the global queue; it might fit a different item with an earlier listed date.
+            i++;
+            continue;
+          }
+
+          oi.set("collectionItem", ci.id);
+          txApp.save(oi);
+
+          ordersUpdated++;
+          totalAssigned++;
+
+          // Remove it from the queue so it can't be reused
+          queue.splice(i, 1);
+
+          // Increment the item's sold count locally
+          remaining -= 1;
+          added += 1;
+        }
+
+        if (added > 0) {
+          ci.set("qtySold", currentSold + added);
+          txApp.save(ci);
+          itemsUpdated++;
+        }
+      }
+
+      return e.json(200, {
+        itemsUpdated,
+        ordersUpdated,
+        unitsAssigned: totalAssigned,
+      });
     });
   },
   $apis.requireAuth()
