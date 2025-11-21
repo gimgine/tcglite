@@ -79,10 +79,11 @@
 import { useSetStore } from '@/store/set-store';
 import { Collections } from '@/types/pocketbase-types';
 import { type PullSheetCsv } from '@/util/csv-parse';
+import { findClosestByString } from '@/util/functions';
 import pb from '@/util/pocketbase';
 import { type FormInstance, type FormSubmitEvent, Form } from '@primevue/forms';
 import axios from 'axios';
-import { Button, Message, Tag, Chip, type TagProps, Dialog, InputText, FloatLabel } from 'primevue';
+import { type TagProps, Button, Chip, Dialog, FloatLabel, InputText, Message, Tag } from 'primevue';
 import { computed, nextTick, onMounted, reactive, ref, useTemplateRef } from 'vue';
 // Types ------------------------------------------------------------------------------
 type Condition = 'Near Mint' | 'Lightly Played' | 'Moderately Played' | 'Heavily Played';
@@ -187,7 +188,9 @@ const getConditionSeverity = (condition: Condition): TagProps['severity'] => {
 const getPlstCard = async (pull: PullSheetCsv) => {
   const number = ('' + pull.Number).split('/')[0];
   const scryfallRes = await axios.get(`https://api.scryfall.com/cards/search?q=set:plst+number:${number}`);
-  return (scryfallRes.data.data as []).find((r: { name: string }) => r.name === pull['Product Name']);
+  const results = scryfallRes.data.data as { name: string }[];
+
+  return findClosestByString(results, pull['Product Name'], (r) => r.name);
 };
 
 const handleHover = (pull: PullSheetCsv, position: 'left' | 'right') => {

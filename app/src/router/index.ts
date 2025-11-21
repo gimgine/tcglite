@@ -2,16 +2,7 @@ import OrderHelperUpload from '@/components/order-helper/OrderHelperUpload.vue';
 import PullSheet from '@/components/order-helper/PullSheet.vue';
 import ShippingHelper from '@/components/order-helper/shipping/ShippingHelper.vue';
 import pb from '@/util/pocketbase';
-import AdminView from '@/views/AdminView.vue';
-import ExpensesView from '@/views/ExpensesView.vue';
-import LoginView from '@/views/LoginView.vue';
-import PricingView from '@/views/PricingView.vue';
-import StatsView from '@/views/StatsView.vue';
-import SettingsView from '@/views/SettingsView.vue';
 import { createRouter, createWebHashHistory } from 'vue-router';
-import HomeView from '../views/HomeView.vue';
-import OrderHelperView from '../views/OrderHelperView.vue';
-import InventoryView from '@/views/InventoryView.vue';
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -19,18 +10,18 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView
+      component: () => import('@/views/HomeView.vue')
     },
     {
       path: '/login',
       name: 'login',
-      component: LoginView
+      component: () => import('@/views/LoginView.vue')
     },
     {
       path: '/order-helper',
       name: 'orderHelper',
       redirect: '/order-helper/upload',
-      component: OrderHelperView,
+      component: () => import('@/views/OrderHelperView.vue'),
       children: [
         {
           path: 'upload',
@@ -52,33 +43,33 @@ const router = createRouter({
     {
       path: '/pricing',
       name: 'pricing',
-      component: PricingView
+      component: () => import('@/views/PricingView.vue')
     },
     {
       path: '/expenses',
       name: 'expenses',
-      component: ExpensesView
+      component: () => import('@/views/ExpensesView.vue')
     },
     {
       path: '/inventory/:collectionId?',
       name: 'inventory',
-      component: InventoryView,
+      component: () => import('@/views/InventoryView.vue'),
       props: true
     },
     {
       path: '/stats',
       name: 'stats',
-      component: StatsView
+      component: () => import('@/views/StatsView.vue')
     },
     {
       path: '/settings',
       name: 'settings',
-      component: SettingsView
+      component: () => import('@/views/SettingsView.vue')
     },
     {
       path: '/admin',
       name: 'admin',
-      component: AdminView
+      component: () => import('@/views/AdminView.vue')
     }
   ]
 });
