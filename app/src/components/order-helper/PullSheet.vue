@@ -184,6 +184,12 @@ const getConditionSeverity = (condition: Condition): TagProps['severity'] => {
   }
 };
 
+const getPlstCard = async (pull: PullSheetCsv) => {
+  const number = ('' + pull.Number).split('/')[0];
+  const scryfallRes = await axios.get(`https://api.scryfall.com/cards/search?q=set:plst+number:${number}`);
+  return (scryfallRes.data.data as []).find((r: { name: string }) => r.name === pull['Product Name']);
+};
+
 const handleHover = (pull: PullSheetCsv, position: 'left' | 'right') => {
   const setImage = (img: string, position: 'left' | 'right') => {
     if (position === 'left') {
@@ -209,14 +215,15 @@ const handleHover = (pull: PullSheetCsv, position: 'left' | 'right') => {
     const number = pull.Number;
 
     try {
-      const scryfallRes = await axios.get(`https://api.scryfall.com/cards/${setCode}/${number}`);
+      const scryfallRes =
+        setCode === 'PLST'.toLowerCase() ? await getPlstCard(pull) : (await axios.get(`https://api.scryfall.com/cards/${setCode}/${number}`)).data;
 
-      if (scryfallRes.data.card_faces) {
+      if (scryfallRes.card_faces) {
         setImage(scryfallRes.data.card_faces[0].image_uris.normal, position);
         return;
       }
 
-      setImage(scryfallRes.data.image_uris.normal, position);
+      setImage(scryfallRes.image_uris.normal, position);
     } catch (error) {
       console.error('Error loading Scryfall image:', error);
       imageError.value = true;
