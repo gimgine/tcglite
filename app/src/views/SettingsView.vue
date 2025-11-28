@@ -1,38 +1,17 @@
 <template>
   <div class="flex flex-wrap gap-4">
-    <Panel v-model:collapsed="topPanelCollapsed" class="basis-full [&_.p-panel-header]:my-2 [&_.p-panel-header]:items-start!" toggleable>
-      <template #header>
-        <Form ref="namesForm" class="flex flex-col gap-4" :resolver="namesResolver" @submit="handleNamesSubmit">
-          <div class="flex items-center">
-            <Avatar icon="pi pi-user" class="mr-2" shape="circle" size="large" />
-            <span v-show="topPanelCollapsed">{{ pb.authStore.record?.name }}</span>
-            <InputText v-show="!topPanelCollapsed" name="userName" />
-          </div>
-          <div v-if="store" class="flex items-center">
-            <Avatar icon="pi pi-shop" class="mr-2" size="large" />
-            <span v-show="topPanelCollapsed">{{ store?.name }}</span>
-            <InputText v-show="!topPanelCollapsed" name="storeName" />
-          </div>
-        </Form>
-      </template>
-      <template #icons><Button icon="pi pi-sign-out" variant="text" rounded @click="handleSignout" /></template>
-      <template #toggleicon><i class="pi pi-pencil" /></template>
-      <div class="flex justify-end gap-2">
-        <Button severity="secondary" label="Cancel" @click="topPanelCollapsed = true" />
-        <Button label="Submit" @click="namesForm?.submit()" />
+    <Panel class="basis-full" header="Settings">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center">
+          <Avatar icon="pi pi-user" class="mr-2" shape="circle" size="large" />
+          <span>{{ pb.authStore.record?.name }}</span>
+        </div>
+        <Button icon="pi pi-sign-out" variant="text" rounded @click="handleSignout" />
       </div>
     </Panel>
-    <Panel :header="store ? 'Store Shipping Options' : 'Create Store'" class="flex-1">
+    <Panel :header="'Store Shipping Options'" class="flex-1">
       <Form ref="shippingForm" v-slot="$form" :initial-values :resolver="shippingResolver" class="flex flex-col gap-2" @submit="handleShippingSubmit">
         <InputText name="id" class="hidden" />
-
-        <div v-if="!store" class="flex w-full flex-col gap-1">
-          <label for="name" class="ml-3 text-sm">Name</label>
-          <InputText name="name" />
-          <Message v-if="$form.name?.invalid" severity="error" size="small" variant="simple">
-            {{ $form.name.error?.message }}
-          </Message>
-        </div>
 
         <div class="grid grid-cols-1 gap-1 text-sm">
           <div class="grid grid-cols-11 gap-2 [&>*]:col-span-3">
@@ -137,36 +116,8 @@
       </Form>
     </Panel>
 
-    <Panel v-if="store" class="flex-1">
-      <template #header>
-        <div class="flex w-full justify-between">
-          <span class="font-semibold">Store Members</span>
-          <InputGroup class="!w-54">
-            <InputText v-model="storeMembersFilter" size="small" placeholder="Search/Add members" />
-            <InputGroupAddon>
-              <i class="pi pi-search" />
-            </InputGroupAddon>
-          </InputGroup>
-        </div>
-      </template>
-      <DataView :value="storeMembers?.filter((m) => m.name?.match(new RegExp(storeMembersFilter, 'i')))">
-        <template #empty>
-          <div class="flex w-full items-center justify-center gap-4 p-2">
-            No members found. <Button icon="pi pi-plus" variant="outlined" size="small" @click="addMember" />
-          </div>
-        </template>
-        <template #list="slotProps">
-          <div class="flex flex-col gap-2">
-            <Message v-for="item in slotProps.items" :key="item.name" closable size="small" severity="secondary" @close="removeMember(item.id)">
-              {{ item.name }}
-            </Message>
-          </div>
-        </template>
-      </DataView>
-    </Panel>
-
-    <Panel v-if="store" header="Additional Options" class="basis-full">
-      <div class="flex gap-4">
+    <Panel header="Additional Options" class="w-1/2">
+      <div class="flex flex-col gap-4">
         <div class="flex flex-col gap-2 text-sm">
           <FileUpload mode="basic" choose-label="Refresh Products" choose-icon="pi pi-upload" accept=".csv" auto @select="handleProductsRefresh" />
           <p class="text-xs italic">Upload your latest Pricing CSV to update your product list.</p>
@@ -186,11 +137,9 @@ import router from '@/router';
 import { OrderService } from '@/service/order-service';
 import { ProductService } from '@/service/product-service';
 import { StorePreferencesService } from '@/service/store-preferences-service';
-import { StoreService } from '@/service/store-service';
-import { UserService } from '@/service/user-service';
 import { useOrderStore } from '@/store/order-store';
 import { usePreferencesStore } from '@/store/preferences-store';
-import { Collections, type StorePreferencesRecord, type StoresRecord, type UsersRecord } from '@/types/pocketbase-types';
+import { Collections, type StorePreferencesRecord } from '@/types/pocketbase-types';
 import { parsePricingCsv } from '@/util/csv-parse';
 import pb from '@/util/pocketbase';
 import { Form, type FormInstance, type FormSubmitEvent } from '@primevue/forms';
@@ -198,7 +147,6 @@ import { zodResolver } from '@primevue/forms/resolvers/zod';
 import {
   Avatar,
   Button,
-  DataView,
   FileUpload,
   InputGroup,
   InputGroupAddon,
@@ -209,13 +157,12 @@ import {
   useToast,
   type FileUploadSelectEvent
 } from 'primevue';
-import { computed, nextTick, onMounted, reactive, ref, useTemplateRef } from 'vue';
+import { computed, onMounted, reactive, ref, useTemplateRef } from 'vue';
 import z from 'zod';
 
 // Types ------------------------------------------------------------------------------
 interface FormValues {
   id?: string;
-  name: string;
   oneOunceCards?: number;
   oneOunceCost?: number;
   twoOunceCards?: number;
@@ -231,21 +178,16 @@ interface FormValues {
 
 // Template Refs ----------------------------------------------------------------------
 const shippingForm = useTemplateRef<FormInstance>('shippingForm');
-const namesForm = useTemplateRef<FormInstance>('namesForm');
 
 // Variables --------------------------------------------------------------------------
-const storeService = new StoreService();
-const userService = new UserService();
 const storePreferencesService = new StorePreferencesService();
 
 const preferencesStore = usePreferencesStore();
 
-const namesResolver = computed(() => zodResolver(z.object({ userName: z.string().min(1), storeName: !store.value ? z.string().min(1) : z.any() })));
 const shippingResolver = computed(() =>
   zodResolver(
     z.object({
       id: z.string(),
-      name: !store.value ? z.string().min(1, { message: 'Name is required.' }) : z.any(),
       oneOunceCards: z.number().min(0, { message: 'Max number for 1 oz cards is required.' }),
       twoOunceCards: z.number().min(0, { message: 'Max number for 2 oz cards is required.' }),
       threeOunceCards: z.number().min(0, { message: 'Max number for 3 oz cards is required.' }),
@@ -262,18 +204,11 @@ const shippingResolver = computed(() =>
 // Reactive Variables -----------------------------------------------------------------
 const toast = useToast();
 
-const store = ref<StoresRecord>();
-const storeMembers = ref<UsersRecord[]>();
-
-const storeMembersFilter = ref<string>('');
-
 const storePreferenceSubmitLoading = ref(false);
 const isUpdateShippingLoading = ref(false);
-const topPanelCollapsed = ref(true);
 
 const initialValues = reactive<FormValues>({
   id: '',
-  name: '',
   oneOunceCards: undefined,
   oneOunceCost: undefined,
   twoOunceCards: undefined,
@@ -294,68 +229,11 @@ const initialValues = reactive<FormValues>({
 // Watchers ---------------------------------------------------------------------------
 
 // Methods ----------------------------------------------------------------------------
-const fetchMembers = async () => {
-  if (!store.value) return;
-  storeMembers.value = await userService.getForStore(store.value.id);
-};
-
-const addMember = async () => {
-  try {
-    const user = await userService.getByName(storeMembersFilter.value);
-    if (user.store) {
-      toast.add({ severity: 'error', summary: 'User Has Store', detail: 'That user is already assigned to a store.', life: 3000 });
-      return;
-    }
-    try {
-      await userService.update(user.id, { store: store.value?.id });
-      toast.add({ severity: 'success', summary: 'User Added', detail: 'The user has successfully been added to the store.', life: 3000 });
-      fetchMembers();
-      storeMembersFilter.value = '';
-    } catch {
-      toast.add({ severity: 'error', summary: 'User Not Added', detail: 'There was a problem adding the user to the store.', life: 3000 });
-    }
-  } catch {
-    toast.add({ severity: 'error', summary: 'User Not Found', detail: 'No user found with the given name.', life: 3000 });
-  }
-};
-
-const removeMember = async (id: string) => {
-  try {
-    await pb.collection(Collections.Users).update(id, { store: null });
-    toast.add({ severity: 'success', summary: 'User Removed', detail: 'The user has successfully been removed from the store.', life: 3000 });
-    fetchMembers();
-  } catch {
-    toast.add({ severity: 'error', summary: 'User Not Removed', detail: 'There was a problem removing the user from the store.', life: 3000 });
-  }
-};
-
-const handleNamesSubmit = async ({ valid, values }: FormSubmitEvent) => {
-  if (!valid) return;
-  await userService.update(pb.authStore.record!.id, { name: values.userName });
-  if (store.value) {
-    await storeService.update(store.value.id, { name: values.storeName });
-    store.value = await storeService.getOne(store.value.id);
-  }
-  await userService.authRefresh();
-  topPanelCollapsed.value = true;
-};
-
 const handleShippingSubmit = async ({ valid, values }: FormSubmitEvent) => {
   if (!valid) return;
   storePreferenceSubmitLoading.value = true;
-
-  if (!store.value) {
-    store.value = await storeService.create(values.name);
-
-    await userService.update(pb.authStore.record!.id, { store: store.value.id });
-    await storePreferencesService.create({ store: store.value.id, ...values });
-
-    await preferencesStore.refresh();
-  } else {
-    await storePreferencesService.update(values as StorePreferencesRecord);
-    toast.add({ severity: 'success', summary: 'Preferences Updated', detail: 'Store preferences successfully updated.', life: 3000 });
-  }
-
+  await storePreferencesService.update(values as StorePreferencesRecord);
+  toast.add({ severity: 'success', summary: 'Preferences Updated', detail: 'Store preferences successfully updated.', life: 3000 });
   await preferencesStore.refresh();
   storePreferenceSubmitLoading.value = false;
   preferencesStore.refresh();
@@ -416,16 +294,9 @@ const updateShippingInformation = async () => {
 
 // Lifecycle Hooks --------------------------------------------------------------------
 onMounted(async () => {
-  if (pb.authStore.record?.store) store.value = await storeService.getOne(pb.authStore.record?.store);
-  await nextTick();
-
-  namesForm.value?.setValues({ userName: pb.authStore.record?.name, storeName: store.value?.name });
-
   await preferencesStore.refresh();
   if (!preferencesStore.preferences) return;
 
   shippingForm.value?.setValues(preferencesStore.preferences);
-
-  fetchMembers();
 });
 </script>

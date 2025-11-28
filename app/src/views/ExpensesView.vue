@@ -286,7 +286,7 @@ const handleSubmit = async (event: FormSubmitEvent) => {
     if (event.values.id) {
       await pb.collection(Collections.Expenses).update(event.values.id, event.values);
     } else {
-      await pb.collection(Collections.Expenses).create({ store: pb.authStore.record?.store, ...event.values });
+      await pb.collection(Collections.Expenses).create(event.values);
     }
 
     event.reset();
@@ -398,9 +398,7 @@ const submitExpensesUpload = async () => {
     isUploadLoading.value = true;
     const batch = pb.createBatch();
     uploadExpenses.value?.forEach((e) =>
-      batch
-        .collection(Collections.Expenses)
-        .create({ ...e, store: pb.authStore.record?.store, purchaseDate: e.purchaseDate ? new Date(e.purchaseDate).toISOString() : '' })
+      batch.collection(Collections.Expenses).create({ ...e, purchaseDate: e.purchaseDate ? new Date(e.purchaseDate).toISOString() : '' })
     );
     await batch.send();
     isUploadModalOpen.value = false;

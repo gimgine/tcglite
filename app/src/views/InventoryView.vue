@@ -459,7 +459,7 @@ const handleSubmit = async (event: FormSubmitEvent) => {
     } else {
       let collectionId = props.collectionId;
       if (!props.collectionId) {
-        collectionId = (await pb.collection(Collections.Collections).create({ store: pb.authStore.record?.store, ...event.values })).id;
+        collectionId = (await pb.collection(Collections.Collections).create(event.values)).id;
       }
       // TODO add additional field to specify listing date
       await inventoryService.addToCollection(

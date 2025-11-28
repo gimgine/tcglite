@@ -16,7 +16,6 @@ export interface OrderRequest {
   shippingFee: number;
   trackingNumber?: string;
   carrier?: string;
-  store: string;
 
   totalPrice?: number;
   vendorFee?: number;
@@ -32,7 +31,6 @@ export interface OrderRequest {
 export interface OrderItemRequest {
   order: string;
   product: string;
-  store: string;
   quantity: number;
   tcgPlayerId: number;
 }

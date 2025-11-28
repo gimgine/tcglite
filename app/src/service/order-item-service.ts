@@ -83,7 +83,6 @@ export class OrderItemService {
             order: order.orderNumber,
             product: productsForPullSheet[row.SkuId].id,
             quantity: 1,
-            store: pb.authStore.record?.store,
             tcgPlayerId: row.SkuId
           };
           cardRequests.push(request);
