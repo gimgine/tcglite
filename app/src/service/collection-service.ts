@@ -30,7 +30,6 @@ export class CollectionService {
       batch.collection(Collections.CollectionItems).create({
         collection: collectionId,
         product: seed.productId,
-        store: pb.authStore.record?.store,
         marketPriceAtImport: seed.marketPrice,
         qtyAcquired: seed.quantity,
         qtySold: 0,

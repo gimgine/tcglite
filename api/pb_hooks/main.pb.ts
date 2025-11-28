@@ -7,19 +7,11 @@ routerAdd(
   (e) => {
     console.log("[/products-sync] START");
 
-    const storeId = e.auth?.get("store");
-    console.log("[/products-sync] storeId:", storeId);
-
     const body = e.requestInfo().body; // <-- unchanged
     const pricingCsv = body?.pricingCsv || [];
     console.log("[/products-sync] pricingCsv length:", pricingCsv.length);
 
-    if (!storeId) {
-      console.log("[/products-sync] Missing storeId on auth record");
-      return e.json(400, { message: "Missing store on auth record" });
-    }
-
-    const products = $app.findRecordsByFilter("products", `store = '${storeId}'`, "", 0, 0);
+    const products = $app.findAllRecords("products");
     console.log("[/products-sync] Loaded", products.length, "products");
 
     // --- Build index by tcgPlayerId to speed up diffing ---
@@ -92,7 +84,6 @@ routerAdd(
 
       for (const product of productsToCreate) {
         const record = new Record(collection);
-        record.set("store", storeId);
         record.set("productLine", product["Product Line"]);
         record.set("name", product["Product Name"]);
         record.set("condition", product["Condition"]);
@@ -128,7 +119,7 @@ routerAdd(
     console.log("[/products-sync] DONE");
 
     return e.json(200, {
-      message: "Store product list successfully synchronized.",
+      message: "Product list successfully synchronized.",
     });
   },
   $apis.requireAuth()
@@ -138,19 +129,18 @@ routerAdd(
   "PATCH",
   "/collections/{collectionId}/scan",
   (e) => {
-    const storeId = e.auth?.get("store");
     const collectionId = e.request?.pathValue("collectionId");
 
     // 1) Load the collection & its items
     const collection = $app.findRecordById("collections", collectionId);
     const collectionPurchasedISO = collection.get("purchased");
 
-    const collectionItems = $app.findRecordsByFilter("collectionItems", `collection = "${collectionId}" && store = "${storeId}"`, "listed", 0, 0);
+    const collectionItems = $app.findRecordsByFilter("collectionItems", `collection = "${collectionId}"`, "listed", 0, 0);
 
     // 2) Load UNASSIGNED orderItems on/after the collection's purchase date
     const orderItems = $app.findRecordsByFilter(
       "orderItems",
-      `order.orderDate >= "${collectionPurchasedISO}" && (collectionItem = null || collectionItem = "") && store = "${storeId}"`,
+      `order.orderDate >= "${collectionPurchasedISO}" && (collectionItem = null || collectionItem = "")`,
       "order.orderDate", // same as client
       0,
       0

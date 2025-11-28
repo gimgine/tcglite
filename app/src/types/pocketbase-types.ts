@@ -110,7 +110,6 @@ export type CollectionItemsRecord = {
   product: RecordIdString;
   qtyAcquired?: number;
   qtySold?: number;
-  store: RecordIdString;
   unitCogs?: number;
   updated: IsoAutoDateString;
 };
@@ -127,7 +126,6 @@ export type CollectionStatsRecord<
   purchaseCost?: number;
   purchased?: IsoDateString;
   purchasedFrom?: string;
-  store?: RecordIdString;
   totalMarketValue?: null | TtotalMarketValue;
   totalMarketValueAtImport?: null | TtotalMarketValueAtImport;
   totalQtyAcquired?: null | TtotalQtyAcquired;
@@ -142,7 +140,6 @@ export type CollectionsRecord = {
   purchaseCost?: number;
   purchased?: IsoDateString;
   purchasedFrom?: string;
-  store?: RecordIdString;
   updated: IsoAutoDateString;
 };
 
@@ -158,7 +155,6 @@ export type ExpensesRecord = {
   price?: number;
   purchaseDate?: IsoDateString;
   quantity?: number;
-  store?: RecordIdString;
   type?: ExpensesTypeOptions;
   updated: IsoAutoDateString;
   url?: string;
@@ -171,7 +167,6 @@ export type OrderItemsRecord = {
   order?: RecordIdString;
   product?: RecordIdString;
   quantity?: number;
-  store?: RecordIdString;
   updated: IsoAutoDateString;
 };
 
@@ -200,7 +195,6 @@ export type OrdersRecord = {
   shippingFee?: number;
   shippingMethod: string;
   state: string;
-  store?: RecordIdString;
   totalPrice?: number;
   trackingNumber?: string;
   updated: IsoAutoDateString;
@@ -235,7 +229,6 @@ export type PricingRulesRecord = {
   filterValue?: string;
   id: string;
   pricing: string;
-  store?: RecordIdString;
   updated: IsoAutoDateString;
 };
 
@@ -244,7 +237,6 @@ export type PricingStrategiesRecord = {
   id: string;
   lastUsed?: IsoDateString;
   name?: string;
-  store?: RecordIdString;
   updated: IsoAutoDateString;
 };
 
@@ -262,7 +254,6 @@ export type ProductsRecord = {
   rarity?: string;
   scryfallId?: string;
   set?: string;
-  store?: RecordIdString;
   tcgPlayerId: number;
   updated: IsoAutoDateString;
 };
@@ -303,7 +294,6 @@ export type StrategyRulesRecord = {
   id: string;
   order?: number;
   rule?: RecordIdString;
-  store?: RecordIdString;
   strategy?: RecordIdString;
   updated: IsoAutoDateString;
 };
