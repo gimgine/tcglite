@@ -22,9 +22,7 @@ export enum Collections {
   Products = 'products',
   Sets = 'sets',
   StorePreferences = 'storePreferences',
-  Stores = 'stores',
-  StrategyRules = 'strategyRules',
-  Users = 'users'
+  StrategyRules = 'strategyRules'
 }
 
 // Alias types for improved usability
@@ -95,6 +93,7 @@ export type SuperusersRecord = {
   email: string;
   emailVisibility?: boolean;
   id: string;
+  name?: string;
   password: string;
   tokenKey: string;
   updated: IsoAutoDateString;
@@ -262,6 +261,7 @@ export type SetsRecord = {
   code?: string;
   created: IsoAutoDateString;
   id: string;
+  isUnsorted?: boolean;
   tcgplayer: string;
   updated: IsoAutoDateString;
 };
@@ -272,20 +272,12 @@ export type StorePreferencesRecord = {
   moreOunceCost?: number;
   oneOunceCards?: number;
   oneOunceCost?: number;
-  store?: RecordIdString;
   threeOunceCards?: number;
   threeOunceCost?: number;
   trackingCost?: number;
   trackingThreshold?: number;
   twoOunceCards?: number;
   twoOunceCost?: number;
-  updated: IsoAutoDateString;
-};
-
-export type StoresRecord = {
-  created: IsoAutoDateString;
-  id: string;
-  name?: string;
   updated: IsoAutoDateString;
 };
 
@@ -296,19 +288,6 @@ export type StrategyRulesRecord = {
   rule?: RecordIdString;
   strategy?: RecordIdString;
   updated: IsoAutoDateString;
-};
-
-export type UsersRecord = {
-  created: IsoAutoDateString;
-  email: string;
-  emailVisibility?: boolean;
-  id: string;
-  name?: string;
-  password: string;
-  store?: RecordIdString;
-  tokenKey: string;
-  updated: IsoAutoDateString;
-  verified?: boolean;
 };
 
 // Response types include system fields and match responses from the PocketBase API
@@ -336,9 +315,7 @@ export type PricingStrategiesResponse<Texpand = unknown> = Required<PricingStrat
 export type ProductsResponse<Texpand = unknown> = Required<ProductsRecord> & BaseSystemFields<Texpand>;
 export type SetsResponse<Texpand = unknown> = Required<SetsRecord> & BaseSystemFields<Texpand>;
 export type StorePreferencesResponse<Texpand = unknown> = Required<StorePreferencesRecord> & BaseSystemFields<Texpand>;
-export type StoresResponse<Texpand = unknown> = Required<StoresRecord> & BaseSystemFields<Texpand>;
 export type StrategyRulesResponse<Texpand = unknown> = Required<StrategyRulesRecord> & BaseSystemFields<Texpand>;
-export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>;
 
 // Types containing all Records and Responses, useful for creating typing helper functions
 
@@ -359,9 +336,7 @@ export type CollectionRecords = {
   products: ProductsRecord;
   sets: SetsRecord;
   storePreferences: StorePreferencesRecord;
-  stores: StoresRecord;
   strategyRules: StrategyRulesRecord;
-  users: UsersRecord;
 };
 
 export type CollectionResponses = {
@@ -381,9 +356,7 @@ export type CollectionResponses = {
   products: ProductsResponse;
   sets: SetsResponse;
   storePreferences: StorePreferencesResponse;
-  stores: StoresResponse;
   strategyRules: StrategyRulesResponse;
-  users: UsersResponse;
 };
 
 // Utility types for create/update operations

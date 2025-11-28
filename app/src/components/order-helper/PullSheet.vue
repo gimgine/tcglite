@@ -14,13 +14,21 @@
         <div
           :class="[
             'mb-2 border-b text-sm',
-            !setStore.setsMap.get(setGroup.set) ? 'border-red-600 text-red-600' : 'text-muted-color dark:border-surface-700 border-gray-300'
+            !setStore.setsMap.get(setGroup.set)
+              ? 'border-red-600 text-red-600'
+              : setStore.sets.find((s) => s.tcgplayer === setGroup.set)?.isUnsorted
+                ? 'border-amber-600 text-amber-600'
+                : 'text-muted-color dark:border-surface-700 border-gray-300'
           ]"
         >
           <span
             :class="[
               'mr-2 rounded-t px-1 py-0.5 text-xs font-bold text-white',
-              !setStore.setsMap.get(setGroup.set) ? 'bg-red-500' : 'dark:bg-surface-700 bg-gray-400'
+              !setStore.setsMap.get(setGroup.set)
+                ? 'bg-red-500'
+                : setStore.sets.find((s) => s.tcgplayer === setGroup.set)?.isUnsorted
+                  ? 'bg-amber-500'
+                  : 'dark:bg-surface-700 bg-gray-400'
             ]"
           >
             {{ setStore.setsMap.get(setGroup.set)?.toUpperCase() ?? 'N/A' }}
@@ -28,8 +36,9 @@
           <span
             class="cursor-pointer transition-opacity hover:opacity-50"
             @click="openSetModal(setStore.sets.find((s) => s.tcgplayer === setGroup.set)?.id, setGroup.set)"
-            >{{ setGroup.set }}</span
           >
+            {{ setGroup.set }}
+          </span>
           <span class="float-right">{{ ` (${setGroup.pulls.reduce((sum, v) => sum + v.Quantity, 0)})` }}</span>
         </div>
         <ul class="flex flex-col gap-2">
@@ -56,21 +65,26 @@
   </div>
 
   <Dialog v-model:visible="isModalVisible" class="w-[36rem]" modal header="Edit Set">
-    <Form ref="setForm" class="mt-1 flex flex-col gap-4" :initial-values @submit="handleSubmit">
+    <Form ref="setForm" class="flex flex-col gap-4" :initial-values @submit="handleSubmit">
       <div class="flex gap-4">
-        <FloatLabel variant="in">
-          <InputText class="w-40" name="code" />
-          <label for="code">Abbreviated Code</label>
-        </FloatLabel>
+        <div class="flex w-full flex-col gap-1">
+          <label for="code" class="ml-3 text-sm">Code</label>
+          <InputText name="code" />
+        </div>
 
-        <FloatLabel variant="in">
+        <div class="flex w-full flex-col gap-1">
+          <label for="tcgplayer" class="ml-3 text-sm">TCGplayer Name</label>
           <InputText name="tcgplayer" disabled fluid />
-          <label for="tcgplayer">TCGplayer Name</label>
-        </FloatLabel>
+        </div>
+      </div>
+
+      <div class="flex w-full items-center gap-1">
+        <Checkbox name="isUnsorted" binary />
+        <label for="isUnsorted" class="ml-2">Unsorted</label>
       </div>
 
       <InputText name="id" class="hidden" />
-      <Button type="submit" label="Save" />
+      <Button class="mt-2" type="submit" label="Save" />
     </Form>
   </Dialog>
 </template>
@@ -83,7 +97,7 @@ import { findClosestByString } from '@/util/functions';
 import pb from '@/util/pocketbase';
 import { type FormInstance, type FormSubmitEvent, Form } from '@primevue/forms';
 import axios from 'axios';
-import { type TagProps, Button, Chip, Dialog, FloatLabel, InputText, Message, Tag } from 'primevue';
+import { type TagProps, Button, Chip, Dialog, InputText, Message, Tag, Checkbox } from 'primevue';
 import { computed, nextTick, onMounted, reactive, ref, useTemplateRef } from 'vue';
 // Types ------------------------------------------------------------------------------
 type Condition = 'Near Mint' | 'Lightly Played' | 'Moderately Played' | 'Heavily Played';
@@ -92,6 +106,7 @@ interface FormValues {
   id?: '';
   tcgplayer?: '';
   code?: '';
+  isUnsorted?: false;
 }
 
 // Component Info (props/emits) -------------------------------------------------------
@@ -271,7 +286,7 @@ const openSetModal = async (setId?: string, tcgplayer?: string) => {
 
   if (setId) {
     const res = await pb.collection(Collections.Sets).getOne(setId);
-    setForm.value?.setValues({ tcgplayer: res.tcgplayer, code: res.code, id: res.id });
+    setForm.value?.setValues({ tcgplayer: res.tcgplayer, code: res.code, id: res.id, isUnsorted: res.isUnsorted });
   } else {
     setForm.value?.setValues({ tcgplayer });
   }
