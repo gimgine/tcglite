@@ -27,12 +27,12 @@
             <div class="text-xl font-semibold">Collections</div>
             <Button icon="pi pi-plus" text rounded @click="handleAddCollection" />
           </div>
-          <InputText placeholder="Search collections" />
+          <InputText v-model="collectionFilter" placeholder="Search collections" />
         </div>
 
         <div class="flex flex-col gap-2 overflow-y-auto">
           <div
-            v-for="collection in collections"
+            v-for="collection in filteredCollections"
             :key="collection.id"
             class="dark:border-surface-700 group flex cursor-pointer items-center justify-between rounded-md border border-gray-200 p-6"
             @click="handleCollectionSelect(collection.id)"
@@ -304,6 +304,11 @@ const columnDefs: ColDef<CollectionItemsExpandProduct>[] = [
 // Reactive Variables -----------------------------------------------------------------
 const collections = ref<CollectionStatsRecord[]>([]);
 
+const collectionFilter = ref('');
+const filteredCollections = computed(() => {
+  return collections.value.filter((c) => c.name?.toLowerCase().includes(collectionFilter.value.toLowerCase()));
+});
+
 const isAddCollectionModalVisible = ref(false);
 const showCollectionSelection = computed(() => !props.collectionId);
 const showListDateInput = ref(false);
@@ -489,7 +494,7 @@ const handleDeleteSelected = async () => {
 
 // Lifecycle Hooks --------------------------------------------------------------------
 onMounted(async () => {
-  collections.value = await pb.collection(Collections.CollectionStats).getFullList();
+  collections.value = await pb.collection(Collections.CollectionStats).getFullList({ sort: '-purchased,name' });
 
   if (import.meta.env.DEV) {
     const pullResponse = await fetch('/TCGplayer_ManageLists_PullSheet.csv');
