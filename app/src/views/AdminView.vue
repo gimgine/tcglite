@@ -64,7 +64,7 @@ const splitOrderItems = async () => {
   for (const item of toSplit) {
     batch.collection(Collections.OrderItems).delete(item.id);
     for (let i = item.quantity; i > 0; i--) {
-      batch.collection(Collections.OrderItems).create({ order: item.order, product: item.product, store: item.store, quantity: 1 });
+      batch.collection(Collections.OrderItems).create({ order: item.order, product: item.product, quantity: 1 });
       count++;
     }
   }
