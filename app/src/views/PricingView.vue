@@ -76,7 +76,11 @@
           <Fieldset legend="Pricing Stats">
             <div class="grid grid-cols-6 grid-rows-2 gap-x-10 gap-y-5">
               <div class="col-span-2 flex flex-col">
-                <span class="text-sm text-gray-500">Inventory Value</span>
+                <span class="text-sm text-gray-500">Cards Listed</span>
+                <span>{{ totalCardsListed }}</span>
+              </div>
+              <div class="col-span-2 flex flex-col">
+                <span class="text-sm text-gray-500">Total Value</span>
                 <span>{{ formatCurrency(totalInventoryValue) }}</span>
               </div>
               <div class="col-span-2 flex flex-col">
@@ -84,19 +88,15 @@
                 <span>{{ formatCurrency(averageCardValue) }}</span>
               </div>
               <div class="col-span-2 flex flex-col">
-                <span class="text-sm text-gray-500">Median Card Value</span>
-                <span>{{ formatCurrency(medianCardValue) }}</span>
-              </div>
-              <div class="col-span-2 flex flex-col">
-                <span class="text-sm text-gray-500">Cards Listed</span>
-                <span>{{ totalCardsListed }}</span>
-              </div>
-              <div class="col-span-2 flex flex-col">
-                <span class="text-sm text-gray-500">Cards Below $1</span>
+                <span class="text-sm text-gray-500">{{ '< $1' }}</span>
                 <span>{{ cardsBelowOneDollar }}</span>
               </div>
               <div class="col-span-2 flex flex-col">
-                <span class="text-sm text-gray-500">Cards Above $5</span>
+                <span class="text-sm text-gray-500">$1-$5</span>
+                <span>{{ cardsBetweenOneAndFiveDollars }}</span>
+              </div>
+              <div class="col-span-2 flex flex-col">
+                <span class="text-sm text-gray-500">>= $5</span>
                 <span>{{ cardsAboveFiveDollars }}</span>
               </div>
             </div>
@@ -214,6 +214,7 @@
 
 <script setup lang="ts">
 import { useAgGridTheme } from '@/composables/useAgGridTheme';
+import { ProductService } from '@/service/product-service';
 import { Collections, PricingRulesFilterOptions, type PricingRulesRecord, type PricingStrategiesRecord } from '@/types/pocketbase-types';
 import { parsePricingCsv, type PricingCsv } from '@/util/csv-parse';
 import { formatCurrency } from '@/util/functions';
@@ -412,6 +413,8 @@ const editingStrategyRules = ref<Array<{ label: string; ruleId: string; strategy
 const strategyRules = ref<Array<{ label: string; ruleId: string; strategyRuleId?: string }>>([]);
 const rulesOptions = ref<Array<{ label: string; ruleId: string }>>([]);
 
+const lastRunStrategyId = ref<string>(); // save last ran strategy id so we can only update the lastRan when the pricing is exported
+
 const lastUsedStrategy = ref<PricingStrategiesRecord>();
 const lastUsedTime = computed(() => {
   dayjs.extend(relativeTime);
@@ -453,25 +456,32 @@ const averageCardValue = computed(() => {
   return totalCards > 0 ? totalInventoryValue.value / totalCards : 0;
 });
 
-const medianCardValue = computed(() => {
-  const values: number[] = [];
+// const medianCardValue = computed(() => {
+//   const values: number[] = [];
 
-  pricing.value.forEach((card) => {
-    for (let i = 0; i < card['Total Quantity']; i++) {
-      values.push(card['TCG Marketplace Price']);
-    }
-  });
+//   pricing.value.forEach((card) => {
+//     for (let i = 0; i < card['Total Quantity']; i++) {
+//       values.push(card['TCG Marketplace Price']);
+//     }
+//   });
 
-  if (values.length === 0) return 0;
+//   if (values.length === 0) return 0;
 
-  values.sort((a, b) => a - b);
-  const mid = Math.floor(values.length / 2);
+//   values.sort((a, b) => a - b);
+//   const mid = Math.floor(values.length / 2);
 
-  if (values.length % 2 === 0) {
-    return (values[mid - 1] + values[mid]) / 2;
-  } else {
-    return values[mid];
-  }
+//   if (values.length % 2 === 0) {
+//     return (values[mid - 1] + values[mid]) / 2;
+//   } else {
+//     return values[mid];
+//   }
+// });
+
+const cardsBetweenOneAndFiveDollars = computed(() => {
+  return pricing.value.reduce(
+    (count, card) => (card['TCG Marketplace Price'] >= 1 && card['TCG Marketplace Price'] < 5 ? count + card['Total Quantity'] : count),
+    0
+  );
 });
 
 const cardsBelowOneDollar = computed(() => {
@@ -479,7 +489,7 @@ const cardsBelowOneDollar = computed(() => {
 });
 
 const cardsAboveFiveDollars = computed(() => {
-  return pricing.value.reduce((count, card) => (card['TCG Marketplace Price'] > 5 ? count + card['Total Quantity'] : count), 0);
+  return pricing.value.reduce((count, card) => (card['TCG Marketplace Price'] >= 5 ? count + card['Total Quantity'] : count), 0);
 });
 
 // Provided ---------------------------------------------------------------------------
@@ -660,13 +670,11 @@ const runStrategy = async (id: string) => {
 
   const strategyRules = await pb.collection(Collections.StrategyRules).getFullList({ filter: `strategy="${id}"`, sort: 'order' });
 
-  await pb.collection(Collections.PricingStrategies).update(id, { lastUsed: new Date() });
-
   for (const sr of strategyRules) {
     await runPricingRule(sr.rule);
   }
 
-  await refreshLastUsed();
+  lastRunStrategyId.value = id;
 };
 
 const runPricingRule = async (id: string) => {
@@ -770,7 +778,7 @@ const updatePricing = (rows: PricingCsv[], formula: string) => {
     });
 };
 
-const exportPricing = () => {
+const exportPricing = async () => {
   pricing.value.forEach((p) => (p['Add to Quantity'] = 0));
 
   const sanitized = pricing.value.map((row) => {
@@ -795,10 +803,24 @@ const exportPricing = () => {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+
+  if (lastRunStrategyId.value) {
+    await pb.collection(Collections.PricingStrategies).update(lastRunStrategyId.value, { lastUsed: new Date() });
+  }
+
+  const result = await new ProductService().syncProducts(pricing.value);
+  toast.add({
+    severity: result.success ? 'success' : 'error',
+    summary: result.success ? 'Products Synced' : 'Sync Failed',
+    detail: result.message,
+    life: 3000
+  });
+
+  await refreshLastUsed();
 };
 
 const refreshRules = async () => {
-  const rules = await pb.collection(Collections.PricingRules).getFullList();
+  const rules = await pb.collection(Collections.PricingRules).getFullList({ sort: 'filter' });
   items.value[1].items = rules.map((r) => ({
     isRule: true,
     label: getRuleLabel(r),
@@ -808,7 +830,7 @@ const refreshRules = async () => {
 };
 
 const refreshStrategies = async () => {
-  const strategies = await pb.collection(Collections.PricingStrategies).getFullList();
+  const strategies = await pb.collection(Collections.PricingStrategies).getFullList({ sort: 'name' });
   items.value[0].items = strategies.map((s) => ({ isStrategy: true, label: s.name, id: s.id, command: () => runStrategy(s.id) }));
 };
 
