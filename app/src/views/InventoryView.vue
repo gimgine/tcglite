@@ -368,7 +368,7 @@ const handleScan = async (collectionId?: string) => {
     });
     await refreshCollectionItems(props.collectionId ?? '');
   }
-  collections.value = await pb.collection(Collections.CollectionStats).getFullList();
+  collections.value = await pb.collection(Collections.CollectionStats).getFullList({ sort: '-purchased,name' });
 };
 
 const handleUpdateUnitCogs = async (collectionId: string) => {
@@ -472,7 +472,7 @@ const handleSubmit = async (event: FormSubmitEvent) => {
     }
 
     event.reset();
-    collections.value = await pb.collection(Collections.CollectionStats).getFullList();
+    collections.value = await pb.collection(Collections.CollectionStats).getFullList({ sort: '-purchased,name' });
     if (props.collectionId) await refreshCollectionItems(props.collectionId);
     isSubmitLoading.value = false;
     isAddCollectionModalVisible.value = false;
