@@ -1,5 +1,20 @@
 <template>
   <div class="grid grid-cols-12 gap-4">
+    <div class="col-span-12 flex w-full items-center">
+      <h1 class="w-32">Order Quota</h1>
+      <ProgressBar class="w-full" :value="(ordersSinceSwitch / (preferencesStore.preferences?.switchGoal ?? 1)) * 100">
+        {{ ordersSinceSwitch }} / {{ preferencesStore.preferences?.switchGoal }}
+      </ProgressBar>
+      <Button class="ml-2" size="small" text icon="pi pi-refresh" @click="handleOpenSwitchPopover"></Button>
+      <Popover ref="popover">
+        <div class="flex flex-col gap-2">
+          <label for="possessionDate" class="ml-3 text-sm">Date of Possession</label>
+          <DatePicker v-model="formPossessionDate" name="possessionDate" show-time hour-format="12"></DatePicker>
+          <Button size="small" class="ml-auto" :loading="isSwitchButtonLoading" @click="handleSwitchClick">Save</Button>
+        </div>
+      </Popover>
+    </div>
+
     <div class="col-span-12 md:col-span-3">
       <StatIndicator label="Profit" :details="totalProfit(orderStore.orders)" :change="totalProfit(orderStore.orders, true)" is-currency />
     </div>
@@ -42,7 +57,7 @@
             <Button icon="pi pi-file-arrow-up" label="Upload Orders" @click="isUploadModalVisible = true" />
           </div>
         </div>
-        <ag-grid-vue ref="grid" class="h-[calc(100vh-270px)]" :grid-options :column-defs :row-data="orderStore.orders" />
+        <ag-grid-vue ref="grid" class="h-[calc(100vh-319px)]" :grid-options :column-defs :row-data="orderStore.orders" />
       </div>
     </div>
   </div>
@@ -102,9 +117,11 @@ import { CollectionService } from '@/service/collection-service';
 import { OrderItemService } from '@/service/order-item-service';
 import { OrderService } from '@/service/order-service';
 import { useOrderStore } from '@/store/order-store';
-import { type OrdersRecord } from '@/types/pocketbase-types';
+import { usePreferencesStore } from '@/store/preferences-store';
+import { Collections, type OrdersRecord } from '@/types/pocketbase-types';
 import { parseShippingCsv, type ShippingCsv } from '@/util/csv-parse';
 import { formatCurrency, isToday } from '@/util/functions';
+import pb from '@/util/pocketbase';
 import {
   type CellClassParams,
   type ColDef,
@@ -114,18 +131,20 @@ import {
   type ValueGetterParams
 } from 'ag-grid-community';
 import { AgGridVue } from 'ag-grid-vue3';
-import { Button, Dialog, FileUpload, type FileUploadSelectEvent, useToast } from 'primevue';
-import { computed, nextTick, ref } from 'vue';
+import { Button, Dialog, FileUpload, ProgressBar, DatePicker, Popover, type FileUploadSelectEvent, useToast } from 'primevue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 // Types ------------------------------------------------------------------------------
 
 // Component Info (props/emits) -------------------------------------------------------
 
 // Template Refs ----------------------------------------------------------------------
 const grid = ref();
+const popover = ref({} as InstanceType<typeof Popover>);
 
 // Variables --------------------------------------------------------------------------
 const orderService = new OrderService();
 const orderStore = useOrderStore();
+const preferencesStore = usePreferencesStore();
 const theme = useAgGridTheme();
 
 const orderItemService = new OrderItemService();
@@ -200,6 +219,10 @@ const isUploadLoading = ref(false);
 const pullSheet = ref();
 const shippingExport = ref();
 
+const possessionDate = ref();
+const formPossessionDate = ref();
+const isSwitchButtonLoading = ref();
+
 const highestValueOrder = computed(() => {
   if (checkingOrders.value.length === 0) return null;
   return checkingOrders.value.reduce((max, order) => (order['Value Of Products'] > max['Value Of Products'] ? order : max));
@@ -208,6 +231,18 @@ const highestValueOrder = computed(() => {
 const largestOrder = computed(() => {
   if (checkingOrders.value.length === 0) return null;
   return checkingOrders.value.reduce((max, order) => (order['Item Count'] > max['Item Count'] ? order : max));
+});
+
+const ordersSinceSwitch = computed<number>(() => {
+  if (!possessionDate.value) {
+    return 0;
+  }
+
+  const possessionTime = Date.parse(possessionDate.value);
+
+  return orderStore.orders.filter((order) => {
+    return Date.parse(order.created) >= possessionTime;
+  }).length;
 });
 
 // Provided ---------------------------------------------------------------------------
@@ -253,6 +288,23 @@ const handleOrdersUpload = async () => {
   }
 };
 
+const handleOpenSwitchPopover = (event: Event) => {
+  popover.value.toggle(event);
+};
+
+const handleSwitchClick = async (event: Event) => {
+  if (!possessionDate.value || !pb.authStore.record?.id) {
+    return;
+  }
+
+  isSwitchButtonLoading.value = true;
+
+  await pb.collection(Collections.Superusers).update(pb.authStore.record.id, { possessionDate: possessionDate.value });
+  possessionDate.value = new Date(formPossessionDate.value);
+  isSwitchButtonLoading.value = false;
+  popover.value.toggle(event);
+};
+
 const handleCheckOrdersCsvClick = async (event: FileUploadSelectEvent) => {
   const shippingCsv = await parseShippingCsv(event.files[0]);
   isCheckModalVisible.value = true;
@@ -296,4 +348,7 @@ const handleShippingExportUpload = (event: FileUploadSelectEvent) => {
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------
+onMounted(() => {
+  possessionDate.value = formPossessionDate.value = new Date(pb.authStore.record?.possessionDate);
+});
 </script>
