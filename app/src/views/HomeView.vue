@@ -299,7 +299,8 @@ const handleSwitchClick = async (event: Event) => {
 
   isSwitchButtonLoading.value = true;
 
-  await pb.collection(Collections.Superusers).update(pb.authStore.record.id, { possessionDate: possessionDate.value });
+  await pb.collection(Collections.Superusers).update(pb.authStore.record.id, { possessionDate: formPossessionDate.value });
+  console.log(pb.authStore.record.possessionDate);
   possessionDate.value = new Date(formPossessionDate.value);
   isSwitchButtonLoading.value = false;
   popover.value.toggle(event);
@@ -349,6 +350,6 @@ const handleShippingExportUpload = (event: FileUploadSelectEvent) => {
 
 // Lifecycle Hooks --------------------------------------------------------------------
 onMounted(() => {
-  possessionDate.value = formPossessionDate.value = new Date(pb.authStore.record?.possessionDate);
+  possessionDate.value = formPossessionDate.value = pb.authStore.record?.possessionDate ? new Date(pb.authStore.record?.possessionDate) : undefined;
 });
 </script>
