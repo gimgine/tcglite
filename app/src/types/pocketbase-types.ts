@@ -95,7 +95,6 @@ export type SuperusersRecord = {
   id: string;
   name?: string;
   password: string;
-  possessionDate?: IsoDateString;
   tokenKey: string;
   updated: IsoAutoDateString;
   verified?: boolean;
@@ -273,6 +272,7 @@ export type StorePreferencesRecord = {
   moreOunceCost?: number;
   oneOunceCards?: number;
   oneOunceCost?: number;
+  possessionDate?: IsoDateString;
   switchGoal?: number;
   threeOunceCards?: number;
   threeOunceCost?: number;

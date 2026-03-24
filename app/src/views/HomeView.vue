@@ -116,9 +116,10 @@ import { useAgGridTheme } from '@/composables/useAgGridTheme';
 import { CollectionService } from '@/service/collection-service';
 import { OrderItemService } from '@/service/order-item-service';
 import { OrderService } from '@/service/order-service';
+import { StorePreferencesService } from '@/service/store-preferences-service';
 import { useOrderStore } from '@/store/order-store';
 import { usePreferencesStore } from '@/store/preferences-store';
-import { Collections, type OrdersRecord } from '@/types/pocketbase-types';
+import { type OrdersRecord } from '@/types/pocketbase-types';
 import { parseShippingCsv, type ShippingCsv } from '@/util/csv-parse';
 import { formatCurrency, isToday } from '@/util/functions';
 import pb from '@/util/pocketbase';
@@ -131,7 +132,7 @@ import {
   type ValueGetterParams
 } from 'ag-grid-community';
 import { AgGridVue } from 'ag-grid-vue3';
-import { Button, Dialog, FileUpload, ProgressBar, DatePicker, Popover, type FileUploadSelectEvent, useToast } from 'primevue';
+import { Button, DatePicker, Dialog, FileUpload, Popover, ProgressBar, useToast, type FileUploadSelectEvent } from 'primevue';
 import { computed, nextTick, onMounted, ref } from 'vue';
 // Types ------------------------------------------------------------------------------
 
@@ -149,6 +150,7 @@ const theme = useAgGridTheme();
 
 const orderItemService = new OrderItemService();
 const collectionService = new CollectionService();
+const storePreferencesService = new StorePreferencesService();
 
 const gridOptions: GridOptions<OrdersRecord> = {
   theme: theme.value,
@@ -298,9 +300,7 @@ const handleSwitchClick = async (event: Event) => {
   }
 
   isSwitchButtonLoading.value = true;
-
-  await pb.collection(Collections.Superusers).update(pb.authStore.record.id, { possessionDate: formPossessionDate.value });
-  console.log(pb.authStore.record.possessionDate);
+  await storePreferencesService.update({ id: preferencesStore.preferences!.id, possessionDate: formPossessionDate.value });
   possessionDate.value = new Date(formPossessionDate.value);
   isSwitchButtonLoading.value = false;
   popover.value.toggle(event);
@@ -350,6 +350,8 @@ const handleShippingExportUpload = (event: FileUploadSelectEvent) => {
 
 // Lifecycle Hooks --------------------------------------------------------------------
 onMounted(() => {
-  possessionDate.value = formPossessionDate.value = pb.authStore.record?.possessionDate ? new Date(pb.authStore.record?.possessionDate) : undefined;
+  possessionDate.value = formPossessionDate.value = preferencesStore.preferences?.possessionDate
+    ? new Date(preferencesStore.preferences?.possessionDate)
+    : undefined;
 });
 </script>

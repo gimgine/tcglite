@@ -10,7 +10,7 @@ export class StorePreferencesService {
     await pb.collection(Collections.StorePreferences).create(preferences);
   };
 
-  update = async (preferences: StorePreferencesRecord) => {
+  update = async (preferences: Omit<StorePreferencesRecord, 'created' | 'updated'>) => {
     await pb.collection(Collections.StorePreferences).update(preferences.id, preferences);
   };
 }
