@@ -295,7 +295,7 @@ const handleOpenSwitchPopover = (event: Event) => {
 };
 
 const handleSwitchClick = async (event: Event) => {
-  if (!possessionDate.value || !pb.authStore.record?.id) {
+  if (!formPossessionDate.value || !pb.authStore.record?.id) {
     return;
   }
 
@@ -349,7 +349,8 @@ const handleShippingExportUpload = (event: FileUploadSelectEvent) => {
 };
 
 // Lifecycle Hooks --------------------------------------------------------------------
-onMounted(() => {
+onMounted(async () => {
+  await preferencesStore.refresh();
   possessionDate.value = formPossessionDate.value = preferencesStore.preferences?.possessionDate
     ? new Date(preferencesStore.preferences?.possessionDate)
     : undefined;
