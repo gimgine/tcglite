@@ -45,12 +45,12 @@ export class CollectionService {
     const collectionStats = await pb.collection(Collections.CollectionStats).getOne(collectionId);
     const collectionItems = await pb.collection(Collections.CollectionItems).getFullList({ filter: `collection="${collectionId}"` });
 
-    const purchaseRate = (collectionStats.totalQtyAcquired as number) / (collectionStats.purchaseCost as number);
-
     const batch = pb.createBatch();
 
     for (const item of collectionItems) {
-      batch.collection(Collections.CollectionItems).update(item.id, { unitCogs: item.marketPriceAtImport * purchaseRate });
+      batch.collection(Collections.CollectionItems).update(item.id, {
+        unitCogs: (item.marketPriceAtImport / (collectionStats.totalMarketValueAtImport as number)) * collectionStats.purchaseCost
+      });
     }
 
     await batch.send();

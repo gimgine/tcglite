@@ -116,8 +116,10 @@ export type CollectionItemsRecord = {
 export type CollectionStatsRecord<
   TtotalMarketValue = unknown,
   TtotalMarketValueAtImport = unknown,
+  TtotalOurPrice = unknown,
   TtotalQtyAcquired = unknown,
   TtotalQtySold = unknown,
+  TtotalRemainingValue = unknown,
   TtotalSoldValue = unknown
 > = {
   id: string;
@@ -127,8 +129,10 @@ export type CollectionStatsRecord<
   purchasedFrom?: string;
   totalMarketValue?: null | TtotalMarketValue;
   totalMarketValueAtImport?: null | TtotalMarketValueAtImport;
+  totalOurPrice?: null | TtotalOurPrice;
   totalQtyAcquired?: null | TtotalQtyAcquired;
   totalQtySold?: null | TtotalQtySold;
+  totalRemainingValue?: null | TtotalRemainingValue;
   totalSoldValue?: null | TtotalSoldValue;
 };
 
@@ -302,11 +306,23 @@ export type CollectionItemsResponse<Texpand = unknown> = Required<CollectionItem
 export type CollectionStatsResponse<
   TtotalMarketValue = unknown,
   TtotalMarketValueAtImport = unknown,
+  TtotalOurPrice = unknown,
   TtotalQtyAcquired = unknown,
   TtotalQtySold = unknown,
+  TtotalRemainingValue = unknown,
   TtotalSoldValue = unknown,
   Texpand = unknown
-> = Required<CollectionStatsRecord<TtotalMarketValue, TtotalMarketValueAtImport, TtotalQtyAcquired, TtotalQtySold, TtotalSoldValue>> &
+> = Required<
+  CollectionStatsRecord<
+    TtotalMarketValue,
+    TtotalMarketValueAtImport,
+    TtotalOurPrice,
+    TtotalQtyAcquired,
+    TtotalQtySold,
+    TtotalRemainingValue,
+    TtotalSoldValue
+  >
+> &
   BaseSystemFields<Texpand>;
 export type CollectionsResponse<Texpand = unknown> = Required<CollectionsRecord> & BaseSystemFields<Texpand>;
 export type ExpensesResponse<Texpand = unknown> = Required<ExpensesRecord> & BaseSystemFields<Texpand>;

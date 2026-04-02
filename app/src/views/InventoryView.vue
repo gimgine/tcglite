@@ -77,9 +77,16 @@
                 </div>
 
                 <div class="flex flex-col">
-                  <span v-tooltip.top="'totalMarketValue - totalSoldValue'" class="text-muted-color text-sm">Remaining Value</span>
+                  <span class="text-muted-color text-sm">Our Price</span>
                   <span>
-                    {{ formatCurrency((collection.totalMarketValue as number) - (collection.totalSoldValue as number)) }}
+                    {{ formatCurrency(collection.totalOurPrice as number) }}
+                  </span>
+                </div>
+
+                <div class="flex flex-col">
+                  <span v-tooltip.top="'Σ (ourPrice * qtyRemaining)'" class="text-muted-color text-sm">Remaining Value</span>
+                  <span>
+                    {{ formatCurrency(collection.totalRemainingValue as number) }}
                   </span>
                 </div>
               </div>
