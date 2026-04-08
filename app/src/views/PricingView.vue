@@ -361,7 +361,7 @@ const numberFilterTypes: Array<Option<PricingRulesFilterTypes>> = [
   { label: 'Less Than or Equal', value: PricingRulesFilterTypes.less_equal }
 ];
 
-const filterOptionsToProperty: Partial<Record<PricingRulesFilterOptions, keyof PricingCsv>> = {
+const FILTER_TO_CSV_PROPERTY: Partial<Record<PricingRulesFilterOptions, keyof PricingCsv>> = {
   set: 'Set Name',
   quantity: 'Total Quantity',
   market: 'TCG Market Price',
@@ -369,7 +369,7 @@ const filterOptionsToProperty: Partial<Record<PricingRulesFilterOptions, keyof P
   our: 'TCG Marketplace Price'
 };
 
-const filters: Record<PricingRulesFilterTypes, (value: string, filterValue: string) => boolean> = {
+const FILTER_TYPE_FUNCTIONS: Record<PricingRulesFilterTypes, (value: string, filterValue: string) => boolean> = {
   equals: (value, filterValue) => value === filterValue,
   'does not equal': (value, filterValue) => value !== filterValue,
   contains: (value, filterValue) => value.includes(filterValue),
@@ -455,27 +455,6 @@ const averageCardValue = computed(() => {
   const totalCards = totalCardsListed.value;
   return totalCards > 0 ? totalInventoryValue.value / totalCards : 0;
 });
-
-// const medianCardValue = computed(() => {
-//   const values: number[] = [];
-
-//   pricing.value.forEach((card) => {
-//     for (let i = 0; i < card['Total Quantity']; i++) {
-//       values.push(card['TCG Marketplace Price']);
-//     }
-//   });
-
-//   if (values.length === 0) return 0;
-
-//   values.sort((a, b) => a - b);
-//   const mid = Math.floor(values.length / 2);
-
-//   if (values.length % 2 === 0) {
-//     return (values[mid - 1] + values[mid]) / 2;
-//   } else {
-//     return values[mid];
-//   }
-// });
 
 const cardsBetweenOneAndFiveDollars = computed(() => {
   return pricing.value.reduce(
@@ -680,17 +659,17 @@ const runPricingRule = async (id: string) => {
 
   const rule = await pb.collection(Collections.PricingRules).getOne(id);
 
-  let filtered;
+  let affectedPricingRows;
 
   if (rule.filter === PricingRulesFilterOptions.all) {
-    filtered = pricing.value;
+    affectedPricingRows = pricing.value;
   } else {
-    const filter = filters[rule.filterType] as (...args: unknown[]) => boolean;
-    const property = filterOptionsToProperty[rule.filter]!;
-    filtered = pricing.value.filter((p) => filter(p[property], rule.filterValue));
+    const filterTypeFunction = FILTER_TYPE_FUNCTIONS[rule.filterType];
+    const property = FILTER_TO_CSV_PROPERTY[rule.filter]!;
+    affectedPricingRows = pricing.value.filter((row) => filterTypeFunction(String(row[property]), rule.filterValue));
   }
 
-  if (!filtered) {
+  if (!affectedPricingRows) {
     toast.add({
       severity: 'error',
       summary: 'Invalid Rule',
@@ -700,37 +679,7 @@ const runPricingRule = async (id: string) => {
     return;
   }
 
-  updatePricing(filtered, rule.pricing);
-};
-
-const deleteRule = async (id: string) => {
-  const strategyRulesForRule = await pb.collection(Collections.StrategyRules).getFullList({ filter: `rule="${id}"` });
-  if (strategyRulesForRule.length) {
-    toast.add({
-      severity: 'warn',
-      summary: 'Rule In Use',
-      detail: `Could not delete rule, it is being used by at least one strategy.`,
-      life: 5000
-    });
-    return;
-  } else {
-    await pb.collection(Collections.PricingRules).delete(id);
-  }
-
-  await refreshRules();
-};
-
-const deleteStrategy = async (id: string) => {
-  const strategyRulesToDelete = await pb.collection(Collections.StrategyRules).getFullList({ filter: `strategy="${id}"` });
-  const batch = pb.createBatch();
-  strategyRulesToDelete.forEach((sr) => {
-    batch.collection(Collections.StrategyRules).delete(sr.id);
-  });
-  batch.send();
-
-  await pb.collection(Collections.PricingStrategies).delete(id);
-
-  await refreshStrategies();
+  updatePricing(affectedPricingRows, rule.pricing);
 };
 
 const updatePricing = (rows: PricingCsv[], formula: string) => {
@@ -774,6 +723,36 @@ const updatePricing = (rows: PricingCsv[], formula: string) => {
       summary: 'Error Updating Prices',
       detail: `There was an error updating the price for the records with the following IDs: \n ${errorRows.map((r) => r['TCGplayer Id'])}`
     });
+};
+
+const deleteRule = async (id: string) => {
+  const strategyRulesForRule = await pb.collection(Collections.StrategyRules).getFullList({ filter: `rule="${id}"` });
+  if (strategyRulesForRule.length) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Rule In Use',
+      detail: `Could not delete rule, it is being used by at least one strategy.`,
+      life: 5000
+    });
+    return;
+  } else {
+    await pb.collection(Collections.PricingRules).delete(id);
+  }
+
+  await refreshRules();
+};
+
+const deleteStrategy = async (id: string) => {
+  const strategyRulesToDelete = await pb.collection(Collections.StrategyRules).getFullList({ filter: `strategy="${id}"` });
+  const batch = pb.createBatch();
+  strategyRulesToDelete.forEach((sr) => {
+    batch.collection(Collections.StrategyRules).delete(sr.id);
+  });
+  batch.send();
+
+  await pb.collection(Collections.PricingStrategies).delete(id);
+
+  await refreshStrategies();
 };
 
 const exportPricing = async () => {
