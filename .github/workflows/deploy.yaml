@@ -5,10 +5,10 @@ on:
   push:
     branches:
       - main # Auto-deploy TEST on pushes to main
-    tags:
-      - "v*" # Auto-deploy PROD on tags like v1.2.3
+
   release:
     types: [published] # Auto-deploy PROD on Release published
+
   workflow_dispatch:
     inputs:
       environment:
@@ -16,6 +16,7 @@ on:
         required: true
         type: choice
         options: [test, prod]
+
       ref:
         description: "Branch, tag, or SHA to deploy (defaults to triggering ref)"
         required: false
