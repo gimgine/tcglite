@@ -17,7 +17,7 @@ import { computed } from 'vue';
 // Types ------------------------------------------------------------------------------
 
 // Component Info (props/emits) -------------------------------------------------------
-const props = defineProps<{ label: string; details: string | number; change?: number; isCurrency?: boolean }>();
+const props = defineProps<{ label: string; details?: string | number; change?: number; isCurrency?: boolean }>();
 
 // Template Refs ----------------------------------------------------------------------
 
@@ -26,7 +26,7 @@ const props = defineProps<{ label: string; details: string | number; change?: nu
 // Reactive Variables -----------------------------------------------------------------
 const formattedDetails = computed(() => {
   if (typeof props.details === 'number') {
-    return props.isCurrency ? formatCurrency(props.details) : props.details;
+    return props.isCurrency ? formatCurrency(props.details) : (props.details ?? 'N/A');
   } else {
     return props.details;
   }

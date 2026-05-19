@@ -2,8 +2,8 @@
   <div class="grid grid-cols-12 gap-4">
     <div class="col-span-12 flex w-full items-center">
       <h1 class="w-32">Order Quota</h1>
-      <ProgressBar class="w-full" :value="(ordersSinceSwitch / (preferencesStore.preferences?.switchGoal ?? 1)) * 100">
-        {{ ordersSinceSwitch }} / {{ preferencesStore.preferences?.switchGoal }}
+      <ProgressBar class="w-full" :value="(orderStore.orderStats?.quotaCompletion! / (preferencesStore.preferences?.switchGoal ?? 1)) * 100">
+        {{ orderStore.orderStats?.quotaCompletion }} / {{ preferencesStore.preferences?.switchGoal }}
       </ProgressBar>
       <Button class="ml-2" size="small" text icon="pi pi-refresh" @click="handleOpenSwitchPopover"></Button>
       <Popover ref="popover">
@@ -16,26 +16,19 @@
     </div>
 
     <div class="col-span-12 md:col-span-3">
-      <StatIndicator label="Profit" :details="totalProfit(orderStore.orders)" :change="totalProfit(orderStore.orders, true)" is-currency />
+      <StatIndicator label="Profit" :details="orderStore.orderStats?.profit" :change="orderStore.orderStats?.todayProfit" is-currency />
     </div>
 
     <div class="col-span-12 md:col-span-3">
-      <StatIndicator label="Gross Sales" :details="grossSales(orderStore.orders)" :change="grossSales(orderStore.orders, true)" is-currency />
+      <StatIndicator label="Gross Sales" :details="orderStore.orderStats?.grossSales" :change="orderStore.orderStats?.todayGrossSales" is-currency />
     </div>
 
     <div class="col-span-12 md:col-span-3">
-      <StatIndicator
-        label="Orders"
-        :details="orderStore.orders.length"
-        :change="orderStore.orders.filter((o) => isToday(new Date(o.created ?? ''))).length"
-      />
+      <StatIndicator label="Orders" :details="orderStore.orderStats?.orderCount" :change="orderStore.orderStats?.todayOrderCount" />
     </div>
 
     <div class="col-span-12 md:col-span-3">
-      <StatIndicator
-        label="Last Updated"
-        :details="new Date(Math.max(...orderStore.orders.map((order) => new Date(order.created!).getTime()))).toLocaleString()"
-      />
+      <StatIndicator label="Last Updated" :details="new Date(orderStore.orderStats?.lastUpdated ?? '').toLocaleString()" />
     </div>
 
     <div class="col-span-12">
@@ -57,7 +50,14 @@
             <Button icon="pi pi-file-arrow-up" label="Upload Orders" @click="isUploadModalVisible = true" />
           </div>
         </div>
-        <ag-grid-vue ref="grid" class="h-[calc(100vh-319px)]" :grid-options :column-defs :row-data="orderStore.orders" />
+        <AgGridVue
+          ref="grid"
+          class="h-[calc(100vh-319px)]"
+          :grid-options
+          :column-defs
+          :row-data="orderStore.orders"
+          :loading="orderStore.isOrdersLoading"
+        />
       </div>
     </div>
   </div>
@@ -121,7 +121,7 @@ import { useOrderStore } from '@/store/order-store';
 import { usePreferencesStore } from '@/store/preferences-store';
 import { type OrdersRecord } from '@/types/pocketbase-types';
 import { parseShippingCsv, type ShippingCsv } from '@/util/csv-parse';
-import { formatCurrency, isToday } from '@/util/functions';
+import { formatCurrency } from '@/util/functions';
 import pb from '@/util/pocketbase';
 import {
   type CellClassParams,
@@ -235,18 +235,6 @@ const largestOrder = computed(() => {
   return checkingOrders.value.reduce((max, order) => (order['Item Count'] > max['Item Count'] ? order : max));
 });
 
-const ordersSinceSwitch = computed<number>(() => {
-  if (!possessionDate.value) {
-    return 0;
-  }
-
-  const possessionTime = Date.parse(possessionDate.value);
-
-  return orderStore.orders.filter((order) => {
-    return Date.parse(order.created) >= possessionTime;
-  }).length;
-});
-
 // Provided ---------------------------------------------------------------------------
 
 // Exposed ----------------------------------------------------------------------------
@@ -310,19 +298,6 @@ const handleCheckOrdersCsvClick = async (event: FileUploadSelectEvent) => {
   const shippingCsv = await parseShippingCsv(event.files[0]);
   isCheckModalVisible.value = true;
   checkingOrders.value = shippingCsv;
-};
-
-const totalProfit = (orders: OrdersRecord[], today?: boolean) => {
-  return orders.filter((order) => !today || isToday(new Date(order.created ?? ''))).reduce((sum, order) => sum + (order.profit ?? 0), 0);
-};
-
-const grossSales = (orders: OrdersRecord[], today?: boolean) => {
-  const filtered = orders.filter((order) => !today || isToday(new Date(order.created ?? '')));
-
-  const sales = filtered.reduce((sum, order) => sum + (order.totalPrice ?? 0), 0);
-  const fees = filtered.reduce((sum, order) => sum + (order.vendorFee ?? 0) + (order.processingFee ?? 0), 0);
-
-  return sales - fees;
 };
 
 const csvGrossSales = (orders: ShippingCsv[]) => {

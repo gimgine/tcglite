@@ -5,25 +5,27 @@
 import type PocketBase from 'pocketbase';
 import type { RecordService } from 'pocketbase';
 
-export enum Collections {
-  Authorigins = '_authOrigins',
-  Externalauths = '_externalAuths',
-  Mfas = '_mfas',
-  Otps = '_otps',
-  Superusers = '_superusers',
-  CollectionItems = 'collectionItems',
-  CollectionStats = 'collectionStats',
-  Collections = 'collections',
-  Expenses = 'expenses',
-  OrderItems = 'orderItems',
-  Orders = 'orders',
-  PricingRules = 'pricingRules',
-  PricingStrategies = 'pricingStrategies',
-  Products = 'products',
-  Sets = 'sets',
-  StorePreferences = 'storePreferences',
-  StrategyRules = 'strategyRules'
-}
+export const Collections = {
+  Authorigins: '_authOrigins',
+  Externalauths: '_externalAuths',
+  Mfas: '_mfas',
+  Otps: '_otps',
+  Superusers: '_superusers',
+  CollectionItems: 'collectionItems',
+  Collections: 'collections',
+  CollectionStats: 'collectionStats',
+  Expenses: 'expenses',
+  OrderItems: 'orderItems',
+  Orders: 'orders',
+  OrderStats: 'orderStats',
+  PricingRules: 'pricingRules',
+  PricingStrategies: 'pricingStrategies',
+  Products: 'products',
+  Sets: 'sets',
+  StorePreferences: 'storePreferences',
+  StrategyRules: 'strategyRules'
+} as const;
+export type Collections = (typeof Collections)[keyof typeof Collections];
 
 // Alias types for improved usability
 export type IsoDateString = string;
@@ -113,6 +115,16 @@ export type CollectionItemsRecord = {
   updated: IsoAutoDateString;
 };
 
+export type CollectionsRecord = {
+  created: IsoAutoDateString;
+  id: string;
+  name?: string;
+  purchaseCost?: number;
+  purchased?: IsoDateString;
+  purchasedFrom?: string;
+  updated: IsoAutoDateString;
+};
+
 export type CollectionStatsRecord<
   TtotalMarketValue = unknown,
   TtotalMarketValueAtImport = unknown,
@@ -136,21 +148,12 @@ export type CollectionStatsRecord<
   totalSoldValue?: null | TtotalSoldValue;
 };
 
-export type CollectionsRecord = {
-  created: IsoAutoDateString;
-  id: string;
-  name?: string;
-  purchaseCost?: number;
-  purchased?: IsoDateString;
-  purchasedFrom?: string;
-  updated: IsoAutoDateString;
-};
-
-export enum ExpensesTypeOptions {
-  'cards' = 'cards',
-  'supplies' = 'supplies',
-  'other' = 'other'
-}
+export const ExpensesTypeOptions = {
+  cards: 'cards',
+  supplies: 'supplies',
+  other: 'other'
+} as const;
+export type ExpensesTypeOptions = (typeof ExpensesTypeOptions)[keyof typeof ExpensesTypeOptions];
 export type ExpensesRecord = {
   created: IsoAutoDateString;
   id: string;
@@ -204,27 +207,41 @@ export type OrdersRecord = {
   vendorFee?: number;
 };
 
-export enum PricingRulesFilterOptions {
-  'all' = 'all',
-  'set' = 'set',
-  'quantity' = 'quantity',
-  'market' = 'market',
-  'low' = 'low',
-  'our' = 'our'
-}
+export type OrderStatsRecord = {
+  grossSales?: number;
+  id: string;
+  lastUpdated?: string;
+  orderCount?: number;
+  profit?: number;
+  quotaCompletion?: number;
+  todayGrossSales?: number;
+  todayOrderCount?: number;
+  todayProfit?: number;
+};
 
-export enum PricingRulesFilterTypeOptions {
-  'equals' = 'equals',
-  'does not equal' = 'does not equal',
-  'contains' = 'contains',
-  'does not contain' = 'does not contain',
-  'begins with' = 'begins with',
-  'ends with' = 'ends with',
-  'greater than' = 'greater than',
-  'greater than or equal' = 'greater than or equal',
-  'less than' = 'less than',
-  'less than or equal' = 'less than or equal'
-}
+export const PricingRulesFilterOptions = {
+  all: 'all',
+  set: 'set',
+  quantity: 'quantity',
+  market: 'market',
+  low: 'low',
+  our: 'our'
+} as const;
+export type PricingRulesFilterOptions = (typeof PricingRulesFilterOptions)[keyof typeof PricingRulesFilterOptions];
+
+export const PricingRulesFilterTypeOptions = {
+  equals: 'equals',
+  'does not equal': 'does not equal',
+  contains: 'contains',
+  'does not contain': 'does not contain',
+  'begins with': 'begins with',
+  'ends with': 'ends with',
+  'greater than': 'greater than',
+  'greater than or equal': 'greater than or equal',
+  'less than': 'less than',
+  'less than or equal': 'less than or equal'
+} as const;
+export type PricingRulesFilterTypeOptions = (typeof PricingRulesFilterTypeOptions)[keyof typeof PricingRulesFilterTypeOptions];
 export type PricingRulesRecord = {
   created: IsoAutoDateString;
   filter?: PricingRulesFilterOptions;
@@ -303,6 +320,7 @@ export type MfasResponse<Texpand = unknown> = Required<MfasRecord> & BaseSystemF
 export type OtpsResponse<Texpand = unknown> = Required<OtpsRecord> & BaseSystemFields<Texpand>;
 export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> & AuthSystemFields<Texpand>;
 export type CollectionItemsResponse<Texpand = unknown> = Required<CollectionItemsRecord> & BaseSystemFields<Texpand>;
+export type CollectionsResponse<Texpand = unknown> = Required<CollectionsRecord> & BaseSystemFields<Texpand>;
 export type CollectionStatsResponse<
   TtotalMarketValue = unknown,
   TtotalMarketValueAtImport = unknown,
@@ -324,10 +342,10 @@ export type CollectionStatsResponse<
   >
 > &
   BaseSystemFields<Texpand>;
-export type CollectionsResponse<Texpand = unknown> = Required<CollectionsRecord> & BaseSystemFields<Texpand>;
 export type ExpensesResponse<Texpand = unknown> = Required<ExpensesRecord> & BaseSystemFields<Texpand>;
 export type OrderItemsResponse<Texpand = unknown> = Required<OrderItemsRecord> & BaseSystemFields<Texpand>;
 export type OrdersResponse<Texpand = unknown> = Required<OrdersRecord> & BaseSystemFields<Texpand>;
+export type OrderStatsResponse<Texpand = unknown> = Required<OrderStatsRecord> & BaseSystemFields<Texpand>;
 export type PricingRulesResponse<Texpand = unknown> = Required<PricingRulesRecord> & BaseSystemFields<Texpand>;
 export type PricingStrategiesResponse<Texpand = unknown> = Required<PricingStrategiesRecord> & BaseSystemFields<Texpand>;
 export type ProductsResponse<Texpand = unknown> = Required<ProductsRecord> & BaseSystemFields<Texpand>;
@@ -344,11 +362,12 @@ export type CollectionRecords = {
   _otps: OtpsRecord;
   _superusers: SuperusersRecord;
   collectionItems: CollectionItemsRecord;
-  collectionStats: CollectionStatsRecord;
   collections: CollectionsRecord;
+  collectionStats: CollectionStatsRecord;
   expenses: ExpensesRecord;
   orderItems: OrderItemsRecord;
   orders: OrdersRecord;
+  orderStats: OrderStatsRecord;
   pricingRules: PricingRulesRecord;
   pricingStrategies: PricingStrategiesRecord;
   products: ProductsRecord;
@@ -364,11 +383,12 @@ export type CollectionResponses = {
   _otps: OtpsResponse;
   _superusers: SuperusersResponse;
   collectionItems: CollectionItemsResponse;
-  collectionStats: CollectionStatsResponse;
   collections: CollectionsResponse;
+  collectionStats: CollectionStatsResponse;
   expenses: ExpensesResponse;
   orderItems: OrderItemsResponse;
   orders: OrdersResponse;
+  orderStats: OrderStatsResponse;
   pricingRules: PricingRulesResponse;
   pricingStrategies: PricingStrategiesResponse;
   products: ProductsResponse;
