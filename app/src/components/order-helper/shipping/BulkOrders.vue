@@ -158,10 +158,23 @@ const bulkOrders = computed<BulkOrder[]>(() => {
   return result;
 });
 
-const groupName = computed(
-  () =>
-    `${new Date().toLocaleDateString().slice(0, -5)} ${new Date().toLocaleTimeString().slice(0, -6)} ${bulkOrders.value[shippingIndex.value]?.type === 'Tracking' ? 'Tracking' : `${bulkOrders.value[shippingIndex.value]?.ounces}oz`}`
-);
+const groupName = computed(() => {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const period = now.getHours() >= 12 ? 'PM' : 'AM';
+  const hours = String(now.getHours() % 12 || 12).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+
+  const label =
+    bulkOrders.value[shippingIndex.value]?.type === 'Tracking'
+      ? 'Tracking'
+      : bulkOrders.value[shippingIndex.value]?.ounces === 0
+        ? '>3oz'
+        : `${bulkOrders.value[shippingIndex.value]?.ounces}oz`;
+
+  return `${month}/${day} ${hours}:${minutes}${period} ${label}`;
+});
 
 // Provided ---------------------------------------------------------------------------
 
